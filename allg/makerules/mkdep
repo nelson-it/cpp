@@ -1,0 +1,44 @@
+#!/bin/bash
+
+export PATH=/bin:/usr/bin:$PATH
+inc=
+out="Makefile.dep"
+
+while true
+do
+    case $1 in
+     -o) out=$2; shift;;
+   -cpp) cpp=$2; shift;;
+     -*) inc="$inc $1";;
+      *) break;
+    esac
+    shift
+done
+
+echo "# =============  neue Abhdngigkeit ============= " >> $out
+
+for file in $*
+do
+    echo depend for $file 1>&2
+
+    depdir=`dirname $file`
+    case $file in
+	*.ecpg )depname=`basename $file Ecpg`cpp; 
+	        cname=`basename $file Ecpg`cpp; 
+	        make $depdir/$depname >/dev/null 2>&1;
+		echo $depname"": $file >> $out ;;
+	*.cpp ) depname=`basename $file cpp`o;
+	        cname=`basename $file`;;
+	*.c   ) depname=`basename $file c`o;
+	        cname=`basename $file`;;
+        *     ) echo "unknow file type: $file" 1>&2
+    esac
+
+    hfiles=`$cpp -E $inc $depdir/$cname | sed -n -e "/lib\/gcc/d " -e "/^#.*\.h/p"  | cut -d\" -f2 | sort -u | sed -e '/:/d' `
+    for hfile in $hfiles
+    do
+        echo $depdir/$depname"": $hfile >> $out
+    done
+done
+
+exit 0

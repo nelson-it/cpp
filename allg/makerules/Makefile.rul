@@ -1,0 +1,99 @@
+
+%.o: %.cpp
+	$(CPP) -c $(OPT_FLAGS) $(INC_FLAGS) $*.cpp -o $@
+
+%.o: %.c
+	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $*.c -o $@
+
+              SHARED_FLAGS := --enable-auto-import
+
+ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
+
+ifneq "$($(TARGET).ISDLL)" "TRUE"
+$(LD_OUTPUT): $(OBJECTS)
+	$(LD_PRE)
+	$(CPP) $(OPT_FLAGS) $(INC_FLAGS) $(SHARED_FLAGS) -o $(LD_OUTPUT) $(OBJECTS) $(LD_FLAGS)
+else
+$(LD_OUTPUT) :
+
+endif
+else
+$(LD_OUTPUT): $(OBJECTS)
+	$(LD_PRE)
+	$(CPP) $(OPT_FLAGS) $(INC_FLAGS) --enable-auto-import $(SHARED_FLAGS) -o $(LD_OUTPUT) $(OBJECTS) $(LD_FLAGS)
+endif
+target:: Makefile.dep
+	@for T in $(TARGETS); \
+           do \
+	   echo make target $$T; \
+	   $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$$T; \
+       echo $$T ready; \
+       done
+
+all:: Makefile.dep
+	@for T in $(TARGETS); \
+           do \
+           $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$$T all_single; \
+        done
+
+args:: Makefile.dep
+	@$(foreach T, $(TARGETS), $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$T args_single; )	
+
+depend:: 
+	@echo "# ==== Automatisch erstellte Datei nicht verdndern ====" \
+	  > Makefile.dep;
+	@$(foreach T, $(TARGETS), $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$T depend_single; )	
+
+clean:: 
+	@for T in $(TARGETS); \
+           do \
+           $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$$T clean_single; \
+        done
+	@-rm -f Makefile.dep
+
+clean_core:: 
+	echo "cleaning core files"
+	@-rm -f *.stackdump core
+
+
+all_single::
+	@ $(MAKE) --no-print-directory $(MAKEFLAGS) args_single; 
+	@ $(MAKE) --no-print-directory $(MAKEFLAGS) depend_single; 
+	@ echo make $(LD_OUTPUT)
+	@ $(MAKE) --no-print-directory $(MAKEFLAGS) $(LD_OUTPUT); 
+
+clean_single::
+	@echo make clean for $(TARGET)
+	@-rm -f $(CLEAN_OBJS)
+
+depend_single::
+	@echo make depend for $(TARGET)
+	@if [ -f $(TARGET).inc ]; then \
+	    echo $(TARGET).o: $(TARGET).inc >> Makefile.dep; \
+	fi;
+	@if [ "$(WITH_SHARED_LIBS)" = "TRUE" ]; then \
+		for L in $(foreach l, $($(TARGET).LIBS), $(call MKLIBNAME,$(l))); \
+	    do \
+	    echo $(TARGET): $$L >> Makefile.dep; \
+	done \
+	fi;
+	
+	-@ chmod +x $(PROJECT_ROOT)/allg/makerules/mkdep;
+	-@ mkd=0;\
+	  if ! [ "$($(TARGET).ISDLL)" = "TRUE" ];  then mkd=1; fi;\
+	  if   [ "$(WITH_SHARED_LIBS)" = "TRUE" ]; then mkd=1; fi; \
+	  if [ $$mkd = 1 ] ; then \
+	     $(PROJECT_ROOT)/allg/makerules/mkdep -cpp $(CPP) $(INC_FLAGS) "$(OPT_FLAGS)"\
+	                                          -o Makefile.dep $(SOURCES);\
+	  fi;
+
+args_single::
+	-@ chmod +x $(PROJECT_ROOT)/allg/makerules/mkargs
+ifneq "$($(TARGET).ISDLL)" "TRUE" 
+	-@echo make args for $(TARGET)
+	 @$(PROJECT_ROOT)/allg/makerules/mkargs -o $(TARGET).inc \
+	     $(sort $(dir $(SOURCES) $(LIBDIRS) $(foreach d, $($(TARGET).LIBS), $($(SHLIB_PRE)$(d).$(SHLIB).SOURCES)) ))
+endif
+
+Makefile.dep:
+	touch Makefile.dep
