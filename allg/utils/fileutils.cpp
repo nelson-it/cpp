@@ -45,7 +45,7 @@ void FileUtils::read_file_data( int werror )
 
     createtime = accesstime = modifytime = 0;
     is_dir = 0;
-    have_data = 0;
+    have_data = -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     HANDLE h;
@@ -126,6 +126,8 @@ void FileUtils::read_file_data( int werror )
 
 int FileUtils::mk_dir(std::string root, std::string dir)
 {
+    have_data = -1;
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
     std::string s;
@@ -199,6 +201,7 @@ int FileUtils::mk_dir(std::string root, std::string dir)
 
 int FileUtils::copy_file(int werror)
 {
+    have_data = -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::string sfile,dfile;
@@ -306,6 +309,7 @@ int FileUtils::copy_file(int werror)
 
 int FileUtils::copy_dir(int werror)
 {
+    have_data = -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::string s,d;
@@ -359,6 +363,7 @@ int FileUtils::copy_dir(int werror)
 
 int FileUtils::remove_file(int werror)
 {
+    have_data = -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::string s;
@@ -602,6 +607,8 @@ int FileUtils::copy(int werror)
 
 int FileUtils::mkdir(int werror)
 {
+    have_data = -1;
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
     std::string s;
@@ -645,6 +652,8 @@ int FileUtils::mkdir(int werror)
 
 int FileUtils::mklink(int werror)
 {
+    have_data = -1;
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
     std::string s;
