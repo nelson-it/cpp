@@ -45,7 +45,7 @@ int Process::start(const char *cmd, const char *logfile,
 		const char *workdir, const char *logdir,
 		const char *extrapath)
 {
-    CsList cmd_list(cmd);
+    CsList cmd_list(cmd, ' ');
     return start(cmd_list, logfile, workdir, logdir, extrapath);
 }
 
@@ -54,6 +54,7 @@ int Process::start(CsList cmd_list, const char *logfile,
         const char *extrapath)
 {
     this->cmd = cmd_list.getString();
+    this->status = -1;
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)
 

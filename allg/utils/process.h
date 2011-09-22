@@ -80,12 +80,14 @@ public:
 
     int write(const char *buffer, int size)
     {
-        return ::write(file, buffer, size);
+        if ( file >= 0 ) return ::write(file, buffer, size);
+        else return 0;
     }
 
     int read( char *buffer, int size)
     {
-        return ::read(file, buffer, size);
+        if ( file >= 0 ) return ::read(file, buffer, size);
+        else return 0;
     }
 
     int wait();
