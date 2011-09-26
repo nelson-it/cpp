@@ -392,7 +392,9 @@ int FileUtils::remove_file(int werror)
     if ( dir != "") s += "/" + dir;
     s = s + "/" + name;
 
+#if defined(MACOS)
     chflags(s.c_str(), 0);
+#endif
     chmod(s.c_str(), 0777);
     if ( unlink(s.c_str()) < 0 )
     {
@@ -438,7 +440,9 @@ int FileUtils::remove_dir(int werror)
     if ( dir != "") s += "/" + dir;
     s = s + "/" + name;
 
+#if defined(MACOS)
     chflags(s.c_str(), 0);
+#endif
     chmod(s.c_str(), 0777);
     if ( ::rmdir(s.c_str()) != 0 )
     {
