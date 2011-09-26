@@ -43,11 +43,19 @@ int CsList::Element::operator ==(std::string str)
     return value == str;
         }
 
-CsList::CsList(int ignore_lastempty)
+CsList::CsList(int ignore_lastempty, char sep )
 {
     cs_string_valid = 1;
     this->ignore_lastempty = ignore_lastempty;
+    this->sep = sep;
+    f = list.end();
+}
 
+CsList::CsList( char sep )
+{
+    cs_string_valid = 1;
+    this->ignore_lastempty = 0;
+    this->sep = sep;
     f = list.end();
 }
 
@@ -72,7 +80,7 @@ CsList::CsList(std::vector<std::string> elements, int ignore_lastempty)
     cs_string_valid = 0;
 }
 
-void CsList::mk_cs_string()
+void CsList::mk_cs_string(char sep)
 {
 
     if ( list.empty() )
@@ -86,7 +94,7 @@ void CsList::mk_cs_string()
         cs_string = *i++;
 
         for ( ; i != list.end(); ++i )
-            cs_string += "," + *i;
+            cs_string += sep + *i;
     }
 }
 
@@ -94,6 +102,7 @@ void CsList::setString(std::string cs_string, char sep, int ignore_lastempty)
 {
     std::string::size_type i;
 
+    this->sep = sep;
     this->cs_string = cs_string;
     this->ignore_lastempty = ignore_lastempty;
     cs_string_valid = 1;
@@ -113,8 +122,9 @@ void CsList::setString(std::string cs_string, char sep, int ignore_lastempty)
 
 CsList CsList::operator+( const CsList &l1 ) const
 {
+    CsList l2 = l1;
     if ( list.size() > 0 )
-        return CsList( cs_string + "," + l1.cs_string);
+        return CsList( cs_string + this->sep + l2.getString(this->sep));
     else
         return l1;
 }

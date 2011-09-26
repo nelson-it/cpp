@@ -29,12 +29,14 @@ private:
     Elements list;
     int cs_string_valid;
     int ignore_lastempty;
+    char sep;
 
-    void mk_cs_string();
+    void mk_cs_string(char sep);
 
     Elements::iterator f;
 public:
-    CsList( int ignore_lastempty = 0 );
+    CsList( int ignore_lastempty = 0, char sep = ',' );
+    CsList( char sep );
     CsList(std::string cs_string, char sep = ',' , int ignore_lastempty = 0);
     CsList(std::vector<std::string> *elements, int ignore_lastempty = 0);
     CsList(std::vector<std::string> elements, int ignore_lastempty = 0);
@@ -44,12 +46,19 @@ public:
     std::string getString()
     {
         if ( ! cs_string_valid )
-	    mk_cs_string();
-	return cs_string;
+            mk_cs_string(this->sep);
+        return cs_string;
+    };
+
+    std::string getString(char sep)
+    {
+        mk_cs_string(sep);
+        if ( sep != this->sep ) cs_string_valid = 0;
+        return cs_string;
     };
 
     CsList operator+ (const CsList &l1) const;
-    operator std::string() { return cs_string; }
+    operator std::string() { return getString(); }
 
     void setString(std::string cs_string, char sep = ',' ,int ignore_lastempty = 0 );
     void add(std::string item)
