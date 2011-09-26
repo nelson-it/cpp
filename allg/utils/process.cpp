@@ -53,7 +53,7 @@ int Process::start(CsList cmd_list, const char *logfile,
         const char *workdir, const char *logdir,
         const char *extrapath)
 {
-    this->cmd = cmd_list.getString();
+    this->cmd = cmd_list.getString(' ');
     this->status = -1;
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -241,7 +241,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 		if ( extrapath != NULL && *extrapath != '\0' )
 		{
 			std::string path = getenv("PATH");
-			setenv("PATH", (path + ":"+ extrapath).c_str(), 1);
+			setenv("PATH", (path + ":" + extrapath).c_str(), 1);
 		}
 
 		execve(argv[0], argv, environ);
