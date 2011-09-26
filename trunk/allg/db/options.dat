@@ -1,0 +1,10 @@
+// Datenbank optionen hier definiert
+// ================================================
+liste["DbDatabase"]         = Argument::Liste("-db", 'c', 1, "mnedb");
+liste["DbApplSchema"]       = Argument::Liste("-dbas", 'c', 1,"mne_appliction");
+liste["DbHttpTimeout"]      = Argument::Liste("-dbtime", 'l', 1, "300");
+liste["DbHttpRealm"]        = Argument::Liste("-dbrealm", 'c', 1, "Nelson technische Informatik");
+liste["DbAdminUser"]        = Argument::Liste("-dbaduser", 'c', 1, "");
+liste["DbAdminPasswd"]      = Argument::Liste("-dbadpasswd", 'c', 1, "");
+liste["DbTranslateUser"]    = Argument::Liste("-dbtruser", 'c', 1, "");
+liste["DbTranslatePasswd"]  = Argument::Liste("-dbtrpasswd", 'c', 1, "");
