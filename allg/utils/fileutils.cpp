@@ -1,3 +1,4 @@
+#define WINVER 0x0500
 #ifdef PTHREAD
 #include <pthreads/pthread.h>
 #endif
@@ -6,7 +7,6 @@
 #include <stdio.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-#define WINVER 0x0500
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -87,7 +87,7 @@ void FileUtils::read_file_data( int werror )
 
     if ( error_found )
     {
-        have_data = 2
+        have_data = 2;
         return;
     }
 
