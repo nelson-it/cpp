@@ -24,6 +24,7 @@ extern char **environ;
 
 #include "process.h"
 
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 static std::set<Process*> processes;
 
 static void sig_child(int signum)
@@ -40,6 +41,7 @@ static void sig_child(int signum)
     }
 
 }
+#endif
 
 int Process::start(const char *cmd, const char *logfile,
 		const char *workdir, const char *logdir,
@@ -53,7 +55,7 @@ int Process::start(CsList cmd_list, const char *logfile,
         const char *workdir, const char *logdir,
         const char *extrapath)
 {
-    this->cmd = cmd_list.getString();
+    this->cmd = cmd_list.getString(' ');
     this->status = -1;
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -156,7 +158,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 			&pi )         // Pointer to PROCESS_INFORMATION structure.
 	)
 	{
-		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",cmd);
+		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden", cmd.c_str());
 		SetEnvironmentVariable("PATH", path);
 		return 0;
 	}
@@ -241,7 +243,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 		if ( extrapath != NULL && *extrapath != '\0' )
 		{
 			std::string path = getenv("PATH");
-			setenv("PATH", (path + ":"+ extrapath).c_str(), 1);
+			setenv("PATH", (path + ":" + extrapath).c_str(), 1);
 		}
 
 		execve(argv[0], argv, environ);

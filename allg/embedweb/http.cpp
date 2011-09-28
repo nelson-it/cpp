@@ -12,7 +12,6 @@
 
 #include <utils/gettimeofday.h>
 #include <utils/tostring.h>
-#include <utils/php_exec.h>
 #include <crypt/base64.h>
 #include <argument/argument.h>
 
@@ -346,16 +345,6 @@ void Http::make_answer()
 		if (act_h->status != 1000)
 			act_h->age = 3600;
 		act_h->status = 200;
-
-        if (act_h->filename.find(".php") == (act_h->filename.size() - 4 ))
-        {
-            fclose(file);
-            file = 0;
-            //fclose(act_h->content);
-            PhpExec(str, act_h);
-            //act_h->content = fopen(act_h->content_filename.c_str(), "rb+");
-            //fseek ( act_h->content, 0, SEEK_END);
-        }
 
 		if (act_h->content_type.find("text") == 0)
 		{

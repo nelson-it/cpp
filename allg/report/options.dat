@@ -1,4 +1,0 @@
-// Reportoptionen
-// ================
-liste["RepRoot"] = Argument::Liste("-reproot", 'c', 1, ".");
-

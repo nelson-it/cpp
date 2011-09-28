@@ -1,3 +1,4 @@
+#define WINVER 0x0500
 #ifdef PTHREAD
 #include <pthreads/pthread.h>
 #endif
@@ -6,7 +7,6 @@
 #include <stdio.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-#define WINVER 0x0500
 #else
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -87,7 +87,7 @@ void FileUtils::read_file_data( int werror )
 
     if ( error_found )
     {
-        have_data = 2
+        have_data = 2;
         return;
     }
 
@@ -392,7 +392,9 @@ int FileUtils::remove_file(int werror)
     if ( dir != "") s += "/" + dir;
     s = s + "/" + name;
 
+#if defined(MACOS)
     chflags(s.c_str(), 0);
+#endif
     chmod(s.c_str(), 0777);
     if ( unlink(s.c_str()) < 0 )
     {
@@ -438,7 +440,9 @@ int FileUtils::remove_dir(int werror)
     if ( dir != "") s += "/" + dir;
     s = s + "/" + name;
 
+#if defined(MACOS)
     chflags(s.c_str(), 0);
+#endif
     chmod(s.c_str(), 0777);
     if ( ::rmdir(s.c_str()) != 0 )
     {
