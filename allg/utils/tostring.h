@@ -113,6 +113,7 @@ public:
 		{
 			str.replace(i, 1, "\\flq ");
 			i += 4;
+            if ( str[i] == ' ') { str.insert(i,"\\"); i++; }
 		}
 
         i = 0;
@@ -120,13 +121,15 @@ public:
         {
             str.replace(i, 1, "\\frq ");
             i += 4;
-        }
+            if ( str[i] == ' ') { str.insert(i,"\\"); i++; }
+      }
 
         i = 0;
         while ( (i = str.find('"', i) ) != std::string::npos)
         {
             str.replace(i, 1, "\\grqq ");
-            i += 4;
+            i += 6;
+            if ( str[i] == ' ') { str.insert(i,"\\"); i++; }
         }
 
 
