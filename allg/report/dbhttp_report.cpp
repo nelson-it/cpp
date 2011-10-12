@@ -506,7 +506,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                         db->release(tab);
                         fseek(h->content, 0, SEEK_END);
                     }
-                    else
+                    else if ( h->vars["base64schema"] != "" && h->vars["base64table"] != "" )
                     {
                         DbTable *tab = db->p_getTable(h->vars["base64schema"],h->vars["base64table"]);
                         DbTable::ValueMap vals;
@@ -528,7 +528,11 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                         }
                         db->release(tab);
                     }
-
+                    else
+                    {
+                        rewind(h->content);
+                        fprintf(h->content,"%s", crypt);
+                    }
                 }
                 delete str;
                 delete crypt;
