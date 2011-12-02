@@ -17,7 +17,8 @@ class DbHttpUtilsQuery : public DbHttpProvider
       E_NOCOL = 1,
       E_WRONG_COLUMN,
       E_PDF_OPEN,
-      E_OLD_STYLE
+      E_OLD_STYLE,
+      E_WVALSIZE
     };
 
     enum WARNING_TYPES

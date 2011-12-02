@@ -437,10 +437,9 @@ char *PgConnect::mk_error(PGresult *res)
     			std::string s;
     			std::string f;
     			std::string str = PQresultErrorField(res, PG_DIAG_MESSAGE_PRIMARY);
-    			j = str.rfind("«");
-    			if ( status == "23503" ) j = str.rfind("«", j - 1);
-    			i = str.find_last_of("»", j - 1);
 
+    			j = str.rfind("«");
+    			i = str.find_last_of("»", j - 1);
     			f = str.substr(i+1, j - i - 1);
 
     			if ( i == std::string::npos || j == std::string::npos || ( s = err.get(msg.getLang(), f)) == "" )

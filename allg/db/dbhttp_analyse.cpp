@@ -44,23 +44,21 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	pthread_mutex_lock(&cl_mutex);
 #endif
 
+	msg.pdebug(D_CLIENT, "cookie %s", cookie.c_str());
 	if ( cookie != "" && (ic = clients.find(cookie) ) != clients.end()  )
 	{
 		msg.pdebug(D_CLIENT, "prüfe auf Gleichheit %d", client);
 		msg.pdebug(D_CLIENT, "host %d:%d", ic->second.host, s->getHost(client));
 		msg.pdebug(D_CLIENT, "browser %d:%d", ic->second.browser, h->browser);
-		msg.pdebug(D_CLIENT, "version %s:%s", ic->second.version.c_str(),
-				h->version.c_str());
+		msg.pdebug(D_CLIENT, "version %s:%s", ic->second.version.c_str(), h->version.c_str());
 		msg.pdebug(D_CLIENT, "connection %d", ic->second.db->have_connection());
-		msg.pdebug(D_CLIENT, "user %s:%s", ic->second.user.c_str(),
-				h->user.c_str());
-		msg.pdebug(D_CLIENT, "passwd %s:%s", ic->second.passwd.c_str(),
-				h->passwd.c_str() );
+		msg.pdebug(D_CLIENT, "user %s:%s", ic->second.user.c_str(), h->user.c_str());
+		msg.pdebug(D_CLIENT, "passwd %s:%s", ic->second.passwd.c_str(), h->passwd.c_str() );
 
 		if (   ic->second.host == s->getHost(client)
 			&& ic->second.browser == h->browser
             && ic->second.version == h->version
-			&& ic->second.db->have_connection())
+			&& ( ic->second.db->have_connection() ) )
 		{
 			msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
 			ic->second.last_connect = time(NULL);
@@ -88,7 +86,10 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		{
 		    msg.pdebug(D_CLIENT, "client muss sich noch verbinden %d", client);
             ic->second.user = h->user;
-			ic->second.db->p_getConnect("", h->user, h->passwd);
+            if ( h->user != "" )
+            {
+                ic->second.db->p_getConnect("", h->user, h->passwd);
+            }
 			if (ic->second.db->have_connection() )
 			{
 				msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);
@@ -161,7 +162,10 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	if ( cookie != "Logout" && h->user != "" && h->passwd != "" )
 	{
         msg.pdebug(D_CLIENT, "client muss sich noch verbinden %d", client);
-        ic->second.db->p_getConnect("", h->user, h->passwd);
+        if ( h->user != "" )
+        {
+            ic->second.db->p_getConnect("", h->user, h->passwd);
+        }
         if (ic->second.db->have_connection() )
         {
             msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);

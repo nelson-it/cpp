@@ -23,6 +23,7 @@ protected:
 	  E_SADD,
 	  E_JADD,
 	  E_WADD,
+
 	  E_MAX
     };
 

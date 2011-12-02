@@ -68,8 +68,8 @@ ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
     length = 0;
     index = 0;
 
-    host = ntohl(sin->sin_addr.s_addr);
-    port = ntohs(sin->sin_port);
+    host = sin->sin_addr.s_addr;
+    port = sin->sin_port;
 
     need_close = 0;
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )

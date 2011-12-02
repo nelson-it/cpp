@@ -91,6 +91,7 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
 DbTranslate::~DbTranslate()
 {
     delete this->db;
+    this->db = NULL;
 }
 
 void DbTranslate::setLang(std::string lang)

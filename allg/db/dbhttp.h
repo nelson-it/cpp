@@ -24,6 +24,7 @@ class DbHttp : public Http
     DbTranslate *trans;
 
     std::map<std::string, locale_t> loc;
+    locale_t stdloc;
 
     DbHttpAnalyse *analyse;
 
