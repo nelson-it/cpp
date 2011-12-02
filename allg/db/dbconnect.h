@@ -90,12 +90,7 @@ public:
     virtual ~DbConnect() {};
 
     virtual void mk_string( std::string &str, int nodelimiter = 0);
-    virtual std::string mk_string( const char *c, int nodelimiter = 1)
-    {
-        std::string s(c);
-	mk_string(s, nodelimiter);
-	return s;
-    }
+
     virtual std::string getValue( int typ, std::string str);
 
     virtual std::string getUser() = 0;

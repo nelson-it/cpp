@@ -65,6 +65,9 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     CsList wcol(h->vars["wcol"]);
     CsList wop(h->vars["wop"]);
 
+    while ( wval.size() < wcol.size() ) wval.add("");
+    while ( wop.size()  < wcol.size() ) wop.add("");
+
     query = db->p_getQuery();
     if ( h->vars["distinct"] != "" && ! cols.empty() )
         query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);

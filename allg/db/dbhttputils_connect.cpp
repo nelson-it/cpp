@@ -33,7 +33,7 @@ DbHttpUtilsConnect::~DbHttpUtilsConnect()
 }
 
 int DbHttpUtilsConnect::request(Database *db, HttpHeader *h)
-{
+    {
 
     SubProviderMap::iterator i;
 

@@ -37,6 +37,7 @@ public:
     virtual ~DbHttpUtilsConnect();
 
     virtual std::string getPath() { return "db/utils/connect"; }
+
     virtual int request (Database *db, HttpHeader *h);
 
 };

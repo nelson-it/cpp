@@ -21,7 +21,15 @@ public:
 
      virtual std::string getPath() = 0;
 
-     virtual int request (Database *db, HttpHeader *h) = 0;
+     virtual int check_request(Database *db, HttpHeader *h)
+     {
+         return 0;
+     }
+     virtual int request (Database *db, HttpHeader *h, int nologin )
+     {
+         return 0;
+     }
+     virtual int request (Database *db, HttpHeader *h ) = 0;
      virtual int request (HttpHeader *h)
          { exit(999); }
 

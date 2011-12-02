@@ -44,6 +44,8 @@ public:
     std::string getRegion()                 { return region; }
     void        setRegion(std::string region);
 
+    Database *p_getDb() { return this->db; }
+
     std::string getDateformat()      { return act_date; }
     std::string getTimeformat()      { return act_time; }
     std::string getIntervalformat()  { return act_interval; }
