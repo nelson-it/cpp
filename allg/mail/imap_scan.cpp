@@ -203,6 +203,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
             for (i = headers.begin(); i != headers.end(); ++i )
             {
                 std::string uid = imap.getHeaderElement(&(i->second), "MESSAGE-ID");
+                msg.pdebug(1, "To %s",i->second["DATE"].c_str());
                 if ( uid != "" && this->headers.find(uid) != this->headers.end() )
                         continue;
 
@@ -264,9 +265,10 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                             {
                                 CryptBase64 crypt;
                                 DbTable::ValueMap val;
+                                CsList ts(i->second["DATE"], '(' );
                                 long t = 0;
 
-                                db->p_getConnect()->execute("SELECT CAST ( EXTRACT ( EPOCH FROM timestamp WITH TIME ZONE '" + i->second["DATE"] + "') AS INT4 )", 1);
+                                db->p_getConnect()->execute("SELECT CAST ( EXTRACT ( EPOCH FROM timestamp WITH TIME ZONE '" + ts[0] + "') AS INT4 )", 1);
 
                                 if ( db->p_getConnect()->have_result() )
                                     t = (long)((*db->p_getConnect()->p_get_first_result())[0]);

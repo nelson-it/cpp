@@ -130,7 +130,13 @@ void Imap::read_answer(int need_split)
             else
                 notready++;
 
-            if ( ( notready == 0 || notready > 1000 ) && strncmp(c, (this->tag + "OK").c_str(), (this->tag + "OK").size()) != 0)
+            if ( ( notready == 0 || notready > 1000 ) && strncmp(c, (this->tag + "NO").c_str(), (this->tag + "NO").size()) == 0)
+            {
+                msg.pwarning(E_READ, "Unerwartete Anwort");
+                msg.line("%s", response);
+            }
+
+            else if ( ( notready == 0 || notready > 1000 ) && strncmp(c, (this->tag + "OK").c_str(), (this->tag + "OK").size()) != 0)
             {
                 msg.perror(E_READ, "Unerwartete Anwort - breche Verbindung ab");
                 msg.line("%s", (this->tag + "OK").c_str());
@@ -251,6 +257,30 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
 
 }
 
+CsList Imap:: split(std::string str)
+{
+    std::string::size_type i;
+    std::string c;
+    int havespace = 0;
+    CsList l;
+
+    for ( i = 0; i<str.size(); ++i)
+    {
+        if ( str[i] == '"')  havespace = ( havespace ) ? 0 : 1;
+        if ( str[i] == ' ' && havespace == 0 )
+        {
+            if ( c != "" ) l.add(c);
+            c = "";
+        }
+        else
+        {
+            c.push_back(str[i]);
+        }
+    }
+    if ( c != "" ) l.add(c);
+
+    return l;
+}
 Imap::Folder Imap::getFolder()
 {
     char tmp[10240];
@@ -263,7 +293,7 @@ Imap::Folder Imap::getFolder()
 
         for ( i = 0; answer.size() > 0 && i < (answer.size()-1); ++i)
         {
-            CsList a(answer[i], ' ');
+            CsList a = split(answer[i]);
             std::string str;
             std::string::size_type j;
             char c;
@@ -423,19 +453,21 @@ Imap::Headers Imap::getHeader(std::string mbox, time_t t )
     std::string s;
     struct tm tm;
 
-    locale_t loc;
-    loc = newlocale(LC_NUMERIC_MASK, "C", NULL);
-    loc = uselocale(loc);
+    locale_t loc, old_loc;
+    loc = newlocale(LC_TIME_MASK | LC_NUMERIC_MASK, "C", NULL);
+    old_loc = uselocale(loc);
 
     strftime(ts, sizeof(ts), "%d-%b-%Y", gmtime_r(&t, &tm) );
 
-    loc = uselocale(loc);
-    freelocale(loc);
+    uselocale(old_loc);
+    if ( loc != NULL ) freelocale(loc);
 
-    snprintf(tmp, sizeof(tmp), ( this->tag + "EXAMINE %s\r\n").c_str(), mbox.c_str());
+    snprintf(tmp, sizeof(tmp), ( this->tag + "EXAMINE \"%s\"\r\n").c_str(), mbox.c_str());
     if ( write_cmd(tmp, strlen(tmp)) < 0 ) return h;
+    if ( answer.size() == 0 || answer[answer.size() - 1] == "" || strncmp(answer[answer.size() - 1].c_str(), (this->tag + "NO").c_str(), (this->tag + "NO").size()) == 0 ) return h;
 
-    snprintf(tmp, sizeof(tmp), ( this->tag + "SEARCH SINCE %s\r\n").c_str(), ts);
+    snprintf(tmp, sizeof(tmp), ( this->tag + "SEARCH SINCE \"%s\"\r\n").c_str(), ts);
+
     if ( write_cmd(tmp, strlen(tmp)) < 0 ) return h;
     mails.setString(answer[0], ' ');
 

@@ -41,7 +41,8 @@ private:
     int bracket_found;
     std::string num;
 
-   int write_cmd(char *cmd, int len, int need_split = 1);
+    CsList split(std::string str);
+    int write_cmd(char *cmd, int len, int need_split = 1);
     void read_answer(int need_split = 1);
 
     std::string getBracketvalue(std::string s, const char *delimiter = "()");
