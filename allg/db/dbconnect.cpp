@@ -91,11 +91,11 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
     case BOOL:
         if (*(long *) value != 0)
         {
-            strncpy(val, "true", l);
+            if ( msg != NULL ) strncpy(val, msg->get("wahr").c_str(), l); else strncpy(val, "true", l);
         }
         else
         {
-            strncpy(val, "false", l);
+            if ( msg != NULL ) strncpy(val, msg->get("falsch").c_str(), l); else strncpy(val, "false", l);
         }
         break;
 
@@ -113,6 +113,8 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
     case LONG:
         if (format != NULL && *format == 't')
             snprintf(val, l, "%s", ctime((long*) value));
+        else if (format != NULL && *format != '\0' )
+            snprintf(val, l, format, *(long*) value);
         else
             snprintf(val, l, "%ld", *(long*) value);
         break;

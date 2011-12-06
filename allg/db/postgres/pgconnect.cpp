@@ -438,11 +438,16 @@ char *PgConnect::mk_error(PGresult *res)
     			std::string f;
     			std::string str = PQresultErrorField(res, PG_DIAG_MESSAGE_PRIMARY);
 
-    			j = str.rfind("«");
-    			i = str.find_last_of("»", j - 1);
-    			f = str.substr(i+1, j - i - 1);
+    			for ( j=0,i=0; i != std::string::npos && j != std::string::npos; )
+    			    {
+    			    i = str.find("»", j);
+    			    j = str.find("«", i);
+    			    f = str.substr(i+2, j - i - 2);
+    			    fprintf(stderr, "%s\n", f.c_str());
+    			    if ( ( s = err.get(msg.getLang(), f)) != "" ) break;
+    			    }
 
-    			if ( i == std::string::npos || j == std::string::npos || ( s = err.get(msg.getLang(), f)) == "" )
+    			if ( s == "" )
     			{
     				p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
     				errresult = new char[strlen(PQerrorMessage(con)) + 1];
