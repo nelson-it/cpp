@@ -48,12 +48,12 @@ public:
         #endif
     }
 
-    void setUserprefs(Database *db)
-	{
-		analyse->setUserprefs(act_client);
-	}
+    DbHttpAnalyse::Client::Userprefs getUserprefs()
+    {
+        return act_client->userprefs;
+    }
 
-	void clear_cache()
+    void clear_cache()
 	{
 		trans->clear_cache();
 	}

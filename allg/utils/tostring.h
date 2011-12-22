@@ -163,18 +163,31 @@ public:
 		return str;
 	}
 
-	static std::string mktexmacro(std::string s)
-	{
-		std::string str = s;
-		std::string::size_type i = 0;
-		while ( (i = str.find('_', i) ) != std::string::npos)
-		{
-			str.replace(i, 1, "");
-			i += 4;
-		}
+    static std::string mktexmacro(std::string s)
+    {
+        std::string str = s;
+        std::string::size_type i = 0;
+        while ( (i = str.find('_', i) ) != std::string::npos)
+        {
+            str.replace(i, 1, "");
+            i += 4;
+        }
 
-		return str;
-	}
+        return str;
+    }
+
+    static std::string mkcsv(std::string s)
+    {
+        std::string str = s;
+        std::string::size_type i = 0;
+        while ( (i = str.find('"', i) ) != std::string::npos)
+        {
+            str.replace(i, 1, "\"\"");
+            i += 2;
+        }
+
+        return str;
+    }
 };
 
 #endif /* tostring_mne */

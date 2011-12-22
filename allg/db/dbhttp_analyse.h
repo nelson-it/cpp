@@ -32,7 +32,8 @@ public:
 		Database     *db;
 		time_t       last_connect;
 
-        std::map<std::string, std::string> userprefs;
+        typedef std::map<std::string, std::string> Userprefs;
+        Userprefs userprefs;
 
 		Client()
             :msg("DbHttpAnalyse::Client")
@@ -57,7 +58,7 @@ public:
 		    std::map<std::string, std::string>::iterator i;
 		    if ( ( i = userprefs.find(name)) != userprefs.end() )
 		        return i->second;
-		    msg.pwarning(1, "Usereinstellung für <%s> ist nicht vorhanden", name.c_str());
+		    msg.pwarning(1, "Usereinstellung fï¿½r <%s> ist nicht vorhanden", name.c_str());
 		    return "";
 		}
 	};
@@ -106,6 +107,8 @@ protected:
 #endif
 
 
+    void setUserprefs(Client *cl);
+
 public:
 	DbHttpAnalyse(ServerSocket *s, Database *db);
 	virtual ~DbHttpAnalyse();
@@ -113,7 +116,6 @@ public:
 	void timeout(long sec, long usec, long w_sec, long w_usec );
 	virtual void disconnect( int client );
 
-	void setUserprefs(Client *cl);
 
 	Client *getClient(std::string cookie)
 	{

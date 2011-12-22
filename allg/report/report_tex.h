@@ -13,6 +13,8 @@ class ReportTex
 {
 public:
 	typedef std::map<std::string, std::string> Macros;
+
+	std::map<std::string, std::string> userprefs;
 private:
 	Message msg;
 
