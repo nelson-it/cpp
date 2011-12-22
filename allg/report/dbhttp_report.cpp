@@ -348,6 +348,8 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     std::string pdftable;
     CsList pdfwcol,pdfwval,pdfwop;
 
+    DbHttpAnalyse::Client::Userprefs::iterator ui;
+
     h->status = 200;
 
     tab = db->p_getTable("mne_application","reportscache");
@@ -437,6 +439,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     	}
     }
 
+    report.userprefs = this->http->getUserprefs();
     report.mk_report(db,str,0,h->content, h->vars["language"],
             h->vars["schema"], h->vars["query"],
             &wid, &wval, &wop, &sort, &macros, &xml );
@@ -467,8 +470,13 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
         fclose(h->content);
 
+        std::string u;
+        for ( ui = report.userprefs.begin(); ui != report.userprefs.end(); ++ui)
+        {
+            u += " -" + ui->first + " " + ui->second;
+        }
         Process p(this->http->getServersocket());
-        p.start( (MKREPORT + h->content_filename).c_str(), filename);
+        p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);
         p.wait();
 
         if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )

@@ -162,6 +162,20 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         return;
     }
 
+    if ( (! query->eof())  && !subreport )
+    {
+        std::map<std::string, std::string>::iterator ui;
+        for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+        {
+            if ( query->find(ui->first) != std::string::npos  )
+            {
+                userprefs[ui->first] = (std::string)(*rv)[query->find(ui->first)];
+            }
+        }
+        for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+            fprintf(out, "\\gdef\\upref%s{%s}%%\n", ui->first.c_str(), ui->second.c_str());
+    }
+
     if ( (! query->eof()) && query->find("language") != std::string::npos  && !subreport )
     {
     	std::string l = (std::string)(*rv)[query->find("language")];

@@ -31,6 +31,11 @@ class DbHttpUtilsQuery : public DbHttpProvider
     SubProviderMap subprovider;
 
     void data_xml (Database *db, HttpHeader *h);
+    void data_csv (Database *db, HttpHeader *h);
+
+    static std::map<std::string,std::string> dateformat;
+    static std::map<std::string,std::string> days;
+
 public:
     DbHttpUtilsQuery( DbHttp *h );
     virtual ~DbHttpUtilsQuery();

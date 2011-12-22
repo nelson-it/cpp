@@ -65,6 +65,8 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
     char *val;
     unsigned int l;
     char c[1024];
+    char tc[1024];
+    char *sc;
 
     if (str == NULL || length < 1)
     {
@@ -128,7 +130,11 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
         else
             strcpy(f,"%'f");
 
-        snprintf(val, l, f, *(double*) value);
+        snprintf(tc, sizeof(tc), f, *(double*) value);
+        for ( sc = tc; *sc == ' ' && *sc != '\0'; sc++ );
+        strncpy(val, sc, l);
+        val[l] = '\0';
+
         break;
     }
 
@@ -272,8 +278,7 @@ std::string DbConnect::getValue(int typ, std::string value)
     }
     else if (typ == DbConnect::BOOL)
     {
-        if (value == "true" || value == "t" || value == "r" || value
-                == "richtig" || atoi(value.c_str()) != 0)
+        if (value == "true" || value == "t" || value == "r" || value == "richtig" || value == "wahr" || value == "w" || atoi(value.c_str()) != 0)
             str = "true";
         else
             str = "false";
