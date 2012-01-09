@@ -239,9 +239,12 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     		for (i = 0; i < sort.size(); ++i)
     			if (sort[i] == id)
     			{
-    				sortid[i] = n;
-    				fprintf(out, "\\gdef\\repgrouptitle%s{%s}%%\n", str.c_str(),
-    						ToString::mktex(id).c_str());
+    				if ( repcols.empty() )
+    					sortid[i] = n;
+    				else
+    					sortid[i] = repcols.find(id);
+
+    				fprintf(out, "\\gdef\\repgrouptitle%s{%s}%%\n", str.c_str(), ToString::mktex(id).c_str());
     				str = str + "i";
     				break;
     			}
