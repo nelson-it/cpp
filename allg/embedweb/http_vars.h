@@ -44,8 +44,8 @@ public:
     int exists( const char *name);
     int exists( std::string name) { return exists(name.c_str()); }
 
-    std::string data(const char *name);
-    std::string data(std::string s) { return data(s.c_str()); }
+    std::string data(const char *name, int raw = 0 );
+    std::string data(std::string s , int raw = 0) { return data(s.c_str(), raw); }
 
     std::string url_decode(std::string val);
 

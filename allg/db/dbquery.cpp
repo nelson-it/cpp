@@ -92,11 +92,11 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
             i++;
         }
 
-        laststm = laststm + sel_fields[j] + " FROM " + from;
+        laststm = laststm + sel_fields[j] + "\nFROM\n" + from;
 
         if (where != "")
         {
-            laststm = laststm + " WHERE ( " + where + " ) ";
+            laststm = laststm + " WHERE\n  ( " + where + " ) ";
             stmconcat = " AND ";
         }
         else
