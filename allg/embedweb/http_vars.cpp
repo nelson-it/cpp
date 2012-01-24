@@ -210,23 +210,20 @@ HttpVars::setMultipart(std::string boundary, char *data)
     }
 }
 
-std::string
-HttpVars::operator[](const char *name)
+std::string HttpVars::operator[](const char *name )
 {
     Vars::iterator i;
     if ((i = vars.find(name)) != vars.end()) return i->second;
     else return "";
 }
 
-int
-HttpVars::exists(const char *name)
+int HttpVars::exists(const char *name)
 {
     if (vars.find(name) != vars.end()) return 1;
     else return 0;
 }
 
-std::string
-HttpVars::data(const char *name)
+std::string HttpVars::data(const char *name, int raw)
 {
     Vars::iterator i;
     int f;
@@ -239,7 +236,7 @@ HttpVars::data(const char *name)
                     "konnte temporäre Datei %s nicht öffnen", i->second.c_str());
             return "";
         }
-        else
+        else if ( raw == 0 )
         {
             CryptBase64 base64;
             int size;
@@ -258,6 +255,23 @@ HttpVars::data(const char *name)
 
             delete in;
             delete out;
+
+            return retval;
+        }
+        else
+        {
+            int size;
+            size = lseek(f, 0, SEEK_END);
+            lseek(f, 0, SEEK_SET);
+
+            unsigned char *in = (unsigned char *)new char[size + 1];
+
+            read(f, in, size);
+            close(f);
+
+            in[size] = '\0';
+            std::string retval((char*)in);
+            delete in;
 
             return retval;
         }

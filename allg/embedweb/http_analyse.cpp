@@ -399,8 +399,7 @@ void HttpAnalyse::read_postvalues()
 		std::string::size_type npos;
 
 		if ( ( npos = act_h->post_type.find("boundary=")) != std::string::npos )
-			act_h->vars.setMultipart( "--" + act_h->post_type.substr(npos + 9),
-					act_h->post_data);
+			act_h->vars.setMultipart( "--" + act_h->post_type.substr(npos + 9), act_h->post_data);
 	}
 	else
 	{
@@ -452,20 +451,16 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 		{
 			int b_rest;
 
-            msg.pdebug(D_CON, "bekomme noch %d Daten",
-                    size);
-            msg.pdebug(D_CON, "benötige noch %d Daten",
-                    act_h->needed_postdata);
+            msg.pdebug(D_CON, "bekomme noch %d Daten",size);
+            msg.pdebug(D_CON, "benötige noch %d Daten",  act_h->needed_postdata);
 
 			b_rest = size - ( c - buffer );
 			if ( b_rest > act_h->needed_postdata )
 				b_rest = act_h->needed_postdata;
 
-            msg.pdebug(D_CON, "lese noch %d Daten",
-                    b_rest);
+            msg.pdebug(D_CON, "lese noch %d Daten", b_rest);
 
-            memcpy(&act_h->post_data[act_h->post_length-act_h->needed_postdata],
-					c, b_rest);
+            memcpy(&act_h->post_data[act_h->post_length-act_h->needed_postdata],c, b_rest);
 			act_h->needed_postdata -= b_rest;
 			c = c + b_rest - 1;
 

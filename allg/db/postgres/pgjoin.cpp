@@ -180,14 +180,14 @@ void PgJoin::add_where(int notop, int leftbrace, std::string lefttab,
         if (rightval != "") where_clause += rightval;
     }
 
-    if (rightbrace) where_clause += ")";
+    if (rightbrace) where_clause += ")\n";
 
     where_clause += " " + boolop + " ";
 }
 
 std::string PgJoin::getFrom()
 {
-    unsigned int i, j;
+    unsigned int i, j, k;
     std::string str;
 
     if (joins.size() == 1 && joins[0].size() == 1) return joins[0][0];
@@ -202,10 +202,14 @@ std::string PgJoin::getFrom()
             str += joins[j][i++];
         }
 
-        for (; i < joins[j].size(); ++i)
+        k = joins[j].size() - 1;
+        for (; i < k; ++i)
+            str = "(" + str + " " + joins[j][i] + " )\n";
+
+        if ( k != 0 )
             str = "(" + str + " " + joins[j][i] + " )";
 
-        str += ")";
+        str += ")\n";
     }
 
     return str;

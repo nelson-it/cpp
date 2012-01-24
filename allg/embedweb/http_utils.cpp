@@ -136,7 +136,10 @@ void HttpUtils::file(HttpHeader *h)
         if ( h->content_type == "text/plain")
         {
             h->content_type = "text/html";
-            fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(h->vars["data"].c_str()).c_str());
+            if ( h->vars["data"].substr(0,10) == "##########" )
+                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", h->vars.data("data", 1).c_str());
+            else
+                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(h->vars["data"].c_str()).c_str());
             return;
         }
     }
