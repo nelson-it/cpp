@@ -1,0 +1,161 @@
+
+              UNAME  := $(shell uname -s)
+
+ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
+         EXTERN_ROOT := $(PROJECT_ROOT)/../extern/i686-pc-mingw32
+               SHLIB := dll
+endif
+
+$(SHLIB_PRE)mnebase.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnebase.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnebase.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnebase.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnebase.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnebase.$(SHLIB).SOURCES := \
+        \
+		$(PROJECT_ROOT)/allg/argument/argument.cpp \
+		$(PROJECT_ROOT)/allg/utils/cslist.cpp \
+		$(PROJECT_ROOT)/allg/utils/gettimeofday.c \
+		$(PROJECT_ROOT)/allg/utils/check_mem.cpp \
+        $(PROJECT_ROOT)/allg/utils/process.cpp \
+        $(PROJECT_ROOT)/allg/utils/php_exec.cpp \
+        $(PROJECT_ROOT)/allg/message/message.cpp \
+        $(PROJECT_ROOT)/allg/ipc/s_socket.cpp \
+        $(PROJECT_ROOT)/allg/deamon/deamon.cpp \
+        $(PROJECT_ROOT)/allg/crypt/base64.cpp \
+        $(PROJECT_ROOT)/allg/network/wake.cpp \
+        $(PROJECT_ROOT)/allg/bonjour/dnsserviceregister.cpp \
+
+$(SHLIB_PRE)mnecrypt.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnecrypt.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnecrypt.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnecrypt.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnecrypt.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnecrypt.$(SHLIB).LIBS := mnebase
+$(SHLIB_PRE)mnecrypt.$(SHLIB).SOURCES := \
+        \
+        $(PROJECT_ROOT)/allg/crypt/hashes.cpp \
+        $(PROJECT_ROOT)/allg/crypt/cipher.cpp \
+
+$(SHLIB_PRE)mnerandom.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnerandom.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnerandom.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnerandom.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnerandom.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnerandom.$(SHLIB).SOURCES := \
+        $(PROJECT_ROOT)/allg/random/tausworthe.c\
+        $(PROJECT_ROOT)/allg/random/puran2.c
+
+$(SHLIB_PRE)mnexml.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnexml.$(SHLIB).LIBS := mnebase
+$(SHLIB_PRE)mnexml.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnexml.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnexml.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnexml.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnexml.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/xml/xmlparse.cpp \
+                $(PROJECT_ROOT)/allg/xml/xmltext.cpp \
+                $(PROJECT_ROOT)/allg/xml/xmltext_tex.cpp \
+                $(PROJECT_ROOT)/allg/xml/xmltext_htmledit.cpp \
+                $(PROJECT_ROOT)/allg/xml/xmltext_html.cpp \
+
+$(SHLIB_PRE)mnemail.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnemail.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnemail.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnemail.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnemail.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnemail.$(SHLIB).SOURCES := \
+        $(PROJECT_ROOT)/allg/mail/imap.cpp \
+        $(PROJECT_ROOT)/allg/mail/imap_scan.cpp
+
+$(SHLIB_PRE)mnehttp.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnehttp.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnehttp.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnehttp.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnehttp.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnehttp.$(SHLIB).LIBS := mnebase
+$(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/embedweb/http_analyse.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_translate.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_cookie.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_vars.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_map.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_utils.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_search.cpp \
+
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).LIBS := mnebase mnexml mnehttp
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnehttpxml.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/xml/http_xmltext.cpp \
+
+$(SHLIB_PRE)mnedb.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnedb.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnedb.$(SHLIB).WITH_POSTGRES := TRUE
+$(SHLIB_PRE)mnedb.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnedb.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnedb.$(SHLIB).LIBS := mnebase mnexml mnehttp
+$(SHLIB_PRE)mnedb.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/db/database.cpp \
+                $(PROJECT_ROOT)/allg/db/dbconnect.cpp \
+                $(PROJECT_ROOT)/allg/db/dbtable.cpp \
+                $(PROJECT_ROOT)/allg/db/dbjoin.cpp \
+                $(PROJECT_ROOT)/allg/db/dbquery.cpp \
+                $(PROJECT_ROOT)/allg/db/dbquery_creator.cpp \
+                $(PROJECT_ROOT)/allg/db/dbconstraint_error.cpp \
+                $(PROJECT_ROOT)/allg/db/dbtranslate.cpp \
+                \
+                $(PROJECT_ROOT)/allg/db/postgres/pgdatabase.cpp \
+                $(PROJECT_ROOT)/allg/db/postgres/pgconnect.cpp \
+                $(PROJECT_ROOT)/allg/db/postgres/pgcursor.cpp \
+                $(PROJECT_ROOT)/allg/db/postgres/pgtable.cpp \
+                $(PROJECT_ROOT)/allg/db/postgres/pgconstraint.cpp \
+                $(PROJECT_ROOT)/allg/db/postgres/pgjoin.cpp \
+                \
+                $(PROJECT_ROOT)/allg/report/report_tex.cpp \
+
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).WITH_POSTGRES := TRUE
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).LIBS    := mnebase mnexml mnehttp mnedb
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnedbhttp.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/db/dbhttp_analyse.cpp \
+                $(PROJECT_ROOT)/allg/db/dbhttp.cpp \
+                \
+                $(PROJECT_ROOT)/allg/db/dbhttputils_connect.cpp \
+                $(PROJECT_ROOT)/allg/db/dbhttputils_table.cpp \
+                $(PROJECT_ROOT)/allg/db/dbhttputils_query.cpp \
+                \
+                $(PROJECT_ROOT)/allg/db/dbhttpadmin_table.cpp \
+                $(PROJECT_ROOT)/allg/db/dbhttpadmin_query.cpp \
+                \
+                $(PROJECT_ROOT)/allg/report/dbhttp_report.cpp \
+
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnedbhttpmail.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/db/dbhttputils_imap.cpp
+
+$(SHLIB_PRE)mnesqlite.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnesqlite.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnesqlite.$(SHLIB).WITH_POSTGRES := FALSE
+$(SHLIB_PRE)mnesqlite.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnesqlite.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnesqlite.$(SHLIB).SOURCES := \
+        \
+        $(PROJECT_ROOT)/allg/sqlite/sqlite3.c \
+
+wake.WITH_GD := FALSE
+wake.WITH_POSTGRES := FALSE
+wake.LIBS    := mnebase
+wake.SOURCES := $(PROJECT_ROOT)/allg/network/wake_main.cpp 
+                
