@@ -1,0 +1,6 @@
+// Deamon Optionen werden hier definiert
+// ================================================
+liste["deamon"]  = Argument::Liste("-deamon", 'l', 0, "0");
+liste["logfile"]  = Argument::Liste("-logfile", 'c', 1, "server.log");
+liste["rundir"]   = Argument::Liste("-rundir",  'c', 1, "");
+liste["lockfile"] = Argument::Liste("-lockfile",'c', 1, "");
