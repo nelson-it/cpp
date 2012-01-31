@@ -1,3 +1,0 @@
-// Php Options
-// ===========
-liste["PhpPath"] = Argument::Liste("-phppath", 'c', 1, "/usr/bin/php-cgi");

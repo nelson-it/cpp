@@ -1,8 +1,0 @@
-// Mail Optionnen
-// ================================================
-liste["ImapScan"]              = Argument::Liste("-imapscan",         'l', 0, "0" );
-liste["ImapScanInterval"]      = Argument::Liste("-imapscaninterval", 'l', 1, "10" );
-liste["ImapScanOffset"]        = Argument::Liste("-imapscanoffset",   'l', 1, "0"  );
-liste["ImapScanClearHeader"]   = Argument::Liste("-imapscancl",       'l', 1, "30" );
-
-liste["MailscanPasswd"]        = Argument::Liste("-mailscanpasswd",   'c', 1, ""   );
