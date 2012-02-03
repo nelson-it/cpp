@@ -108,10 +108,20 @@ void CsList::setString(std::string cs_string, char sep, int ignore_lastempty)
     cs_string_valid = 1;
 
     list.clear();
-    while( ( i = cs_string.find(sep)) != std::string::npos )
+    i = 0;
+    while( ( i = cs_string.find(sep,i)) != std::string::npos )
     {
-        list.push_back(cs_string.substr(0, i));
-        cs_string = cs_string.substr(i+1);
+        if ( i == 0 || cs_string[i-1] != '\\' )
+        {
+            list.push_back(cs_string.substr(0, i));
+            cs_string = cs_string.substr(i+1);
+            i = 0;
+        }
+        else
+        {
+            cs_string = cs_string.substr(0,i-1) + cs_string.substr(i);
+            i++;
+        }
     }
 
     if ( this->cs_string != "" && ( cs_string != "" || ignore_lastempty == 0 ) )
