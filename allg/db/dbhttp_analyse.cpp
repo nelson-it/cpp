@@ -226,7 +226,7 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 	    std::string id;
 	    unsigned int j;
 	    for ( j = 0; ( id = q->getId(j) ) != ""; j++ )
-	        cl->userprefs[id] = (std::string)((*r)[0])[j];
+	        cl->userprefs[id] = (((*r)[0])[j]).format();
 	}
 
 	cl->db->release(q);
