@@ -17,7 +17,8 @@ class DbHttpUtilsTable : public DbHttpProvider
     enum ERROR_TYPES
     {
         E_WRONG_COLUMN = 1,
-        E_DEL
+        E_DEL,
+        E_MOD
     };
 
     enum WARNING_TYPES
