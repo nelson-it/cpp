@@ -450,7 +450,29 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         }
     }
 
-    if ( act_table->modify(&vals, &where) == 0 )
+    if ( where.size() == 0 )
+    {
+        msg.perror(E_MOD, "Modifizieren der gesammten Tabelle nicht gestattet");
+        if ( h->content_type == "text/xml" )
+        {
+            fprintf(h->content,
+                    "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
+                    h->charset.c_str());
+            fprintf(h->content, "<body>error</body>");
+        }
+        else if ( h->content_type == "text/html" )
+        {
+            if ( h->vars["script"] != "" )
+            {
+                fprintf(h->content,"<script type=\"text/javascript\">\n");
+                fprintf(h->content,"<!--\n");
+                fprintf(h->content,"%s\n", h->vars["script"].c_str());
+                fprintf(h->content,"//-->\n");
+                fprintf(h->content,"</script>\n");
+            }
+        }
+    }
+    else if ( act_table->modify(&vals, &where) == 0 )
     {
         if (h->vars["modifyinsert"] != "")
         {
