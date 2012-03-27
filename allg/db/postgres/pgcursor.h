@@ -22,7 +22,7 @@ public:
 
      void open( char *stm);
      void close();
-     int eof() { return PgConnect::eof(); }
+     int eof() { return ( (!opened) || PgConnect::eof()); }
 
      void start() { PgConnect::start(); }
      void   end() { PgConnect::end(); }

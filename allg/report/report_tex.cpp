@@ -75,6 +75,7 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     std::string langid("de");
     std::string langsave;
     CsList      repcols;
+    int have_query;
 
     langsave = msg.getLang();
     if (language != "" && language != langsave )
@@ -122,15 +123,22 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     	msg.perror(E_NOREPORTROOT, "Reportroot ist nicht vorhanden");
     	return;
     }
+
+    have_query = 1;
     query = db->p_getQuery();
     if ( schema != "" && queryname != "" )
     {
     	query->setName((char*) schema.c_str(), (char*) queryname.c_str(), NULL );
     }
-    else
+    else if ( (std::string) (rm[0][2]) != "" )
     {
     	query->setName((char*) (rm[0][1]), (char*) (rm[0][2]), ( ! repcols.empty()) ? &repcols : NULL );
     }
+    else
+    {
+        have_query = 0;
+    }
+
     msg.stop_debug();
 
     if ( !subreport && ((std::string)(rm[0][7])) != "" )
@@ -151,10 +159,13 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         }
     }
 
-    query->open(wcol, wval, wop, &sort);
-    rv = query->p_next();
+    if ( have_query )
+    {
+        query->open(wcol, wval, wop, &sort);
+        rv = query->p_next();
+    }
 
-    if ((long) (rm[0][4]) != 0 && query->eof())
+    if ((long) (rm[0][4]) != 0  && query->eof())
     {
         db->release(reptab);
         db->release(query);
@@ -207,7 +218,41 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         if ( landscape )
             fprintf(out,"\\gdef\\mnelandscape{landscape}%%\n");
 
+        while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
+            fwrite(buffer, size, 1, out);
+
+        fclose(fp);
+
+        if ( (! query->eof()) )
+        {
+            std::map<std::string, std::string>::iterator ui;
+            for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+            {
+                if ( query->find(ui->first) != std::string::npos  )
+                {
+                    userprefs[ui->first] = (std::string)(*rv)[query->find(ui->first)];
+                }
+            }
+            for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+                fprintf(out, "\\gdef\\upref%s{%s}%%\n", ui->first.c_str(), ui->second.c_str());
+        }
+
         fprintf(out, "\\gdef\\reptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
+
+        str = root + "/" + reptype + "/docinit.tex";
+        if ((fp = fopen(str.c_str(), "r")) == NULL)
+        {
+            str = path[path.size() - 1] + "/allg/default/docinit.tex";
+            fp = fopen(str.c_str(), "r");
+        }
+        if ( fp == NULL )
+        {
+            db->release(query);
+            db->release(reptab);
+            msg.perror(E_NOINIT, "kann datei %s nicht finden", str.c_str());
+            msg.setLang(langsave);
+            return;
+        }
 
         while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
             fwrite(buffer, size, 1, out);
