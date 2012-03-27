@@ -70,6 +70,7 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
     std::string::size_type k, j, i, index;
     std::string having;
     std::string no;
+    int ornull;
 
     if ( this->errorfound ) return "";
     for (j = 0; j < joins.size(); ++j)
@@ -128,6 +129,7 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
                 if ( where != "" ) wconcat = gwconcat;
                 if ( having != "" ) hconcat = ghconcat;
                 no = "";
+                ornull = 0;
 
                 if ( wop != NULL )
                 {
@@ -143,10 +145,14 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
                         op = op.substr(1);
                         no = " NOT ";
                     }
+                    if (op[0] == '0')
+                    {
+                        op = op.substr(1);
+                        ornull = 1;
+                    }
                 }
 
-                if ((vi = std::find(sel_id.begin(), sel_id.end(), (*wcol)[i]))
-                        != sel_id.end())
+                if ((vi = std::find(sel_id.begin(), sel_id.end(), (*wcol)[i])) != sel_id.end())
                 {
                     index = vi - sel_id.begin();
                     long vt = sel_typ[index];
@@ -168,16 +174,14 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
                     {
                         if ( vt == DbConnect::CHAR && op == "like")
                         {
-                            str =  "( lower("
-                                    + sel_field[j][index] + ")) " + op
-                                    + " lower(" + con->getValue(sel_typ[index],
-                                    (*wval)[i]) + ")";
+                            if ( ornull )
+                                 str =  " (( lower(" + sel_field[j][index] + ") " + op + " lower(" + con->getValue(sel_typ[index], (*wval)[i]) + ") OR ( " + sel_field[j][index] + " IS NULL )) ";
+                            else
+                                str =  "( lower(" + sel_field[j][index] + ")) " + op + " lower(" + con->getValue(sel_typ[index], (*wval)[i]) + ")";
                         }
                         else if ( vt == DbConnect::CHAR && op == "in")
                         {
-                            str = " ( "
-                                    + sel_field[j][index] + " ) " + op + " "
-                                    + (*wval)[i];
+                            str = " ( " + sel_field[j][index] + " ) " + op + " " + (*wval)[i];
                         }
                         else if ( vt == DbConnect::CHAR  && sel_null[index] && (*wval)[i] == "" )
                         {
@@ -186,11 +190,14 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
                         }
                         else if ((op).find("NULL") != std::string::npos || (op).find("null") != std::string::npos )
                         {
-                            str = " ( "  + sel_field[j][index] + " ) " + op;
+                                str = " ( "  + sel_field[j][index] + " ) " + op;
                         }
                         else
                         {
-                            str =  " ( "  + sel_field[j][index] + " ) " + op + " " + con->getValue(sel_typ[index], (*wval)[i]);
+                            if ( ornull )
+                                str =  " (( "  + sel_field[j][index] + " " + op + " " + con->getValue(sel_typ[index], (*wval)[i]) + " ) OR ( " + sel_field[j][index] + " IS NULL )) ";
+                            else
+                                str =  " ( "  + sel_field[j][index] + " ) " + op + " " + con->getValue(sel_typ[index], (*wval)[i]);
                         }
                     }
                 }

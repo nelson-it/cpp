@@ -54,26 +54,26 @@ void PgCursor::open(char *s )
 
 DbConnect::ResultVec PgCursor::next()
 {
-    execute(fetch_cmd);
+    if ( opened ) execute(fetch_cmd);
 
-    if ( have_result() )
+    if ( opened && have_result() )
     {
-	return get_first_result();
+        return get_first_result();
     }
     else
     {
         DbConnect::ResultVec v;
-	opened = 0;
-	return v;
+        opened = 0;
+        return v;
     }
 
 }
 
 DbConnect::ResultVec* PgCursor::p_next()
 {
-    execute(fetch_cmd);
+    if ( opened ) execute(fetch_cmd);
 
-    if ( have_result() )
+    if ( opened && have_result() )
 	return p_get_first_result();
     else
     {
