@@ -146,7 +146,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
                 char *tmp = tempnam(NULL, "HttpVars");
 #else
                 char str[16];
-                strcpy(str, "HttpVarsXXXXXX");
+                strcpy(str, "/tmp/HttpVarsXXXXXX");
                 char *tmp = mktemp(str);
 #endif
                 if ((f = fopen(tmp, "wb")) == NULL)
@@ -221,6 +221,13 @@ int HttpVars::exists(const char *name)
 {
     if (vars.find(name) != vars.end()) return 1;
     else return 0;
+}
+
+std::string HttpVars::getFile(const char *name )
+{
+    Files::iterator i;
+    if ((i = files.find(name)) != files.end()) return i->second;
+    else return "";
 }
 
 std::string HttpVars::data(const char *name, int raw)
