@@ -19,11 +19,13 @@
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <unistd.h>
 #define MKREPORT "mkreport.bat "
+#define MKHEADER "mkheader.bat "
 #define MKPDF    "mkpdf.bat "
 #define DIRSEP   "\\"
 #define unlink DeleteFile
 #else
 #define MKREPORT "mkreport "
+#define MKHEADER "mkheader "
 #define MKPDF    "mkpdf "
 #define DIRSEP   "/"
 #endif
@@ -35,6 +37,7 @@ DbHttpReport::DbHttpReport(DbHttp *h)
 :DbHttpProvider(h),
  msg("DbHttpReport")
 {
+    subprovider["header.html"] = &DbHttpReport::header_html;
     h->add_provider(this);
 }
 
@@ -106,12 +109,21 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
 
     std::string str;
     std::string t;
-    std::string::size_type i;
+    std::string::size_type j;
 
-    if ( ( i = h->filename.find_last_of(".") ) != std::string::npos )
+
+    SubProviderMap::iterator i;
+
+    if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
-        str = h->filename.substr(0, i );
-        t = h->filename.substr(i+1);
+        (this->*(i->second))(db, h);
+        return 1;
+    }
+
+    if ( ( j = h->filename.find_last_of(".") ) != std::string::npos )
+    {
+        str = h->filename.substr(0, j );
+        t = h->filename.substr(j+1);
     }
     else
     {
@@ -138,8 +150,41 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
     return 1;
 }
 
-void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
+void DbHttpReport::header_html( Database *db, HttpHeader *h)
 {
+    std::string u;
+    DbHttpAnalyse::Client::Userprefs::iterator ui;
+    DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
+    std::string typ;
+    int result;
+
+    h->content_type = "text/plain";
+    for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+    {
+        u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
+    }
+
+    typ = h->vars["typ"];
+    if ( typ == "" ) typ = "report";
+
+    fclose(h->content);
+
+    Process p(this->http->getServersocket());
+    p.start( (MKHEADER + u + " -typ " + typ + " -filetyp " + h->vars["data"].substr(10) + " " + h->vars.getFile("data")).c_str(), h->content_filename.c_str());
+    result = p.wait();
+
+    if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
+    {
+        fseek(h->content, 0, SEEK_END);
+        if ( result == 0 )
+            fprintf(h->content,"ok");
+        else
+            fprintf(h->content, "notok");
+    }
+
+}
+void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
+    {
 
     Database *db;
     db = dbin->getDatabase();
@@ -473,7 +518,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         std::string u;
         for ( ui = report.userprefs.begin(); ui != report.userprefs.end(); ++ui)
         {
-            u += " -" + ui->first + " " + ui->second;
+            u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
         }
         Process p(this->http->getServersocket());
         p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);

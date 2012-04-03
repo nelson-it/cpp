@@ -30,6 +30,11 @@ class DbHttpReport : public DbHttpProvider
 		MAX_WARNING = 1000
 	};
 
+    typedef void ( DbHttpReport::*SubProvider)(Database *db, HttpHeader *h);
+    typedef std::map<std::string, SubProvider> SubProviderMap;
+
+    SubProviderMap subprovider;
+
 	void start_function(Database *db, DbQuery *query, DbConnect::ResultVec *rv, std::string schema, std::string function, CsList cols );
 	DbTable::ValueMap mk_pdfwhere(HttpHeader *h, CsList *pdfwcol, CsList *pdfwval);
 
@@ -38,6 +43,8 @@ protected:
     Message msg;
     void mk_auto (Database *db, HttpHeader *h);
     void index (Database *db, HttpHeader *h, const char *report);
+
+    void header_html( Database *db, HttpHeader *h);
 
 public:
     DbHttpReport( DbHttp *h );
