@@ -159,6 +159,14 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     int result;
 
     h->content_type = "text/plain";
+
+    if ( ! h->vars.exists("companyownprefix") )
+    {
+        fprintf(h->content, "kein companyownprefix angegeben");
+        return;
+    }
+
+    userprefs["uowncompanyownprefix"] = h->vars["companyownprefix"];
     for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
     {
         u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
