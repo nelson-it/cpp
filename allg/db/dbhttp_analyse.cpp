@@ -215,7 +215,12 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 	    DbTable *t = cl->db->p_getTable(cl->db->getApplschema(), "userpref");
 		DbTable::ValueMap v;
 		v["username"] = where["username"];
-		t->insert(&v, 1);
+		r = t->select(&v, &where);
+		if ( r->empty() )
+		{
+			v["username"] = where["username"];
+			t->insert(&v, 1);
+		}
 	    cl->db->release(t);
 	    cl->db->p_getConnect()->end();
 	}
