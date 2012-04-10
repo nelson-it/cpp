@@ -450,7 +450,7 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         }
     }
 
-    if ( where.size() == 0 )
+    if ( where.size() == 0 && h->vars["modifyall"] != "1" )
     {
         msg.perror(E_MOD, "Modifizieren der gesammten Tabelle nicht gestattet");
         if ( h->content_type == "text/xml" )
