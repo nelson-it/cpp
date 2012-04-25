@@ -10,8 +10,8 @@
 
 ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
            MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -D WINDOWS -I$(EXTERN_ROOT)/include/iconv
-              LD_STD := $(LD_STD)  -lwsock32 -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+             OPT_STD := $(OPT_STD) -static-libgcc -D WINDOWS -I$(EXTERN_ROOT)/include/iconv
+              LD_STD := $(LD_STD)  -static-libgcc -lwsock32 -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
                  CPP := i686-pc-mingw32-g++
                   CC := i686-pc-mingw32-gcc
 endif
