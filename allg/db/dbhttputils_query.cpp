@@ -88,7 +88,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
 
     h->status = 200;
     if ( exports )
-        h->content_type = "text/csv";
+        h->content_type = "application/mne_octet-stream";
     else
         h->content_type = "text/xml";
 
