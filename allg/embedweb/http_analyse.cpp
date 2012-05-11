@@ -283,34 +283,52 @@ void HttpAnalyse::analyse_header()
 		}
 		else if ( name == "user-agent" )
 		{
+			act_h->user_agent = arg;
 			if ( ( k = arg.find("MSIE") ) != std::string::npos )
 			{
-				act_h->browser = HttpHeader::IE;
-				act_h->version = arg.substr(k + 5, 3);
+				act_h->browser = HttpHeader::B_IE;
 			}
+            else if ( ( k = arg.find("Firefox")) != std::string::npos )
+            {
+                act_h->browser = HttpHeader::B_FF;
+            }
 			else if ( ( k = arg.find("Netscape")) != std::string::npos )
 			{
-				act_h->browser = HttpHeader::NS;
-				act_h->version = arg.substr(k + 9,3);
+				act_h->browser = HttpHeader::B_NS;
 			}
 			else if ( ( k = arg.find("Safari")) != std::string::npos)
 			{
-			    act_h->browser = HttpHeader::SAFARI;
-			    act_h->version = arg.substr(k-6, 1);
+			    act_h->browser = HttpHeader::B_SAFARI;
 			}
 			else if ( ( k = arg.find("Mozilla")) != std::string::npos )
 			{
-				act_h->browser = HttpHeader::MOZILLA;
-				act_h->version = arg.substr(k+8, 3 );
+				act_h->browser = HttpHeader::B_MOZILLA;
 			}
-			else if ( ( k = arg.find("Opera")) != std::string::npos )
-			{
-				act_h->browser = HttpHeader::OPERA;
-				act_h->version = arg.substr(k+6, 4 );
-			}
-			msg.pdebug(D_HEADER, "browser: \"%d\", version \"%s\"",
-					act_h->browser,
-					act_h->version.c_str());
+            else if ( ( k = arg.find("Opera")) != std::string::npos )
+            {
+                act_h->browser = HttpHeader::B_OPERA;
+            }
+            if ( ( k = arg.find("Windows") ) != std::string::npos )
+            {
+                act_h->os = HttpHeader::OS_WIN;
+            }
+            else if ( ( k = arg.find("Mac") ) != std::string::npos )
+            {
+                act_h->os = HttpHeader::OS_MAC;
+            }
+            else if ( ( k = arg.find("Ipad") ) != std::string::npos )
+            {
+                act_h->os = HttpHeader::OS_IPAD;
+            }
+            else if ( ( k = arg.find("Linux") ) != std::string::npos )
+            {
+                act_h->os = HttpHeader::OS_LINUX;
+            }
+
+			msg.pdebug(D_HEADER, "browser: \"%d\"", act_h->browser);
+			msg.pdebug(D_HEADER, "os: \"%d\"", act_h->os);
+			msg.pdebug(D_HEADER, "user-agent: \"%s\"", act_h->user_agent.c_str());
+
 		}
 		else if ( name == "content-type" )
 		{

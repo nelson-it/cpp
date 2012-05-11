@@ -50,14 +50,14 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		msg.pdebug(D_CLIENT, "prüfe auf Gleichheit %d", client);
 		msg.pdebug(D_CLIENT, "host %d:%d", ic->second.host, s->getHost(client));
 		msg.pdebug(D_CLIENT, "browser %d:%d", ic->second.browser, h->browser);
-		msg.pdebug(D_CLIENT, "version %s:%s", ic->second.version.c_str(), h->version.c_str());
+		msg.pdebug(D_CLIENT, "user-agent %s:%s", ic->second.user_agent.c_str(), h->user_agent.c_str());
 		msg.pdebug(D_CLIENT, "connection %d", ic->second.db->have_connection());
 		msg.pdebug(D_CLIENT, "user %s:%s", ic->second.user.c_str(), h->user.c_str());
 		msg.pdebug(D_CLIENT, "passwd %s:%s", ic->second.passwd.c_str(), h->passwd.c_str() );
 
 		if (   ic->second.host == s->getHost(client)
 			&& ic->second.browser == h->browser
-            && ic->second.version == h->version
+            && ic->second.user_agent == h->user_agent
 			&& ( ic->second.db->have_connection() ) )
 		{
 			msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
@@ -144,7 +144,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	msg.pdebug(D_CLIENT, "ist ein neuer client %d", client);
     msg.pdebug(D_CLIENT, "host %d", s->getHost(client));
     msg.pdebug(D_CLIENT, "browser %d", h->browser);
-    msg.pdebug(D_CLIENT, "version %s", h->version.c_str());
+    msg.pdebug(D_CLIENT, "user-agent %s", h->user_agent.c_str());
     msg.pdebug(D_CLIENT, "user %s", h->user.c_str());
     msg.pdebug(D_CLIENT, "passwd %s",h->passwd.c_str() );
 
@@ -154,7 +154,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
 	cl.host = s->getHost(client);
 	cl.browser = h->browser;
-	cl.version = h->version;
+	cl.user_agent = h->user_agent;
 	cl.db = db->getDatabase();
     clients[str] = cl;
     ic = clients.find(str);

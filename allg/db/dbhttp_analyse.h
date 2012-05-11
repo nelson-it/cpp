@@ -25,7 +25,7 @@ public:
 
 		unsigned int host;
 		int          browser;
-		std::string  version;
+		std::string  user_agent;
 		std::string  user;
 		std::string  passwd;
 

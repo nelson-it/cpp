@@ -12,12 +12,23 @@ class HttpHeader
 public:
     enum Browser
     {
-        UNKNWON,
-	MOZILLA,
-	OPERA,
-	NS,
-	SAFARI,
-	IE
+    B_UNKNWON,
+	B_FF,
+	B_MOZILLA,
+	B_OPERA,
+	B_NS,
+	B_SAFARI,
+	B_IE
+    };
+
+    enum Os
+    {
+        OS_UNKNWON,
+        OS_WIN,
+        OS_MAC,
+        OS_LINUX,
+        OS_IPAD,
+        OS_ANDORID
     };
 
     typedef std::map<std::string, std::string> SetCookies;
@@ -42,7 +53,8 @@ public:
     std::string referer;
 
     Browser     browser;
-    std::string version;
+    Os          os;
+    std::string user_agent;
 
     std::string user;
     std::string passwd;
@@ -109,8 +121,9 @@ public:
 	port     = "";
 	referer  = "";
 
-	browser = UNKNWON;
-	version = "";
+	browser = B_UNKNWON;
+	user_agent = "";
+	os = OS_UNKNWON;
 
 	user   = "";
 	passwd = "";
