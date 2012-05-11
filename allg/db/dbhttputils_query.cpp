@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <iconv.h>
 
 #include <utils/tostring.h>
 
@@ -326,7 +327,10 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                                 struct tm tm;
                                 time_t t = (long)((*rm)[vals[i]]);
                                 strftime(str, sizeof(str), dateformat.c_str(),localtime_r(&t,&tm));
-                                fprintf(h->content, "%s%s", komma.c_str(), str);
+                                if ( (std::string)((*rm)[vals[i]]) != "" )
+                                    fprintf(h->content, "%s%s", komma.c_str(), str);
+                                else
+                                    fprintf(h->content, "%s", komma.c_str());
                                 break;
                             }
                             case DbConnect::TIME:
@@ -346,16 +350,22 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                                 strftime(str, sizeof(str), (dateformat + " %H:%M").c_str(),localtime_r(&t,&tm));
                                 fprintf(h->content, "%s%s", komma.c_str(), str);
                             }
-                                break;
+                            break;
                             case DbConnect::INTERVAL:
                                 fprintf(h->content, "%s%02ld:%02ld", komma.c_str(), ((long)((*rm)[vals[i]])) / 3600, (((long)((*rm)[vals[i]])) % 3600) / 60 );
                                 break;
+
                             case DbConnect::DAY:
-                                fprintf(h->content, "%s\"%s\"", komma.c_str(), ToString::mkcsv( days[(*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())]).c_str());
+                                if ( days.find((char*)(*rm)[vals[i]]) != days.end() )
+                                    fprintf(h->content, "%s\"%s\"", komma.c_str(), ToString::mkcsv( days[(*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())]).c_str());
+                                else
+                                    fprintf(h->content, "%s\"%s\"", komma.c_str(), ToString::mkcsv( (*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())).c_str());
                                 break;
+
                             default:
                                 fprintf(h->content, "%s\"%s\"", komma.c_str(), ToString::mkcsv( (*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())).c_str());
                             }
+
                             komma = ";";
                         }
                     }
@@ -374,8 +384,45 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
             else
                 fprintf(h->content, "</r>\n");
         }
+
         if ( ! exports )
+        {
             fprintf(h->content, "</body>");
+        }
+        else
+        {
+            iconv_t iv;
+            char *inbuf, *outbuf, *ci, *co;
+            size_t innum,outnum;
+            size_t iconv_value;
+
+            fseek( h->content, 0, SEEK_END);
+            innum = ftell(h->content);
+            fseek( h->content, 0, SEEK_SET);
+
+            if ( innum < 0 ) innum = 0;
+
+            ci = inbuf = new char[innum + 1];
+            inbuf[innum] = '\0';
+            fread(inbuf, innum, 1, h->content);
+
+            fclose(h->content);
+            h->content = fopen(h->content_filename.c_str(), "wb+");
+            fseek (h->content, 0, SEEK_SET);
+
+            co = outbuf = new char[innum * 4];
+            outnum = ( innum * 4 - 1);
+
+            iv = iconv_open("iso-8859-1", "utf-8");
+            iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+            iconv_close(iv);
+
+            *co = '\0';
+            fwrite(outbuf, (co - outbuf), 1, h->content);
+
+            delete[] outbuf;
+            delete[] inbuf;
+        }
     }
     else
     {

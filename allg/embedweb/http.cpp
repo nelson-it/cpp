@@ -408,7 +408,7 @@ void Http::write_header()
 		msg.line("%s: %s", msg.get("Protokoll").c_str(), act_h->protokoll.c_str());
 		msg.line("%s: %s", msg.get("Hostname").c_str(), act_h->hostname.c_str());
 		msg.line("%s: %d", msg.get("Browser").c_str(), act_h->browser);
-		msg.line("%s: %s", msg.get("Version").c_str(), act_h->version.c_str());
+		//msg.line("%s: %s", msg.get("Version").c_str(), act_h->version.c_str());
 		msg.line("%s: %s", msg.get("User").c_str(), act_h->user.c_str());
 
 		v = act_h->vars.p_getVars()->begin();
@@ -441,7 +441,7 @@ void Http::write_header()
 	sprintf(buffer, "Server: M Nelson Embedded Http Server 0.9\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	if (act_h->browser != HttpHeader::IE && (no_cache || act_h->age == 0))
+	if (act_h->browser != HttpHeader::B_IE && (no_cache || act_h->age == 0))
 	{
 		msg.pdebug(D_HTTP, "Cache_Control: no-store");
 		sprintf(buffer, "Cache-Control: no-store\r\n");
@@ -450,16 +450,8 @@ void Http::write_header()
 	{
 		if (no_cache)
 			act_h->age = -1;
-		if (atoi(act_h->version.c_str()) < 7 || !no_cache)
-		{
-			msg.pdebug(D_HTTP, "Cache_Control: %d", act_h->age);
-			sprintf(buffer, "Cache-Control: max-age=%d\r\n", act_h->age);
-		}
-		else
-		{
-			msg.pdebug(D_HTTP, "Cache_Control: no-store");
-			sprintf(buffer, "Cache-Control: no-store\r\n");
-		}
+        msg.pdebug(D_HTTP, "Cache_Control: no-store");
+        sprintf(buffer, "Cache-Control: no-store\r\n");
 
 	}
 
