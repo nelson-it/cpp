@@ -203,8 +203,12 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         str = root + "/" + reptype + "/init.tex";
         if ((fp = fopen(str.c_str(), "r")) == NULL)
         {
-            str = path[path.size() - 1] + "/allg/default/init.tex";
-            fp = fopen(str.c_str(), "r");
+            for ( i = 0; i<path.size(); i++ )
+            {
+            	str = path[i] + "/allg/default/init.tex";
+                fp = fopen(str.c_str(), "r");
+                if ( fp != NULL ) break;
+            }
         }
         if ( fp == NULL )
         {
@@ -242,8 +246,12 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         str = root + "/" + reptype + "/docinit.tex";
         if ((fp = fopen(str.c_str(), "r")) == NULL)
         {
-            str = path[path.size() - 1] + "/allg/default/docinit.tex";
-            fp = fopen(str.c_str(), "r");
+            for ( i = 0; i<path.size(); i++ )
+            {
+            	str = path[i] + "/allg/default/docinit.tex";
+                fp = fopen(str.c_str(), "r");
+                if ( fp != NULL ) break;
+            }
         }
         if ( fp == NULL )
         {
@@ -581,8 +589,12 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         str = root + "/" + reptype + "/end.tex";
         if ((fp = fopen(str.c_str(), "r")) == NULL)
         {
-            str = path[path.size() - 1] + "/allg/default/end.tex";
-            fp = fopen(str.c_str(), "r");
+            for ( i = 0; i<path.size(); i++ )
+            {
+            	str = path[i] + "/allg/default/end.tex";
+                fp = fopen(str.c_str(), "r");
+                if ( fp != NULL ) break;
+            }
         }
         if ( fp == NULL )
         {
