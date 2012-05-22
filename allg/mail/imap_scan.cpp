@@ -116,6 +116,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
     std::map<std::string, long>::iterator jf;
     std::map<std::string, Mailbox>::iterator mi;
    unsigned int j,k;
+   int ignore_message;
 
 #ifdef PTHREAD
    if ( pthread_mutex_trylock(&this->mutex) != 0 )
@@ -246,12 +247,24 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                     }
                 }
 
-                for ( j = 0; j < addresses.size(); j++ )
+                ignore_message = 0;
+                for ( j = 0; ignore_message == 0 && j < addresses.size(); j++ )
+                {
+                    for ( k = 0; ignore_message == 0 && k < emails.size(); ++k )
+                     {
+
+                         e = (char *)emails[k][emailid];
+                         std::transform(e.begin(), e.end(), e.begin(), (int(*)(int)) tolower);
+                         if ( e.substr(0,1) == "-" && addresses[j] == e.substr(1) )
+                             ignore_message = 1;
+                     }
+                }
+
+                for ( j = 0; ignore_message == 0 && j < addresses.size(); j++ )
                 {
                     msg.pdebug(1, "check %s", addresses[j].c_str());
                     for ( k = 0; k < emails.size(); ++k )
                     {
-
                         e = (char *)emails[k][emailid];
                         std::transform(e.begin(), e.end(), e.begin(), (int(*)(int)) tolower);
                         if ( addresses[j] == e )
