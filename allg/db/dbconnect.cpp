@@ -60,6 +60,129 @@ DbConnect::Result& DbConnect::Result::operator=(const DbConnect::Result &in)
     return *this;
 }
 
+bool DbConnect::Result::operator==  (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return false;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value == (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value == (double*)in.value);
+
+    default:
+        return (std::string((char*)value) == std::string((char*)in.value));
+    }
+}
+
+bool DbConnect::Result::operator!=  (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return true;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value != (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value != (double*)in.value);
+
+    default:
+        return (std::string((char*)value) != std::string((char*)in.value));
+    }
+}
+
+bool DbConnect::Result::operator<   (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return false;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value < (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value < (double*)in.value);
+
+    default:
+        return (std::string((char*)value) < std::string((char*)in.value));
+    }
+}
+bool DbConnect::Result::operator>   (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return false;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value > (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value > (double*)in.value);
+
+    default:
+        return (std::string((char*)value) > std::string((char*)in.value));
+    }
+}
+bool DbConnect::Result::operator<=  (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return false;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value <= (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value <= (double*)in.value);
+
+    default:
+        return (std::string((char*)value) <= std::string((char*)in.value));
+    }
+}
+bool DbConnect::Result::operator>=  (const Result &in) const
+{
+    if ( typ != in.typ  )
+        return false;
+
+    switch (typ)
+    {
+    case BOOL:
+    case SHORT:
+    case LONG:
+        return ((long*)value >= (long*)in.value);
+
+    case FLOAT:
+    case DOUBLE:
+        return ((double*)value >= (double*)in.value);
+
+    default:
+        return (std::string((char*)value) >= std::string((char*)in.value));
+    }
+}
+
 char *DbConnect::Result::format(Message *msg, char *str, int length, const char *format)
 {
     char *val;
@@ -169,6 +292,9 @@ DbConnect::Result::~Result()
     case DbConnect::DOUBLE:
     case DbConnect::FLOAT:
         delete (double*) value;
+        break;
+
+    case DbConnect::UNKNOWN:
         break;
 
     default:

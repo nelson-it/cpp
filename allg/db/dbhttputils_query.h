@@ -18,7 +18,9 @@ class DbHttpUtilsQuery : public DbHttpProvider
       E_WRONG_COLUMN,
       E_PDF_OPEN,
       E_OLD_STYLE,
-      E_WVALSIZE
+      E_WVALSIZE,
+
+      E_DYNDATA_COLSSIZE
     };
 
     enum WARNING_TYPES
@@ -26,10 +28,14 @@ class DbHttpUtilsQuery : public DbHttpProvider
       W_OLD = 1
     };
 
+    void mk_export(HttpHeader *h);
+    void mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dpytyp, std::string colfs, std::string sep, std::string dateformat);
+
     typedef void ( DbHttpUtilsQuery::*SubProvider)(Database *db, HttpHeader *h);
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
+    void dyndata_xml (Database *db, HttpHeader *h);
     void data_xml (Database *db, HttpHeader *h);
     void data_csv (Database *db, HttpHeader *h);
 

@@ -9,52 +9,53 @@
 class DbConnect
 {
 public:
-     enum ERROR_TYPE
-     {
-         E_OK = 0,
-	 E_NORESULT,
+    enum ERROR_TYPE
+    {
+        E_OK = 0,
+        E_NORESULT,
 
-	 E_MAXERROR  = 100
+        E_MAXERROR  = 100
 
-     };
+    };
 
-     enum WARNING_TYPE
-     {
-    	 W_STRINGDOUBLE = 1
-     };
+    enum WARNING_TYPE
+    {
+        W_STRINGDOUBLE = 1
+    };
 
-     enum READYTYPE
-     {
-         NOT_READY = 0,
-	 READY
-     };
+    enum READYTYPE
+    {
+        NOT_READY = 0,
+        READY
+    };
 
-     enum VARTYPE
-     {
-	 UNKNOWN = -1,
+    enum VARTYPE
+    {
+        UNKNOWN = -1,
 
-	 BOOL = 1,
-	 CHAR,
-	 SHORT,
-	 LONG,
-	 FLOAT,
-	 DOUBLE,
+        BOOL = 1,
+        CHAR,
+        SHORT,
+        LONG,
+        FLOAT,
+        DOUBLE,
 
-	 BINARY =100,
+        BINARY =100,
 
-	 DATETIME = 1000,
-	 DATE,
-	 TIME,
-	 INTERVAL,
-	 DAY,
+        DATETIME = 1000,
+        DATE,
+        TIME,
+        INTERVAL,
+        DAY,
+        QUARTER,
 
-	 EMAIL = 1010,
-	 LINK,
+        EMAIL = 1010,
+        LINK,
 
-	 TYPECOL = 1100,
+        TYPECOL = 1100,
 
-	 MAX_VARTYPE = 100000
-     };
+        MAX_VARTYPE = 100000
+    };
 
     class Result
     {
@@ -62,28 +63,35 @@ public:
         int typ;
         void *value;
         int length;
-	int isnull;
+        int isnull;
 
         Result();
         Result(const Result &in);
         Result &operator=(const Result &in);
         ~Result();
 
-	operator char *() { return (char *)value; }
-	operator double() { return *(double *) value; }
-	operator long()   { return *(long *) value; }
+        bool operator==  (const Result &in) const;
+        bool operator!=  (const Result &in) const;
+        bool operator<   (const Result &in) const;
+        bool operator>   (const Result &in) const;
+        bool operator<=  (const Result &in) const;
+        bool operator>=  (const Result &in) const;
 
-	char *format( Message *msg = NULL,
-	              char *str = NULL, int length = 0,
-		      const char *format = NULL);
+        operator char *() { return (char *)value; }
+        operator double() { return *(double *) value; }
+        operator long()   { return *(long *) value; }
+
+        char *format( Message *msg = NULL,
+                char *str = NULL, int length = 0,
+                const char *format = NULL);
     };
 
     typedef std::vector<Result> ResultVec;
     typedef std::vector<ResultVec> ResultMat;
 
 protected:
-     Message msg;
-     ResultMat result;
+    Message msg;
+    ResultMat result;
 
 public:
     DbConnect() : msg("DbConnect") {};
@@ -112,11 +120,11 @@ public:
     virtual std::string getCurschema(int ready = 0) = 0;
 
     virtual int execute(const char *stm, int ready = 0,
-                         int no_clear_result = 0) = 0;
+            int no_clear_result = 0) = 0;
 
     int execute( std::string stm, int ready = 0, int no_clearresult = 0 )
     {
-	return execute(stm.c_str(), ready, no_clearresult);
+        return execute(stm.c_str(), ready, no_clearresult);
     }
     virtual int get_error() = 0;
     virtual int get_warning() = 0;
@@ -130,24 +138,24 @@ public:
     ResultVec    get_first_result()
     {
         if ( have_result() )
-	    return result[0];
-	else
-	{
-	    ResultVec v;
-	    msg.perror(E_NORESULT, "Keine Ergebniszeile verfügbar");
-	    return v;
-	}
+            return result[0];
+        else
+        {
+            ResultVec v;
+            msg.perror(E_NORESULT, "Keine Ergebniszeile verfügbar");
+            return v;
+        }
     }
 
     ResultVec *p_get_first_result()
     {
         if ( have_result() )
-	    return &result[0];
-	else
-	{
-	    msg.perror(E_NORESULT, "Keine Ergebniszeile verfügbar");
-	    return NULL;
-	}
+            return &result[0];
+        else
+        {
+            msg.perror(E_NORESULT, "Keine Ergebniszeile verfügbar");
+            return NULL;
+        }
     }
 
     ResultMat    get_result() { return result; }
