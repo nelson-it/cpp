@@ -52,6 +52,8 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		msg.pdebug(D_CLIENT, "browser %d:%d", ic->second.browser, h->browser);
 		msg.pdebug(D_CLIENT, "user-agent %s:%s", ic->second.user_agent.c_str(), h->user_agent.c_str());
 		msg.pdebug(D_CLIENT, "connection %d", ic->second.db->have_connection());
+		msg.pdebug(D_CLIENT, "user %s:%s", ic->second.user.c_str(), h->user.c_str());
+		msg.pdebug(D_CLIENT, "passwd %s:%s", ic->second.passwd.c_str(), h->passwd.c_str() );
 
 		if (   ic->second.host == s->getHost(client)
 			&& ic->second.browser == h->browser
@@ -64,46 +66,106 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 #ifdef PTHREAD
 			pthread_mutex_unlock(&cl_mutex);
 #endif
+
+			return;
+		}
+		else if ( ic->second.user != "" )
+		{
+            msg.pdebug(D_CLIENT, "verbinden gescheitert %d", client);
+            h->status = 403;
+            h->realm = realm;
+            h->set_cookies["MneHttpSessionId"] = "";
+            delete ic->second.db;
+            clients.erase(ic);
+#ifdef PTHREAD
+                pthread_mutex_unlock(&cl_mutex);
+#endif
+            return;
+		}
+		else if ( !ic->second.db->have_connection() )
+		{
+		    msg.pdebug(D_CLIENT, "client muss sich noch verbinden %d", client);
+            ic->second.user = h->user;
+            if ( h->user != "" )
+            {
+                ic->second.db->p_getConnect("", h->user, h->passwd);
+            }
+			if (ic->second.db->have_connection() )
+			{
+				msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);
+				ic->second.passwd = h->passwd;
+				ic->second.last_connect = time(NULL);
+				setUserprefs(&ic->second);
+				ic->second.db->p_getConnect()->end();
+#ifdef PTHREAD
+				pthread_mutex_unlock(&cl_mutex);
+#endif
+
+				return;
+			}
+			else
+			{
+				msg.pdebug(D_CLIENT, "verbinden gescheitert %d", client);
+				h->status = 403;
+				h->realm = realm;
+	            h->set_cookies["MneHttpSessionId"] = "Logout";
+	            delete ic->second.db;
+	            clients.erase(ic);
+
+#ifdef PTHREAD
+				pthread_mutex_unlock(&cl_mutex);
+#endif
+
+				return;
+			}
+		}
+		else
+		{
+			msg.pdebug(D_CLIENT, "falscher client %d", client);
+			h->status = 401;
+			h->realm = realm;
+			h->connection = 0;
+			h->set_cookies["MneHttpSessionId"] = "Logout";
+
+            delete ic->second.db;
+            clients.erase(ic);
+
+#ifdef PTHREAD
+			pthread_mutex_unlock(&cl_mutex);
+#endif
+
 			return;
 		}
 	}
 
-	if ( h->dirname == "/main/login" )
-	{
-#ifdef PTHREAD
-	    pthread_mutex_unlock(&cl_mutex);
-#endif
-	    return;
-	}
-
 	char str[1024];
 	Client cl;
-    std::string user = h->vars["user"];
-    std::string passwd = h->vars["passwd"];
-    h->location = h->vars["location"];
 
-    if ( user != "" )
-    {
-        msg.pdebug(D_CLIENT, "ist ein neuer client %d", client);
-        msg.pdebug(D_CLIENT, "host %d", s->getHost(client));
-        msg.pdebug(D_CLIENT, "browser %d", h->browser);
-        msg.pdebug(D_CLIENT, "user-agent %s", h->user_agent.c_str());
-        msg.pdebug(D_CLIENT, "user %s", user.c_str());
-        msg.pdebug(D_CLIENT, "passwd %s", passwd.c_str() );
+	msg.pdebug(D_CLIENT, "ist ein neuer client %d", client);
+    msg.pdebug(D_CLIENT, "host %d", s->getHost(client));
+    msg.pdebug(D_CLIENT, "browser %d", h->browser);
+    msg.pdebug(D_CLIENT, "user-agent %s", h->user_agent.c_str());
+    msg.pdebug(D_CLIENT, "user %s", h->user.c_str());
+    msg.pdebug(D_CLIENT, "passwd %s",h->passwd.c_str() );
 
-        sprintf(str, "%d%d", (unsigned int)time(NULL), user_count++);
-        h->set_cookies["MneHttpSessionId"] = str;
-        h->realm = realm;
+    sprintf(str, "%d%d", (unsigned int)time(NULL), user_count++);
+	h->set_cookies["MneHttpSessionId"] = str;
+	h->realm = realm;
 
-        cl.host = s->getHost(client);
-        cl.browser = h->browser;
-        cl.user_agent = h->user_agent;
-        cl.db = db->getDatabase();
-        clients[str] = cl;
-        ic = clients.find(str);
+	cl.host = s->getHost(client);
+	cl.browser = h->browser;
+	cl.user_agent = h->user_agent;
+	cl.db = db->getDatabase();
+    clients[str] = cl;
+    ic = clients.find(str);
 
-        ic->second.db->p_getConnect("", user, passwd);
-
+	if ( cookie != "Logout" && h->user != "" && h->passwd != "" )
+	{
+        msg.pdebug(D_CLIENT, "client muss sich noch verbinden %d", client);
+        if ( h->user != "" )
+        {
+            ic->second.db->p_getConnect("", h->user, h->passwd);
+        }
         if (ic->second.db->have_connection() )
         {
             msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);
@@ -113,23 +175,16 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
             ic->second.last_connect = time(NULL);
             setUserprefs(&ic->second);
             ic->second.db->p_getConnect()->end();
-            h->status = 301;
-#ifdef PTHREAD
-    pthread_mutex_unlock(&cl_mutex);
-#endif
-            return;
-        }
-
-        msg.pdebug(D_CLIENT, "falscher client %d", client);
-
-        delete ic->second.db;
-        clients.erase(ic);
-    }
-
-    h->dirname = "/main/login";
-    h->filename = "login.html";
-    h->content_type = "text/html";
-    h->set_cookies["MneHttpSessionId"] = "";
+	    }
+	    else
+	    {
+	        h->status = 401;
+	    }
+	}
+	else
+	{
+	    h->status = 401;
+	}
 
 #ifdef PTHREAD
 	pthread_mutex_unlock(&cl_mutex);
@@ -183,7 +238,6 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 	cl->db->p_getConnect()->end();
 }
 
-
 void DbHttpAnalyse::del_client(unsigned int client)
 {
     msg.pdebug(D_CLIENT, "lösche client %d", client);
@@ -191,7 +245,6 @@ void DbHttpAnalyse::del_client(unsigned int client)
         setWakeup(time(NULL) + this->dbtimeout);
     msg.pdebug(D_CON, "Nächstes Aufräumen %s", Message::timestamp(this->tv_sec).c_str());
 }
-
 
 void DbHttpAnalyse::disconnect(int client)
 {
