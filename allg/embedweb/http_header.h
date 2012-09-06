@@ -12,13 +12,13 @@ class HttpHeader
 public:
     enum Browser
     {
-    B_UNKNWON,
-	B_FF,
-	B_MOZILLA,
-	B_OPERA,
-	B_NS,
-	B_SAFARI,
-	B_IE
+        B_UNKNWON,
+        B_FF,
+        B_MOZILLA,
+        B_OPERA,
+        B_NS,
+        B_SAFARI,
+        B_IE
     };
 
     enum Os
@@ -93,72 +93,72 @@ public:
 public:
     HttpHeader()
     {
-    content = NULL;
-	post_data = NULL;
-	user_data = NULL;
-	clear();
+        content = NULL;
+        post_data = NULL;
+        user_data = NULL;
+        clear();
     }
     ~HttpHeader()
     {
         if ( content != NULL )   fclose(content);
-	if ( post_data != NULL ) delete post_data;
-	if ( user_data != NULL ) delete (char *)user_data;
+        if ( post_data != NULL ) delete post_data;
+        if ( user_data != NULL ) delete (char *)user_data;
     }
 
     void clear()
     {
-	client = -1;
+        client = -1;
 
-	id = "";
-	serverpath.clear();
-	typ       = "";
-	providerpath = "";
-	dirname   = "";
-	filename  = "";
-	protokoll = "";
+        id = "";
+        serverpath.clear();
+        typ       = "";
+        providerpath = "";
+        dirname   = "";
+        filename  = "";
+        protokoll = "";
 
-	hostname = "";
-	port     = "";
-	referer  = "";
+        hostname = "";
+        port     = "";
+        referer  = "";
 
-	browser = B_UNKNWON;
-	user_agent = "";
-	os = OS_UNKNWON;
+        browser = B_UNKNWON;
+        user_agent = "";
+        os = OS_UNKNWON;
 
-	user   = "";
-	passwd = "";
+        user   = "";
+        passwd = "";
 
-    if ( content   != NULL ) fclose(content);
-	if ( post_data != NULL ) delete post_data;
-    if ( user_data != NULL ) delete (char*)user_data;
+        if ( content   != NULL ) fclose(content);
+        if ( post_data != NULL ) delete post_data;
+        if ( user_data != NULL ) delete (char*)user_data;
 
-	post_data = NULL;
+        post_data = NULL;
         post_length = 0;
-	needed_postdata = -1;
+        needed_postdata = -1;
 
-	status = 404;
-	translate = 0;
-	age = 0;
-	connection = 1;
+        status = 404;
+        translate = 0;
+        age = 0;
+        connection = 1;
 
-	realm = "";
-	location = "";
-	content_filename = "";
-	content_type   = "text/html";
-	charset        = "UTF-8";
-	content        = NULL;
-	content_length = 0;
+        realm = "";
+        location = "";
+        content_filename = "";
+        content_type   = "text/html";
+        charset        = "UTF-8";
+        content        = NULL;
+        content_length = 0;
 
-	cookies.clear();
-	set_cookies.clear();
-	vars.clear();
+        cookies.clear();
+        set_cookies.clear();
+        vars.clear();
 
-	extra_header.clear();
-	error_messages.clear();
+        extra_header.clear();
+        error_messages.clear();
 
-	error_found = 0;
-	warning_found = 0;
-	message_found = 0;
+        error_found = 0;
+        warning_found = 0;
+        message_found = 0;
 
     }
 

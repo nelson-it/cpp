@@ -501,14 +501,24 @@ void Http::write_header()
 	if (status >= 300 && status < 400 )
 	{
 		msg.pdebug(D_HTTP, "redirect");
-		msg.pdebug(D_HTTP, "Location: https://%s%s\r\n", act_h->hostname.c_str(),
-				act_h->location.c_str());
-		sprintf(buffer, "Location: https://%s%s\r\n", act_h->hostname.c_str(),
-				act_h->location.c_str());
-		s->write(act_h->client, buffer, strlen(buffer));
-		sprintf(buffer, "Content-Location: https://%s%s\r\n", act_h->hostname.c_str(),
-				act_h->location.c_str());
-		s->write(act_h->client, buffer, strlen(buffer));
+
+		if ( act_h->location == "" )
+		{
+		    msg.pdebug(D_HTTP, "Location: https://%s\r\n", act_h->hostname.c_str());
+		    sprintf(buffer, "Location: https://%s\r\n", act_h->hostname.c_str());
+		    s->write(act_h->client, buffer, strlen(buffer));
+		    sprintf(buffer, "Content-Location: https://%s\r\n", act_h->hostname.c_str());
+		    s->write(act_h->client, buffer, strlen(buffer));
+		}
+		else
+		{
+		    msg.pdebug(D_HTTP, "Location: %s\r\n", act_h->location.c_str());
+		    sprintf(buffer, "Location: %s\r\n", act_h->location.c_str());
+		    s->write(act_h->client, buffer, strlen(buffer));
+		    sprintf(buffer, "Content-Location: %s\r\n", act_h->location.c_str());
+		    s->write(act_h->client, buffer, strlen(buffer));
+
+		}
 	}
 	sprintf(buffer, "\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
