@@ -58,7 +58,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
             && ic->second.user_agent == h->user_agent
 			&& ( ic->second.db->have_connection() ) )
 		{
-			msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
+		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
 			ic->second.last_connect = time(NULL);
 
 #ifdef PTHREAD
@@ -124,6 +124,13 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
         delete ic->second.db;
         clients.erase(ic);
+
+        h->set_cookies["MneHttpSessionLoginWrong"] = "1";
+    }
+
+    if ( h->vars.exists("user") )
+    {
+        h->set_cookies["MneHttpSessionLoginWrong"] = "1";
     }
 
     h->dirname = "/main/login";
