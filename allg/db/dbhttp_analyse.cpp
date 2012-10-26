@@ -136,6 +136,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
     h->dirname = "/main/login";
     h->filename = "login.html";
     h->content_type = "text/html";
+    h->setstatus = 201;
     h->set_cookies["MneHttpSessionId"] = "";
 
 #ifdef PTHREAD

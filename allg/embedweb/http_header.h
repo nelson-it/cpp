@@ -68,6 +68,7 @@ public:
     // Vom Provider auszuf|llen
     // ========================
     int status;
+    int setstatus;
     int translate;
     int age;
     int connection;
@@ -137,6 +138,7 @@ public:
         needed_postdata = -1;
 
         status = 404;
+        setstatus = 0;
         translate = 0;
         age = 0;
         connection = 1;

@@ -514,7 +514,7 @@ char *PgConnect::mk_error(PGresult *res)
 
 std::string PgConnect::getValue(int typ, std::string str)
 {
-    if (str == "current_user" || str == "session_user" || str == "'session_user'" || str == "'current_user'" )
+    if (str == "current_user" || str == "session_user" || str == "'session_user'" || str == "'current_user'" || str == "current_database()"|| str == "'current_database()'")
         return str;
     else
         return DbConnect::getValue(typ, str);
