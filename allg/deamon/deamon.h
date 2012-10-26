@@ -14,8 +14,11 @@ class Deamon
 class Deamon
 {
     Message msg;
+    int deamon;
 public:
     Deamon();
+
+    int isdeamon() { return deamon; }
 
 };
 #endif

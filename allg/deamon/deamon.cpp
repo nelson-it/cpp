@@ -48,8 +48,11 @@ Deamon::Deamon()
 
     if (getppid() == 1) return; /* already a daemon */
 
+    deamon = 0;
     if ( (long)a["deamon"] == 0 )
         return;
+
+    deamon = 1;
 
     logfile = (char *)a["logfile"];
     runningdir = (char*)a["rundir"];

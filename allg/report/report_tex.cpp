@@ -180,7 +180,7 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         {
             if ( query->find(ui->first) != std::string::npos  )
             {
-                userprefs[ui->first] = (std::string)(*rv)[query->find(ui->first)];
+                userprefs[ui->first] = ((*rv)[query->find(ui->first)]).format(&msg);
             }
         }
         for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)

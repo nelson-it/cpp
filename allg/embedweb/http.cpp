@@ -347,6 +347,9 @@ void Http::make_answer()
 			act_h->age = 3600;
 		act_h->status = 200;
 
+		if ( act_h->setstatus  )
+		    act_h->status = act_h->setstatus;
+
         if (act_h->filename.find(".php") == (act_h->filename.size() - 4 ))
         {
             fclose(file);
