@@ -493,10 +493,10 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     }
 
     report.userprefs = this->http->getUserprefs();
-    report.mk_report(db,str,0,h->content, h->vars["language"],
-            h->vars["schema"], h->vars["query"],
-            &wid, &wval, &wop, &sort, &macros, &xml );
-
+    if ( report.mk_report(db,str,0,h->content, h->vars["language"], h->vars["schema"], h->vars["query"], &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
+    {
+        msg.pwarning(W_NOROWS, "Der Report <%s> hat keine Zeilen", str);
+    }
 
     if ( h->error_messages.empty() )
     {

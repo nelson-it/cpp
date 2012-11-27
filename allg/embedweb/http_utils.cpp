@@ -105,10 +105,15 @@ void HttpUtils::time(HttpHeader *h)
 
 void HttpUtils::logout(HttpHeader *h)
 {
+    Argument a;
+    char str[1024];
+
     h->status = 200;
     h->content_type = "text/xml";
 
-    h->set_cookies["MneHttpSessionId"] = "Logout";
+    snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
+    str[sizeof(str) - 1] = '\0';
+    h->set_cookies[str] = "Logout";
     fprintf(h->content,"<?xml version=\"1.0\" encoding=\"%s\"?><result><body>logout</body>",h->charset.c_str());
 }
 

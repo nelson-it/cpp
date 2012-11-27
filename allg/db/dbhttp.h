@@ -22,6 +22,7 @@ class DbHttp : public Http
     Message msg;
     Database *dbtrans;
     DbTranslate *trans;
+    std::string cookieid;
 
     std::map<std::string, locale_t> loc;
     locale_t stdloc;

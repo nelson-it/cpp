@@ -48,17 +48,14 @@ void XmlText::compute(XmlParseNode *node)
 	{
 		unsigned int save_row;
 		unsigned int save_col;
-		unsigned int save_max;
 		XmlParseNode *save_tab;
 
 		save_row = act_rowcount;
 		save_col = act_colcount;
-		save_max = max_colcount;
 		save_tab = act_tab;
 
 		act_rowcount = 0;
 		act_colcount = 0;
-		max_colcount = 0;
 
 		act_tab = node;
 
@@ -70,7 +67,7 @@ void XmlText::compute(XmlParseNode *node)
 
 		for ( i=0; i< node->size(); ++i ) compute(node->getChild(i));
 		act_tab->setAttr("rowcount", itoa(act_rowcount, buffer, 10));
-		act_tab->setAttr("colcount", itoa(max_colcount, buffer, 10));
+		act_tab->setAttr("colcount", itoa(act_colcount, buffer, 10));
 
 		if ( save_tab != NULL )
 			act_tab->setAttr("parentborder",
@@ -80,7 +77,6 @@ void XmlText::compute(XmlParseNode *node)
 
 		act_rowcount = save_row;
 		act_colcount = save_col;
-		max_colcount = save_max;
 		act_tab = save_tab;
 	}
 	else if ( id == "tr" )
@@ -92,27 +88,34 @@ void XmlText::compute(XmlParseNode *node)
 	}
 	else if ( id == "td" )
 	{
-		node->setAttr("colnum", itoa(act_colcount, buffer, 10 ));
-		for ( i=0; i< node->size(); ++i ) compute(node->getChild(i));
-		act_colcount++;
-		if ( max_colcount < act_colcount )
-		{
-			char str[256];
-			max_colcount = act_colcount;
+	    node->setAttr("colnum", itoa(act_colcount, buffer, 10 ));
+	    for ( i=0; i< node->size(); ++i ) compute(node->getChild(i));
+	    act_colcount++;
 
-			sprintf(str, "width%d", max_colcount - 1 );
-			act_tab->setAttr(str, node->getAttr("relwidth").c_str());
+	    char str[256];
+	    if ( node->getAttr("relwidth") != "")
+	    {
+	        sprintf(str, "width%d", act_colcount - 1 );
+	        act_tab->setAttr(str, node->getAttr("relwidth").c_str());
+	    }
 
-			sprintf(str, "height%d", max_colcount - 1 );
-			act_tab->setAttr(str, node->getAttr("relheight").c_str());
+	    if ( node->getAttr("relheight") != "")
+	    {
+	        sprintf(str, "height%d", act_colcount - 1 );
+	        act_tab->setAttr(str, node->getAttr("relheight").c_str());
+	    }
 
-			sprintf(str, "align%d", max_colcount - 1 );
-			act_tab->setAttr(str, node->getAttr("align").c_str());
+	    if ( node->getAttr("align") != "")
+	    {
+	        sprintf(str, "align%d", act_colcount - 1 );
+	        act_tab->setAttr(str, node->getAttr("align").c_str());
+	    }
 
-			sprintf(str, "valign%d", max_colcount - 1 );
-			act_tab->setAttr(str, node->getAttr("valign").c_str());
-		}
-
+	    if ( node->getAttr("valign") != "")
+	    {
+	        sprintf(str, "valign%d", act_colcount - 1 );
+	        act_tab->setAttr(str, node->getAttr("valign").c_str());
+	    }
 	}
 	else
 	{

@@ -58,7 +58,7 @@ public:
 		    std::map<std::string, std::string>::iterator i;
 		    if ( ( i = userprefs.find(name)) != userprefs.end() )
 		        return i->second;
-		    msg.pwarning(1, "Usereinstellung f�r <%s> ist nicht vorhanden", name.c_str());
+		    msg.pwarning(1, "Usereinstellung für <%s> ist nicht vorhanden", name.c_str());
 		    return "";
 		}
 	};
@@ -87,6 +87,7 @@ private:
 	int user_count;
 	time_t dbtimeout;
 	std::string realm;
+	std::string cookieid;
 
 	void check_user(HttpHeader *h);
 	void del_client(unsigned int clientid);

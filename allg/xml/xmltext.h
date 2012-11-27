@@ -18,7 +18,6 @@ private:
 
 	int act_rowcount;
 	int act_colcount;
-	int max_colcount;
 
 protected:
 
