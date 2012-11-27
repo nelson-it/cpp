@@ -39,14 +39,29 @@ ReportTex::~ReportTex()
 {
 }
 
-void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
+std::string ReportTex::getFile(std::string file, int is_dir )
+{
+    unsigned int i;
+    struct stat s;
+
+    for ( i=0; i<path.size(); i++ )
+    {
+        if ( (stat ((path[i] + "/" + file).c_str(), &s) == 0) && ((is_dir && S_ISDIR (s.st_mode)) || (! is_dir && S_ISREG (s.st_mode))) )
+            break;
+    }
+    if ( i != path.size() )
+        return (path[i] + "/" + file);
+    return "";
+}
+
+int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         FILE *out, std::string language, std::string schema, std::string queryname,
         CsList *wcol, CsList *wval, CsList *wop, CsList *s, Macros *macros,
         Macros *xml)
 {
     DbQuery * query;
     DbTable *reptab;
-    std::string reptype;
+    std::string rtemplate;
     std::string root;
 
     DbTable::ValueMap w;
@@ -76,6 +91,9 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     std::string langsave;
     CsList      repcols;
     int have_query;
+    int record_count;
+
+    record_count = 0;
 
     langsave = msg.getLang();
     if (language != "" && language != langsave )
@@ -95,12 +113,12 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         msg.perror(E_NOREPORT, "Report %s nicht vorhanden", reportname.c_str());
         db->release(reptab);
         msg.setLang(langsave);
-        return;
+        return record_count;
     }
 
-    reptype = (char*) (rm[0][5]);
-    if (reptype == "")
-        reptype = reportname;
+    rtemplate = (char*) (rm[0][5]);
+    if (rtemplate == "")
+        rtemplate = reportname;
 
     if (s == NULL || s->getString() == "")
         sort.setString((char *) (rm[0][3]));
@@ -110,18 +128,10 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     landscape = (long) (rm[0][6]);
     repcols.setString((char *) (rm[0][10]));
 
-    for ( i=0; i<path.size(); i++ )
-    {
-    	 struct stat s;
-    	 root = path[i];
-    	if ( stat ((root+ "/" + reptype).c_str(), &s) == 0 && S_ISDIR (s.st_mode) )
-            break;
-    }
-
-    if ( i == path.size() )
+    if ( getFile(rtemplate, 1) == "" )
     {
     	msg.perror(E_NOREPORTROOT, "Reportroot ist nicht vorhanden");
-    	return;
+    	return record_count;
     }
 
     have_query = 1;
@@ -170,7 +180,7 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         db->release(reptab);
         db->release(query);
         msg.setLang(langsave);
-        return;
+        return -1;
     }
 
     if ( (! query->eof())  && !subreport )
@@ -200,23 +210,17 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     if (!subreport)
     {
-        str = root + "/" + reptype + "/init.tex";
-        if ((fp = fopen(str.c_str(), "r")) == NULL)
-        {
-            for ( i = 0; i<path.size(); i++ )
-            {
-            	str = path[i] + "/allg/default/init.tex";
-                fp = fopen(str.c_str(), "r");
-                if ( fp != NULL ) break;
-            }
-        }
+        str = getFile(rtemplate + "/init.tex");
+        if ( str == "" ) str = getFile("/allg/default/init.tex");
+        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
         if ( fp == NULL )
         {
             db->release(query);
             db->release(reptab);
-            msg.perror(E_NOINIT, "kann datei %s nicht finden", str.c_str());
+            msg.perror(E_NOINIT, "kann datei %s nicht finden", (rtemplate + "/init.tex").c_str());
             msg.setLang(langsave);
-            return;
+            return record_count;
         }
 
         if ( landscape )
@@ -243,23 +247,17 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         fprintf(out, "\\gdef\\reptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
 
-        str = root + "/" + reptype + "/docinit.tex";
-        if ((fp = fopen(str.c_str(), "r")) == NULL)
-        {
-            for ( i = 0; i<path.size(); i++ )
-            {
-            	str = path[i] + "/allg/default/docinit.tex";
-                fp = fopen(str.c_str(), "r");
-                if ( fp != NULL ) break;
-            }
-        }
+        str = getFile(rtemplate + "/docinit.tex");
+        if ( str == "" ) str = getFile("/allg/default/docinit.tex");
+        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
         if ( fp == NULL )
         {
             db->release(query);
             db->release(reptab);
-            msg.perror(E_NOINIT, "kann datei %s nicht finden", str.c_str());
+            msg.perror(E_NOINIT, "kann datei %s nicht finden", (rtemplate + "/docinit.tex").c_str());
             msg.setLang(langsave);
-            return;
+            return record_count;
         }
 
         while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
@@ -273,8 +271,10 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     {
         fprintf(out, "\\gdef\\subreptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
 
-        str = root + "/" + reptype + "/subinit.tex";
-        if ((fp = fopen(str.c_str(), "r")) != NULL)
+        str = getFile(rtemplate + "/subinit.tex");
+        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
+        if (fp != NULL)
         {
             while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
                 fwrite(buffer, size, 1, out);
@@ -329,14 +329,16 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             fprintf(out, "}%%\n");
         }
 
-    str = root + "/" + reptype + "/header.tex";
-    if ((fp = fopen(str.c_str(), "r")) == NULL)
+    str = getFile(rtemplate + "/header.tex");
+    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
+    if (fp == NULL)
     {
         db->release(query);
         db->release(reptab);
-        msg.perror(E_NOHEADER, "kann datei %s nicht finden", str.c_str());
+        msg.perror(E_NOHEADER, "kann datei %s nicht finden", (rtemplate + "/header.tex").c_str());
         msg.setLang(langsave);
-        return;
+        return record_count;
     }
 
     while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
@@ -344,27 +346,31 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     fclose(fp);
 
-    str = root + "/" + reptype + "/record.tex";
-    if ((fp = fopen(str.c_str(), "r")) == NULL)
+    str = getFile(rtemplate + "/record.tex");
+    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
+    if (fp == NULL)
     {
         db->release(query);
         db->release(reptab);
-        msg.perror(E_NORECORD, "kann datei %s nicht finden", str.c_str());
+        msg.perror(E_NORECORD, "kann datei %s nicht finden", (rtemplate + "/record.tex").c_str());
         msg.setLang(langsave);
-        return;
+        return record_count;
     }
 
-    str = root + "/" + reptype + "/prerecord.tex";
-    pre = fopen(str.c_str(), "r");
+    str = getFile(rtemplate + "/prerecord.tex");
+    if ( str != "" ) pre = fopen(str.c_str(), "r"); else pre = NULL;
 
-    str = root + "/" + reptype + "/postrecord.tex";
-    post = fopen(str.c_str(), "r");
+    str = getFile(rtemplate + "/postrecord.tex");
+    if ( str != "" ) post = fopen(str.c_str(), "r"); else post = NULL;
 
     for (i = 0; i < sort.size(); ++i)
         sortlist.push_back("###############");
 
     for (; !query->eof(); rv = query->p_next())
     {
+        record_count++;
+
         if (pre != NULL)
         {
             fseek(pre, SEEK_SET, 0);
@@ -571,12 +577,14 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     db->release(query);
     db->release(reptab);
 
-    str = root + "/" + reptype + "/trailer.tex";
-    if ((fp = fopen(str.c_str(), "r")) == NULL)
+    str = getFile(rtemplate + "/trailer.tex");
+    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
+    if (fp == NULL)
     {
-        msg.perror(E_NOTRAILER, "kann datei %s nicht finden", str.c_str());
+        msg.perror(E_NOTRAILER, "kann datei %s nicht finden", (rtemplate + "/trailer.tex").c_str());
         msg.setLang(langsave);
-        return;
+        return record_count;
     }
 
     while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
@@ -586,21 +594,15 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     if (!subreport)
     {
-        str = root + "/" + reptype + "/end.tex";
-        if ((fp = fopen(str.c_str(), "r")) == NULL)
-        {
-            for ( i = 0; i<path.size(); i++ )
-            {
-            	str = path[i] + "/allg/default/end.tex";
-                fp = fopen(str.c_str(), "r");
-                if ( fp != NULL ) break;
-            }
-        }
+        str = getFile(rtemplate + "/end.tex");
+        if ( str == "" ) str = getFile("/allg/default/end.tex");
+        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
         if ( fp == NULL )
         {
-            msg.perror(E_NOEND, "kann datei %s nicht finden", str.c_str());
+            msg.perror(E_NOEND, "kann datei %s nicht finden", (rtemplate + "/end.tex").c_str());
             msg.setLang(langsave);
-            return;
+            return record_count;
         }
 
         while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
@@ -610,8 +612,10 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
     else
     {
-        str = root + "/" + reptype + "/subend.tex";
-        if ((fp = fopen(str.c_str(), "r")) != NULL)
+        str = getFile(rtemplate + "/subend.tex");
+        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+
+        if ( fp != NULL )
         {
             while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
                 fwrite(buffer, size, 1, out);
@@ -620,5 +624,6 @@ void ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
 
     msg.setLang(langsave);
+    return record_count;
 }
 

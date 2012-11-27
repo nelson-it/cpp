@@ -45,15 +45,16 @@ private:
 		E_MAXERROR
 	};
 
+	std::string getFile(std::string file, int is_dir = 0);
 public:
 	ReportTex();
 	~ReportTex();
 
-	void mk_report(Database *db, std::string reportname, int subreport,
-			FILE *out, std::string language, std::string schema, std::string query,
-			CsList *wcol, CsList *wval,
-			CsList *wop, CsList *sort, Macros *macros = NULL, Macros *xml =
-					NULL);
+	int mk_report(Database *db, std::string reportname, int subreport,
+			      FILE *out, std::string language, std::string schema, std::string query,
+			      CsList *wcol, CsList *wval,
+			      CsList *wop, CsList *sort, Macros *macros = NULL, Macros *xml =
+				  NULL);
 };
 
 #endif /*report_tex_mne */

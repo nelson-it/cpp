@@ -19,11 +19,16 @@ DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
     Http(s, analyse, 0), msg("DbHttp")
 {
     Argument a;
+    char str[1024];
 
     this->analyse = analyse;
     this->act_client = NULL;
     this->trans = new DbTranslate(db);
     this->loc[a["locale"]] = this->stdloc = newlocale(LC_ALL_MASK, ((char *)a["locale"]), NULL);
+
+    snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
+    str[sizeof(str) - 1] = '\0';
+    this->cookieid = str;
 
     analyse->add_http(this);
 }
@@ -50,7 +55,7 @@ void DbHttp::make_answer()
 
     if (act_client == NULL)
     {
-        act_client = analyse->getClient(act_h->cookies["MneHttpSessionId"]);
+        act_client = analyse->getClient(act_h->cookies[cookieid.c_str()]);
         clear = 1;
     }
 
@@ -93,7 +98,7 @@ void DbHttp::make_answer()
         std::string lstr;
         HttpProvider *p;
 
-        act_h->id = act_h->cookies["MneHttpSessionId"];
+        act_h->id = act_h->cookies[cookieid.c_str()];
 
         msg.setLang(act_client->getUserprefs("language"));
         msg.setRegion(act_client->getUserprefs("region"));

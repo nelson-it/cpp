@@ -14,10 +14,15 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 	HttpAnalyse(s), TimeoutClient(s), msg("DbHttpAnalyse")
 {
 	Argument a;
+    char str[1024];
 
 	this->s = s;
 	this->dbtimeout = a["DbHttpTimeout"];
 	this->realm = (char*)a["DbHttpRealm"];
+    snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
+    str[sizeof(str) - 1] = '\0';
+    this->cookieid = str;
+
 
     this->db = db->getDatabase();
     user_count = 0;
@@ -38,7 +43,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	unsigned int client;
 
 	client = h->client;
-	cookie = h->cookies["MneHttpSessionId"];
+	cookie = h->cookies[cookieid.c_str()];
 
 #ifdef PTHREAD
 	pthread_mutex_lock(&cl_mutex);
@@ -92,7 +97,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         msg.pdebug(D_CLIENT, "passwd %s", passwd.c_str() );
 
         sprintf(str, "%d%d", (unsigned int)time(NULL), user_count++);
-        h->set_cookies["MneHttpSessionId"] = str;
+        h->set_cookies[cookieid.c_str()] = str;
         h->realm = realm;
 
         cl.host = s->getHost(client);
@@ -107,7 +112,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         if (ic->second.db->have_connection() )
         {
             msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);
-            h->cookies.addCookie("MneHttpSessionId", ic->first);
+            h->cookies.addCookie(cookieid, ic->first);
             ic->second.user = h->user;
             ic->second.passwd = h->passwd;
             ic->second.last_connect = time(NULL);
@@ -137,7 +142,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
     h->filename = "login.html";
     h->content_type = "text/html";
     h->setstatus = 201;
-    h->set_cookies["MneHttpSessionId"] = "";
+    h->set_cookies[cookieid.c_str()] = "";
 
 #ifdef PTHREAD
 	pthread_mutex_unlock(&cl_mutex);

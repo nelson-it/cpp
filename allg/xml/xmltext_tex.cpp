@@ -94,12 +94,17 @@ void XmlTextTex::mk_itemize(XmlParseNode *node, int num)
     partbegin = "{";
     partend = "}\\par";
 
+    if ( node->getAttr("relwidth") != "" )
+         fprintf(fp, "\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
     fprintf(fp, "\\begin{itemize}");
 }
 
 void XmlTextTex::mk_itemize_end(XmlParseNode *node, int num)
 {
     fprintf(fp, "\\end{itemize}%%\n");
+
+    if ( node->getAttr("relwidth") != "" )
+        fprintf(fp, "}%%\n");
 
     partbegin = node->getAttr("partbegin");
     partend = node->getAttr("partend");
@@ -114,6 +119,8 @@ void XmlTextTex::mk_enumerate(XmlParseNode *node, int num)
     partbegin = "{";
     partend = "}\\par";
 
+    if ( node->getAttr("relwidth") != "" )
+         fprintf(fp, "\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
     fprintf(fp, "\\begin{enumerate}");
 }
 
@@ -121,6 +128,8 @@ void XmlTextTex::mk_enumerate_end(XmlParseNode *node, int num)
 {
     fprintf(fp, "\\end{enumerate}%%\n");
 
+    if ( node->getAttr("relwidth") != "" )
+        fprintf(fp, "}%%\n");
     partbegin = node->getAttr("partbegin");
     partend = node->getAttr("partend");
 
