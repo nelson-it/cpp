@@ -34,7 +34,7 @@ ifeq "$(UNAME)" "Darwin"
 	 OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc
-             LD_STD := $(LD_STD) -liconv
+             LD_STD := $(LD_STD) -L /usr/lib/ -liconv
           LD_SHARED := -shared -Wl,-soname,lib$(TARGET).so.$($(TARGET).LIBMAJOR)        
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
 endif
@@ -71,7 +71,7 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)include
   else ifeq "$(UNAME)" "Darwin"
-              LIB_PG := -L/Library/PostgreSQL/8.4/lib -lpq
+              LIB_PG := -L/Library/PostgreSQL/8.4/lib -lpq.5.2
               INC_PG := -I/Library/PostgreSQL/8.4/include 
   else
               LIB_PG := -lpq
