@@ -5,4 +5,5 @@ liste["ImapScanInterval"]      = Argument::Liste("-imapscaninterval", 'l', 1, "1
 liste["ImapScanOffset"]        = Argument::Liste("-imapscanoffset",   'l', 1, "0"  );
 liste["ImapScanClearHeader"]   = Argument::Liste("-imapscancl",       'l', 1, "30" );
 
+liste["MailscanUser"]          = Argument::Liste("-mailscanuser",     'c', 1, "mailscan" );
 liste["MailscanPasswd"]        = Argument::Liste("-mailscanpasswd",   'c', 1, ""   );
