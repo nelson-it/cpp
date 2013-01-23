@@ -99,6 +99,8 @@ void DbHttp::make_answer()
         HttpProvider *p;
 
         act_h->id = act_h->cookies[cookieid.c_str()];
+        act_h->user = act_client->user;
+        act_h->passwd = act_client->passwd;
 
         msg.setLang(act_client->getUserprefs("language"));
         msg.setRegion(act_client->getUserprefs("region"));

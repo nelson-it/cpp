@@ -197,6 +197,8 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     Database *db;
     db = dbin->getDatabase();
     db->p_getConnect("", h->user, h->passwd);
+    if ( db->p_getConnect() == NULL ) return;
+
     db->p_getConnect()->execute(("select mne_catalog.start_session('" + db->getApplschema()+"')").c_str());
 
     DbQuery *query;
