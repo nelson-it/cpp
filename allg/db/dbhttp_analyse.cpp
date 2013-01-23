@@ -113,8 +113,8 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         {
             msg.pdebug(D_CLIENT, "client %d hat sich verbunden", client);
             h->cookies.addCookie(cookieid, ic->first);
-            ic->second.user = h->user;
-            ic->second.passwd = h->passwd;
+            ic->second.user = user;
+            ic->second.passwd = passwd;
             ic->second.last_connect = time(NULL);
             setUserprefs(&ic->second);
             ic->second.db->p_getConnect()->end();
