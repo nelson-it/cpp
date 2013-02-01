@@ -8,20 +8,21 @@
               SHARED_FLAGS := --enable-auto-import
 
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
-
 ifneq "$($(TARGET).ISDLL)" "TRUE"
 $(LD_OUTPUT): $(OBJECTS)
 	$(LD_PRE)
 	$(CPP) $(OPT_FLAGS) $(INC_FLAGS) $(SHARED_FLAGS) -o $(LD_OUTPUT) $(OBJECTS) $(LD_FLAGS)
 else
 $(LD_OUTPUT) :
-
 endif
+
 else
+
 $(LD_OUTPUT): $(OBJECTS)
 	$(LD_PRE)
 	$(CPP) $(OPT_FLAGS) $(INC_FLAGS) --enable-auto-import $(SHARED_FLAGS) -o $(LD_OUTPUT) $(OBJECTS) $(LD_FLAGS)
 endif
+
 target:: Makefile.dep
 	@for T in $(TARGETS); \
            do \

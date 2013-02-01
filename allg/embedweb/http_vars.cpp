@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -7,7 +7,7 @@
 #include <string.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-#include <windows.h>
+#include <sec_api/stdio_s.h>
 #endif
 
 #include <fcntl.h>
@@ -142,16 +142,25 @@ HttpVars::setMultipart(std::string boundary, char *data)
             if (content_type != "")
             {
                 FILE *f;
+                char str[32];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-                char *tmp = tempnam(NULL, "HttpVars");
+				char filename[512];
+				*filename = '\0';
+				if ( getenv ("TEMP") != NULL)
+				{
+					strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
+					strncat(filename, "\\HttpVarsXXXXXX", sizeof(filename) - strlen(str) - 1);
+				}
+				_mktemp_s(filename, strlen(filename) + 1);
+				filename[sizeof(filename) - 1] = '\0';
+                char *tmp = filename;
 #else
-                char str[16];
                 strcpy(str, "/tmp/HttpVarsXXXXXX");
                 char *tmp = mktemp(str);
 #endif
                 if ((f = fopen(tmp, "wb")) == NULL)
                 {
-                    msg.perror(FILEOPEN,
+                	msg.perror(FILEOPEN,
                             "konnte temporäre Datei %s nicht öffnen", tmp);
                 }
                 else
@@ -162,9 +171,6 @@ HttpVars::setMultipart(std::string boundary, char *data)
                     files[name] = tmp;
                     vars[name] = "##########" + content_type;
                 }
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-                free(tmp);
-#endif
             }
             else
             {

@@ -1,9 +1,11 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
-
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <sec_api/stdio_s.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -590,14 +592,22 @@ void Http::get(HttpHeader *h)
 
 	struct timeval t1, t2;
 	long diff;
+	char str[512];
 
 	gettimeofday(&t1, NULL);
 
 	act_h = h;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-	char *filename = tempnam(NULL, "Http");
+	char filename[512];
+	*filename = '\0';
+	if ( getenv ("TEMP") != NULL)
+	{
+		strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
+		strncat(filename, "\\HttpXXXXXX", sizeof(filename) - strlen(str) - 1);
+	}
+	_mktemp_s(filename, strlen(filename) + 1);
+	filename[sizeof(filename) - 1] = '\0';
 #else
-	char str[32];
 	strcpy(str, "/tmp/HttpXXXXXX");
 	char *filename = mktemp(str);
 #endif
@@ -610,10 +620,6 @@ void Http::get(HttpHeader *h)
 	{
 		msg.perror(E_TEMPFILE, "Kann temporäre Datei <%s> nicht öffnen", filename);
 
-		#if defined(__MINGW32__) || defined(__CYGWIN__)
-		free(filename);
-                #endif
-
 		s->close(act_h->client);
 		return;
 	}
@@ -624,7 +630,6 @@ void Http::get(HttpHeader *h)
 	msg.del_msgclient(this);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 	DeleteFile(filename);
-	free(filename);
 #else
 	unlink(filename);
 #endif

@@ -1,6 +1,6 @@
 #define WINVER 0x0500
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>

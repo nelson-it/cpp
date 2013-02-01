@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -52,7 +52,11 @@ void *ImapScanThreadMain(void *param)
             p->imapscan.scan("", 0);
             msg.pdebug(1, "Differenz Scan Ready");
         }
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        Sleep(interval * 1000);
+#else
         sleep(interval);
+#endif
     }
 
     pthread_exit(NULL);

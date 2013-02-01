@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -8,7 +8,6 @@
 
 #include <string>
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-#include <winsock2.h>
 #else
 #include <sys/socket.h>
 #include <netinet/in.h>

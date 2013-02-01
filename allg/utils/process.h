@@ -58,6 +58,7 @@ public:
 
     ~Process()
     {
+#ifndef WINDOWS
         if ( file >=0 )
         {
             pthread_mutex_lock(&mutex);
@@ -65,6 +66,7 @@ public:
             file = -1;
             pthread_mutex_unlock(&mutex);
         }
+#endif
         stop();
     }
 
@@ -80,14 +82,18 @@ public:
 
     int write(const char *buffer, int size)
     {
-        if ( file >= 0 ) return ::write(file, buffer, size);
-        else return 0;
-    }
+#ifndef WINDOWS
+    	if ( file >= 0 ) return ::write(file, buffer, size);
+#endif
+        return 0;
+    	}
 
     int read( char *buffer, int size)
     {
-        if ( file >= 0 ) return ::read(file, buffer, size);
-        else return 0;
+#ifndef WINDOWS
+    	if ( file >= 0 ) return ::read(file, buffer, size);
+#endif
+        return 0;
     }
 
     int wait();

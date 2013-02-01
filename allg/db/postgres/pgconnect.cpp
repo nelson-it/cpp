@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -244,10 +244,14 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
     int i, k, rows, cols;
     Oid typ;
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    std::string loc = setlocale(LC_NUMERIC, NULL);
+    setlocale(LC_NUMERIC, "C");
+#else
     locale_t loc;
     loc = newlocale(LC_NUMERIC_MASK, "C", NULL);
     loc = uselocale(loc);
-
+#endif
     result.clear();
 
     is_eof = (rows = PQntuples(res)) == 0;
@@ -414,9 +418,12 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
         result.push_back(rv);
     }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+   setlocale(LC_NUMERIC, loc.c_str());
+#else
     loc = uselocale(loc);
     freelocale(loc);
-
+#endif
 }
 
 char *PgConnect::mk_error(PGresult *res)

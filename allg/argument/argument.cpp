@@ -1,14 +1,10 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#include <windows.h>
-#endif
 
 #include "argument.h"
 

@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -502,25 +502,36 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
     if ( h->error_messages.empty() )
     {
-        char str[512];
-        *str = '\0';
-        str[sizeof(str) -1] = '\0';
+    	char str[512];
+    	*str = '\0';
+    	str[sizeof(str) -1] = '\0';
 
-        if ( getenv ("TMPDIR") != NULL)
-        {
-            strncpy(str, getenv("TMPDIR"), sizeof(str) -1 );
-            strncat(str, "/", sizeof(str) - strlen(str) - 1);
-        }
-        else if ( getenv ("TMP") != NULL)
-        {
-            strncpy(str, getenv("TMP"), sizeof(str) -1 );
-            strncat(str, "/", sizeof(str) - strlen(str) - 1);
-        }
-        strncat(str, "HttpReportXXXXXX", sizeof(str) - strlen(str) - 1);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    	char filename[512];
+    	*filename = '\0';
+    	if ( getenv ("TEMP") != NULL)
+    	{
+    		strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
+    		strncat(filename, "\\HttpReportXXXXXX", sizeof(filename) - strlen(str) - 1);
+    	}
+    	_mktemp_s(filename, strlen(filename) + 1);
+    	filename[sizeof(filename) - 1] = '\0';
+#else
+    	if ( getenv ("TMPDIR") != NULL)
+    	{
+    		strncpy(str, getenv("TMPDIR"), sizeof(str) -1 );
+    		strncat(str, "/", sizeof(str) - strlen(str) - 1);
+    	}
+    	else if ( getenv ("TMP") != NULL)
+    	{
+    		strncpy(str, getenv("TMP"), sizeof(str) -1 );
+    		strncat(str, "/", sizeof(str) - strlen(str) - 1);
+    	}
+    	strncat(str, "HttpReportXXXXXX", sizeof(str) - strlen(str) - 1);
 
-        char *filename = mktemp(str);
-
-        HttpTranslate trans;
+    	char *filename = mktemp(str);
+#endif
+    	HttpTranslate trans;
         trans.make_answer(h, NULL);
 
         fclose(h->content);
@@ -528,16 +539,47 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         std::string u;
         for ( ui = report.userprefs.begin(); ui != report.userprefs.end(); ++ui)
         {
-            u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
+        	if ( ui->second != "" )
+				u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
         }
         Process p(this->http->getServersocket());
+
         p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);
         p.wait();
 
         if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
         {
-            fseek(h->content, 0, SEEK_END);
-            if ( ( pdfschema != "" && pdftable != "" ) || h->vars["base64"] != "" )
+        	if ( fread(str, 4, 1, h->content) != 1 )
+        	{
+        		msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
+        	}
+        	str[4] = '\0';
+        	if ( strncmp((char*)str, "%PDF", 4) != 0 )
+        	{
+        		msg.perror(E_PDF_HEADER, "Datei ist keine PDF Datei");
+                FILE *fp;
+                char buffer[1024];
+
+                h->content = fopen(h->content_filename.c_str(), "wb+");
+                h->content_type = "text/plain";
+
+                if ( ( fp = fopen(filename, "r")) != NULL )
+                {
+                    while ( fgets(buffer, sizeof(buffer), fp) != NULL )
+                    {
+                        while ( buffer[strlen(buffer) - 1] == '\n' ||
+                                buffer[strlen(buffer) - 1] == '\r' )
+                            buffer[strlen(buffer) - 1] = '\0';
+
+                        if ( *buffer != '\0' )
+                            msg.line("%s", buffer);
+                    }
+                }
+                fclose(fp);
+        	}
+
+        	fseek(h->content, 0, SEEK_END);
+        	if ( ( pdfschema != "" && pdftable != "" ) || h->vars["base64"] != "" )
             {
                 DbTable::ValueMap where;
                 DbTable::ValueMap values;

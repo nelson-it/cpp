@@ -15,7 +15,6 @@ $(SHLIB_PRE)mnebase.$(SHLIB).SOURCES := \
         \
 		$(PROJECT_ROOT)/allg/argument/argument.cpp \
 		$(PROJECT_ROOT)/allg/utils/cslist.cpp \
-		$(PROJECT_ROOT)/allg/utils/gettimeofday.c \
 		$(PROJECT_ROOT)/allg/utils/check_mem.cpp \
         $(PROJECT_ROOT)/allg/utils/process.cpp \
         $(PROJECT_ROOT)/allg/utils/php_exec.cpp \

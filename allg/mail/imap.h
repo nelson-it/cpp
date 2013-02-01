@@ -2,7 +2,7 @@
 #define imap_mne
 
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <string>

@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -24,8 +24,10 @@ DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
     this->analyse = analyse;
     this->act_client = NULL;
     this->trans = new DbTranslate(db);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#else
     this->loc[a["locale"]] = this->stdloc = newlocale(LC_ALL_MASK, ((char *)a["locale"]), NULL);
-
+#endif
     snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
@@ -35,11 +37,16 @@ DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
 
 DbHttp::~DbHttp()
 {
-    std::map<std::string, locale_t>::iterator i;
     delete trans;
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    // nichts tun
+#else
+    std::map<std::string, locale_t>::iterator i;
 
     for ( i = this->loc.begin(); i != this->loc.end(); ++i )
         freelocale(i->second);
+#endif
 }
 
 void DbHttp::init_thread()
@@ -64,9 +71,14 @@ void DbHttp::make_answer()
         HttpProvider *p;
         if ( (p = find_provider(&dbprovider)) != NULL )
         {
-            int result = 1;
-            uselocale(this->stdloc);
-            if ( ((DbHttpProvider *) p)->check_request(this->trans->p_getDb(), act_h) )
+        	int result = 1;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        	Argument a;
+        	setlocale(LC_ALL, (char*)a["locale"]);
+#else
+        	uselocale(this->stdloc);
+#endif
+        	if ( ((DbHttpProvider *) p)->check_request(this->trans->p_getDb(), act_h) )
             {
                 result = ((DbHttpProvider *) p)->request(this->trans->p_getDb(), act_h);
                 if (!result)
@@ -94,7 +106,10 @@ void DbHttp::make_answer()
     {
         int result = 1;
         std::map<std::string, std::string>::iterator i;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#else
         std::map<std::string, locale_t>::iterator l;
+#endif
         std::string lstr;
         HttpProvider *p;
 
@@ -105,6 +120,10 @@ void DbHttp::make_answer()
         msg.setLang(act_client->getUserprefs("language"));
         msg.setRegion(act_client->getUserprefs("region"));
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        lstr = act_client->getUserprefs("mslanguage");
+        setlocale(LC_ALL, lstr.c_str());
+#else
         lstr = act_client->getUserprefs("language") + "_" + act_client->getUserprefs("region") + ".UTF-8";
         if ( ( l = this->loc.find(lstr)) == this->loc.end() )
         {
@@ -112,6 +131,7 @@ void DbHttp::make_answer()
             l = this->loc.find(lstr);
         }
         uselocale(l->second);
+#endif
 
         if (act_h->status == 404 && (p = find_provider(&dbprovider)) != NULL)
         {

@@ -24,8 +24,10 @@ class DbHttp : public Http
     DbTranslate *trans;
     std::string cookieid;
 
+#if !defined (__MINGW32__) && ! defined(__CYGWIN)
     std::map<std::string, locale_t> loc;
     locale_t stdloc;
+#endif
 
     DbHttpAnalyse *analyse;
 

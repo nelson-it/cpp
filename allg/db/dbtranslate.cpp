@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -32,7 +32,11 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
         this->db->p_getConnect("", a["DbTranslateUser"], a["DbTranslatePasswd"]);
         while ( ! this->db->have_connection() )
         {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            Sleep(10000);
+#else
             sleep(10);
+#endif
             this->db->p_getConnect("", a["DbTranslateUser"], a["DbTranslatePasswd"]);
         }
 
