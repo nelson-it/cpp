@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -9,9 +9,12 @@
 #include <iconv.h>
 
 #include <sys/types.h>
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netdb.h>
+#endif
 #include <fcntl.h>
 #include <errno.h>
 
@@ -55,8 +58,14 @@ int Imap::write_cmd(char *cmd, int len, int need_split )
 {
     int  i, count;
     count = 0;
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    while (count < len && (i = ::send(sock, &cmd[count], len - count, 0)) > 0)
+        count += i;
+#else
     while (count < len && (i = write(sock, &cmd[count], len - count)) > 0)
         count += i;
+#endif
 
     if (i < 0)
     {
@@ -87,21 +96,34 @@ void Imap::read_answer(int need_split)
     len = 0;
     while (notready)
     {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        while ((i = ::recv(sock, &response[len], size - len, 0)) > 0)
+            len += i;
+
+        if (i < 0 && errno != EAGAIN && errno != 0 )
+#else
         while ((i = read(sock, &response[len], size - len)) > 0)
             len += i;
 
-        if (i < 0 && errno != EAGAIN)
+        if (i < 0 && errno != EAGAIN )
+#endif
         {
+            perror("IMAP");
             msg.perror(E_READ, "Fehler beim lesen");
             close( sock);
             sock = -1;
             return;
         }
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        else if ( i < 0 && ( errno == EAGAIN || errno == 0 ) )
+#else
         else if ( i < 0 && errno == EAGAIN )
+#endif
         {
             struct timeval tv;
             tv.tv_sec = 0;
-            tv.tv_usec = 20000;
+            tv.tv_usec = 100000;
             select(0,0,0,0,&tv);
         }
 
@@ -190,15 +212,15 @@ std::string Imap::getBracketvalue(std::string s, const char *delimiter)
 void Imap::connect(std::string server, std::string user, std::string passwd)
 {
     char tmp[10240];
-#ifdef Darwin
+#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
     struct hostent *hp;
 #else
     struct hostent hostbuf, *hp;
     int herr;
+    int i;
 #endif
     struct sockaddr_in s_in;
     int port = 143;
-    int i;
 
     if (server == "") return;
 
@@ -220,7 +242,7 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
     }
 
     s_in.sin_family = AF_INET;
-#ifdef Darwin
+#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
     hp = gethostbyname(s[0].c_str());
 #else
     gethostbyname_r(s[0].c_str(), &hostbuf, tmp, sizeof(tmp), &hp, &herr);
@@ -233,21 +255,24 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
         return;
     }
 
-    bcopy(hp->h_addr, &s_in.sin_addr, hp->h_length);
+    memcpy(&s_in.sin_addr, hp->h_addr, hp->h_length);
     s_in.sin_port = htons(port);
 
     if (::connect(sock, (sockaddr*) &s_in, sizeof(struct sockaddr_in)) < 0)
     {
-        msg.perror(E_CONNECT, "kann mich nicht mit Mailserver <%s> verbinden",
-                (s[0] + ":" + s[1]).c_str());
+        msg.perror(E_CONNECT, "kann mich nicht mit Mailserver <%s> verbinden", (s[0] + ":" + s[1]).c_str());
         close( sock);
         sock = -1;
         return;
     }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    unsigned long on = 1;
+    ioctlsocket(sock, FIONBIO, &on);
+#else
     i = fcntl(sock, F_GETFL, 0);
     fcntl(sock, F_SETFL, i | O_NONBLOCK);
-
+#endif
     this->tag = "* ";
     read_answer();
 
@@ -451,8 +476,19 @@ Imap::Headers Imap::getHeader(std::string mbox, time_t t )
     CsList line;
     CsList mails;
     std::string s;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#else
     struct tm tm;
+#endif
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    std::string loc;
+    loc = setlocale(LC_NUMERIC, NULL);
+    setlocale(LC_NUMERIC | LC_TIME , "C");
+    strftime(ts, sizeof(ts), "%d-%b-%Y", gmtime(&t) );
+
+    setlocale(LC_NUMERIC | LC_TIME, loc.c_str());
+#else
     locale_t loc, old_loc;
     loc = newlocale(LC_TIME_MASK | LC_NUMERIC_MASK, "C", NULL);
     old_loc = uselocale(loc);
@@ -461,6 +497,7 @@ Imap::Headers Imap::getHeader(std::string mbox, time_t t )
 
     uselocale(old_loc);
     if ( loc != NULL ) freelocale(loc);
+#endif
 
     snprintf(tmp, sizeof(tmp), ( this->tag + "EXAMINE \"%s\"\r\n").c_str(), mbox.c_str());
     if ( write_cmd(tmp, strlen(tmp)) < 0 ) return h;

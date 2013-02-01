@@ -3,8 +3,6 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
-#include <winsock2.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -16,9 +14,9 @@ struct timezone {
      int tz_dsttime;     /* type of dst correction */
 };
 int gettimeofday(struct timeval *tv, struct timezone *tz);
-#endif /* 0 */
 
 struct tm* localtime_r (const time_t *clock, struct tm *result);
+#endif /* 0 */
 
 #ifdef __cplusplus
 }

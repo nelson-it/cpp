@@ -1,7 +1,7 @@
 #include "fdsize.h"
 
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -416,7 +416,7 @@ void ServerSocket::write(int client, char *buffer, int size)
 
 #ifndef PTHREAD
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         FD_SET((unsigned)client, wr_set);
 #else
         FD_SET(client, wr_set);
@@ -451,7 +451,7 @@ void ServerSocket::write(int client, FILE *fp, int size)
         i->second.write(fp, size);
 #ifndef PTHREAD
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         FD_SET((unsigned)client, wr_set);
 #else
         FD_SET(client, wr_set);
@@ -516,7 +516,7 @@ int ServerSocket::read(int client, char *buffer, int size)
     for ( len = 0; len != size; )
     {
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         FD_SET((unsigned)client, &rd);
         select( client + 1, &rd, (fd_set*)0, (fd_set*)0, NULL);
         l = ::recv(client, &buffer[len], size - len, 0);
@@ -596,7 +596,7 @@ void ServerSocket::close(int client)
             ii->second->disconnect(i->first);
 
         FD_ZERO(rd_set);
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
         FD_SET((unsigned)sock, rd_set);
 #else
         FD_SET(sock, rd_set);
@@ -604,7 +604,7 @@ void ServerSocket::close(int client)
         max_sock = sock;
         for ( i=clients.begin(); i != clients.end(); ++i )
         {
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
             FD_SET((unsigned)i->first, rd_set);
 #else
             FD_SET(i->first, rd_set);
@@ -652,7 +652,7 @@ void ServerSocket::loop()
     FD_ZERO(rd_set);
     FD_ZERO(wr_set);
 
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
     FD_SET((unsigned)sock, rd_set);
 #else
     FD_SET(sock, rd_set);
@@ -745,7 +745,7 @@ void ServerSocket::loop()
             //msg.perror(E_SELECT, "Fehler beim select - wird ignoriert");
             //msg.line("%s", strerror(errno));
             FD_ZERO(rd_set);
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
             FD_SET((unsigned)sock, rd_set);
 #else
             FD_SET(sock, rd_set);
@@ -756,7 +756,7 @@ void ServerSocket::loop()
                 struct stat s;
                 if ( fstat(i->first, &s) == 0 )
                 {
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                     FD_SET((unsigned)i->first, rd_set);
 #else
                     FD_SET(i->first, rd_set);
@@ -784,7 +784,7 @@ void ServerSocket::loop()
                 {
                     msg.pdebug(D_CON, "Client %d need_close: %d",
                             i->first, i->second.need_close);
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                     FD_CLR((unsigned)i->first, wr_set );
 #else
                     FD_CLR(i->first, wr_set );
@@ -803,7 +803,7 @@ void ServerSocket::loop()
             else if ( FD_ISSET(i->first, &rd_ready ) )
             {
                 rsel--;
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                 rval = ::recv( i->first, buffer, sizeof(buffer) - 1, 0);
 #else
                 rval = ::read( i->first, buffer, sizeof(buffer) - 1);
@@ -836,15 +836,19 @@ void ServerSocket::loop()
                 }
                 else
                 {
-                    if ( errno != EINTR )
-                    {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+                	if ( errno != EINTR && errno != 0 )
+#else
+                	if ( errno != EINTR )
+#endif
+                	{
                         msg.perror(E_CLIENT_READ,
                                 "Fehler beim lesen des clients %d",i->first);
                         msg.line("%s", strerror(errno));
                         ::close(i->first);
 #ifdef PTHREAD
 #else
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                         FD_CLR((unsigned)i->first, wr_set );
 #else
                         FD_CLR(i->first, wr_set );
@@ -884,7 +888,7 @@ void ServerSocket::loop()
             }
 
             FD_ZERO(rd_set);
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
             unsigned long cmd;
             cmd = 1;
             ioctlsocket(rval, FIONBIO, &cmd);
@@ -895,7 +899,7 @@ void ServerSocket::loop()
             max_sock = sock;
             for ( i=clients.begin(); i != clients.end(); ++i )
             {
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                 FD_SET((unsigned)i->first, rd_set);
 #else
                 FD_SET(i->first, rd_set);
@@ -923,7 +927,7 @@ void ServerSocket::loop()
             del_clients.clear();
 
             FD_ZERO(rd_set);
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
             FD_SET((unsigned)sock, rd_set);
 #else
             FD_SET(sock, rd_set);
@@ -931,7 +935,7 @@ void ServerSocket::loop()
             max_sock = sock;
             for ( i=clients.begin(); i != clients.end(); ++i )
             {
-#ifdef __MINGW32__
+#if defined(__MINGW32__) || defined(__CYGWIN__)
                 FD_SET((unsigned)i->first, rd_set);
 #else
                 FD_SET(i->first, rd_set);

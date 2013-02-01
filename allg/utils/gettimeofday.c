@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -48,7 +48,6 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 
 return 0;
 }
-#endif
 
 #ifdef PTHREAD
 static pthread_mutex_t time_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -66,5 +65,6 @@ struct tm* localtime_r (const time_t *clock, struct tm *result) {
 #endif
 	return result;
 }
+#endif
 
 #endif

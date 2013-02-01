@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
@@ -9,10 +9,6 @@
 
 #ifdef Darwin
 #include <xlocale.h>
-#endif
-
-#ifdef __MINGW32__
-#include <winsock2.h>
 #endif
 
 #include <unistd.h>
@@ -249,11 +245,18 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
     {
         char f[128];
         if (format != NULL && *format != '\'' && *format != '\0')
-            strcpy(f, format);
+            strncpy(f, format, 128);
         else
-            strcpy(f,"%'f");
+            strncpy(f,"%'f", 128);
+        f[127] = '\0';
 
-        snprintf(tc, sizeof(tc), f, *(double*) value);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( f[1] == '\'')	strcpy(&f[1], &f[2]);
+        sprintf_s(tc, sizeof(tc) - 1, f, *(double*) value);
+#else
+        snprintf(tc, sizeof(tc) - 1, f, *(double*) value);
+#endif
+        tc[sizeof(tc) - 1] = '\0';
         for ( sc = tc; *sc == ' ' && *sc != '\0'; sc++ );
         strncpy(val, sc, l);
         val[l] = '\0';
@@ -367,14 +370,22 @@ std::string DbConnect::getValue(int typ, std::string value)
 
         sscanf(value.c_str(), "%ld", &v);
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        std::string loc = setlocale(LC_NUMERIC, NULL);
+        setlocale(LC_NUMERIC, "C");
+#else
         locale_t loc;
         loc = newlocale(LC_NUMERIC_MASK, "C", NULL);
         loc = uselocale(loc);
-
+#endif
         sprintf(dval, "%20ld", v);
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        setlocale(LC_NUMERIC,loc.c_str());
+#else
         loc = uselocale(loc);
         freelocale(loc);
+#endif
         return dval;
     }
     else if ( typ == DbConnect::DOUBLE || typ == DbConnect::FLOAT )
@@ -392,14 +403,22 @@ std::string DbConnect::getValue(int typ, std::string value)
 
         sscanf(value.c_str(), "%lf", &v);
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        std::string loc = setlocale(LC_NUMERIC, NULL);
+        setlocale(LC_NUMERIC, "C");
+#else
         locale_t loc;
         loc = newlocale(LC_NUMERIC_MASK, "C", NULL);
         loc = uselocale(loc);
-
+#endif
         sprintf(fval, "%40.40f", v);
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+       setlocale(LC_NUMERIC,loc.c_str());
+#else
         loc = uselocale(loc);
         freelocale(loc);
+#endif
         return fval;
     }
     else if (typ == DbConnect::BOOL)

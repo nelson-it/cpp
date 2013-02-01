@@ -6,15 +6,6 @@
 	      
 	      OPT_SHARED :=
            LD_SHARED :=
-           
-
-ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -static-libgcc -D WINDOWS -I$(EXTERN_ROOT)/include/iconv
-              LD_STD := $(LD_STD)  -static-libgcc -lwsock32 -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
-                 CPP := i686-pc-mingw32-g++
-                  CC := i686-pc-mingw32-gcc
-endif
 
 ifeq "$(UNAME)" "Linux"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
@@ -39,8 +30,24 @@ ifeq "$(UNAME)" "Darwin"
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
 endif
 
+ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
+           MKLIBNAME  = $(1).dll
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -I$(EXTERN_ROOT)/include/iconv
+              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100 -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+                 CPP := i686-w64-mingw32-g++
+                  CC := i686-w64-mingw32-gcc
+endif
+
+ifdef $($(TARGET).WITH_SHARED_LIBS) 
+    WITH_SHARED_LIBS := $($(TARGET).WITH_SHARED_LIBS)
+endif
+
 ifeq "$(WITH_SHARED_LIBS)" ""
     WITH_SHARED_LIBS := TRUE
+endif
+
+ifdef $(TARGET).WITH_PTHREADS
+    WITH_PTHREADS := $($(TARGET).WITH_PTHREADS)
 endif
 
 ifeq "$(WITH_PTHREADS)" ""
@@ -48,34 +55,41 @@ ifeq "$(WITH_PTHREADS)" ""
 endif
 
 ifeq "$(INC_STD)" "" 
-             INC_STD =  -I$(PROJECT_ROOT)/allg 
+          INC_STD := -I$(PROJECT_ROOT)/allg 
+endif
+
+ifdef $(TARGET).INC_STD 
+    INC_STD := $($(TARGET).INC_STD)
+endif
+
+ifdef $(TARGET).INC_ADD 
+    INC_ADD := $($(TARGET).INC_ADD)
 endif
 
 ifeq "$(WITH_PTHREADS)" "TRUE" 
+    ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
               LIB_PTH := -lpthread
               INC_PTH := -DPTHREAD -I$(PROJECT_ROOT)/extern/include/pthreads
-
-  ifeq "$(UNAME)" "CYGWIN_NT-5.1"
-              LIB_PTH := -lpthread
-              INC_PTH := -DPTHREAD # -I$(PROJECT_ROOT)/extern/include/pthreads
-  endif
-  
-  ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
-              LIB_PTH := -lpthread #
+    else 
+              LIB_PTH := -lpthread 
               INC_PTH := -DPTHREAD
-  endif
+    endif
+else
+              LIB_PTH := 
+              INC_PTH := 
 endif
 
 ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE" 
-  ifeq "$(UNAME)" "CYGWIN_NT-5.1"
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I$(POSTGRES_ROOT)include
-  else ifeq "$(UNAME)" "Darwin"
+    ifeq "$(UNAME)" "Darwin"
               LIB_PG := -L/Library/PostgreSQL/8.4/lib -lpq.5.2
               INC_PG := -I/Library/PostgreSQL/8.4/include 
-  else
-              LIB_PG := -lpq
-              INC_PG := -I/usr/include/postgresql -I$(PROJECT_ROOT)/extern/include/postgres
+    else ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
+       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
+              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
+              INC_PG := -I$(POSTGRES_ROOT)/include
+    else
+             LIB_PG := -lpq
+             INC_PG := -I/usr/include/postgresql -I$(PROJECT_ROOT)/extern/include/postgres
   endif
 endif
 
@@ -99,14 +113,22 @@ ifneq "$($(TARGET).ISDLL)" "TRUE"
           SHARED_LIB := FALSE
               LD_PRE := 
            LD_OUTPUT := $(TARGET)
+    ifneq "$($(TARGET).LIBS)" ""
              LIB_ADD := $(LIB_ADD)  -L. $(foreach l, $($(TARGET).LIBS), -l$(l))
+    endif
            
 else
           SHARED_LIB := TRUE
           OPT_SHARED := -shared
            LD_SHARED := -shared
            LD_OUTPUT := $(TARGET)
+    ifneq "$($(TARGET).LIBS)" ""
              LIB_ADD := $(LIB_ADD) -L. $(foreach l, $($(TARGET).LIBS), -l$(l))
+    endif
+endif
+
+ifdef $(TARGET).LD_STD
+          LD_STD := $($(TARGET).LD_STD)
 endif
 
            LD_FLAGS := $(LD_STD) $(LD_SHARED)  \

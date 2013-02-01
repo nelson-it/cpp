@@ -7,7 +7,7 @@
 
 #ifdef PTHREAD
 #include <map>
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define PTHREADID pthread_self().p
 #else

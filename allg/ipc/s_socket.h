@@ -1,9 +1,7 @@
 #ifndef s_socket_mne
 #define s_socket_mne
 
-#ifdef __MINGW32__
-#include <winsock2.h>
-#else
+#ifndef __MINGW32__
 #include <netinet/in.h>
 #endif
 
@@ -14,7 +12,7 @@
 #include <message/message.h>
 
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 class SocketProvider;

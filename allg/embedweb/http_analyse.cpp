@@ -1,11 +1,15 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <mbctype.h>
+#endif
 
 #include <utils/cslist.h>
 #include <utils/gettimeofday.h>
@@ -19,6 +23,11 @@
 
 void *HttpAnalyseThread(void *param)
 {
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	    _setmbcp(_MB_CP_ANSI);
+#endif
+
 	Message msg("HttpAnalyseThread", 1);
 
 	HttpAnalyse::HttpAnalyseThreadParam *p;

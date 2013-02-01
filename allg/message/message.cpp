@@ -1,5 +1,5 @@
 #ifdef PTHREAD
-#include <pthreads/pthread.h>
+#include <pthread.h>
 #endif
 
 #include <stdio.h>
@@ -11,11 +11,10 @@
 #include "message.h"
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
-#include <windows.h>
-#include <utils/gettimeofday.h>
 #else
 #include <errno.h>
 #endif
+
 
 #if 1
 #define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);

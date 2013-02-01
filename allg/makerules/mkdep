@@ -15,7 +15,7 @@ do
     shift
 done
 
-echo "# =============  neue Abhdngigkeit ============= " >> $out
+echo "# =============  neue Abhängigkeit ============= " >> $out
 
 for file in $*
 do
