@@ -1,14 +1,17 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/*
 #define _WIN32_WINNT  0x0500
 #define  WINVER       0x0500
+*/
 
 #include <windows.h>
 #include <Lm.h>
 #include <Ntsecapi.h>
 #include <ntdef.h>
 #include <Sddl.h>
+#include <ntstatus.h>
 
 #include "winaddaccess.h"
 #include "winmkservice.h"
@@ -99,7 +102,56 @@ void create_user(const char* name, const char* passwd, const char* kommentar)
     }
 }
 
-void add_user_and_access(const char *name, const char *passwd )
+void modify_user(const char* name, const char* passwd, const char *kommentar)
+{
+    USER_INFO_1003 ui;
+    USER_INFO_1007 uk;
+    DWORD error = 0;
+    NET_API_STATUS result;
+
+    WCHAR w_user[1024], w_password[1024], w_kommentar[1024];
+
+    MultiByteToWideChar(CP_ACP, 0, name, -1, w_user, 1024);
+    MultiByteToWideChar(CP_ACP, 0, passwd, -1, w_password, 1024);
+    MultiByteToWideChar(CP_ACP, 0, kommentar, -1, w_kommentar, 1024);
+
+    ui.usri1003_password = w_password;
+    result = NetUserSetInfo(NULL, w_user, 1003, (LPBYTE) &ui, &error);
+
+    if (result != NERR_Success)
+    {
+        switch (result)
+        {
+        case ERROR_ACCESS_DENIED:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Zugriff verweigert");
+            break;
+        case NERR_InvalidComputer:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Der Rechnername ist unbekannt");
+            break;
+        case NERR_NotPrimary:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Der Rechner ist kein PDC");
+            break;
+        case NERR_GroupExists:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Die Gruppe existiert schon");
+            break;
+        case NERR_UserExists:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Der Benutzer existiert schon");
+            break;
+        case NERR_PasswordTooShort:
+            report_log("modify user", EVENTLOG_ERROR_TYPE, "Das Password wird nicht akzeptiert");
+            break;
+        default:
+            report_log("modify user", EVENTLOG_ERROR_TYPE,  "unbekannter Fehler");
+            break;
+        };
+    }
+
+    uk.usri1007_comment = w_kommentar;
+    NetUserSetInfo(NULL, w_user, 1007, (LPBYTE) &uk, &error);
+
+}
+
+void add_user_and_access(const char *name, const char *passwd, const char *kommentar )
 {
     DWORD refsize = 0;
     DWORD sidsize = 0;
@@ -114,10 +166,13 @@ void add_user_and_access(const char *name, const char *passwd )
 
     LSA_UNICODE_STRING lsa_str;
 
-    if (LookupAccountName(NULL, name, NULL, &sidsize, NULL, &refsize,
-            &peUse) == 0 && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
+    if (LookupAccountName(NULL, name, NULL, &sidsize, NULL, &refsize, &peUse) == 0 && GetLastError() != ERROR_INSUFFICIENT_BUFFER)
     {
-        create_user(name, passwd, "Benutzer zum Anmelden als Service");
+        create_user(name, passwd, kommentar);
+    }
+    else
+    {
+        modify_user(name, passwd, kommentar);
     }
 
     refsize = sidsize = 0;
@@ -171,7 +226,7 @@ int create_service(const char *name, const char *path, int sauto,
     errorfound = 0;
     if ( *user != '\0' )
     {
-        add_user_and_access(user, passwd);
+        add_user_and_access(user, passwd, name);
         add_access(rootdir, user, 1);
     }
 

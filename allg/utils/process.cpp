@@ -132,7 +132,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 	}
 	else
 	{
-		si.hStdOutput  = GetStdHandle(STD_OUTPUT_HANDLE);
+		si.hStdOutput  = GetStdHandle(STD_ERROR_HANDLE);
 		si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
 		have_logfile = 0;
 	}

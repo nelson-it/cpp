@@ -15,6 +15,8 @@
 #include "dbtranslate.h"
 #include "dbhttp_analyse.h"
 
+#include <utils/tostring.h>
+
 class DbHttpProvider;
 
 class DbHttp : public Http

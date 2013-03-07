@@ -169,7 +169,8 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     userprefs["uowncompanyownprefix"] = h->vars["companyownprefix"];
     for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
     {
-        u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
+    	if ( ui->second != "" )
+			u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
     }
 
     typ = h->vars["typ"];
@@ -542,6 +543,8 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         	if ( ui->second != "" )
 				u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
         }
+        fprintf(stderr, "%s\n", u.c_str());
+
         Process p(this->http->getServersocket());
 
         p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);
