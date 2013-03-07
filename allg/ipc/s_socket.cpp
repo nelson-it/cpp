@@ -203,9 +203,12 @@ void ServerSocket::Client::write()
         result = ::send(fd, &buffer[index], length - index, 0);
         if ( result < 0 )
         {
-            s->msg.perror(ServerSocket::E_WRITE,
-                    "Fehler beim Schreiben zum Client %d\n", fd);
+            s->msg.perror(ServerSocket::E_WRITE, "Fehler beim Schreiben zum Client %d", fd);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            s->msg.line("Fehlernummer %d", WSAGetLastError());
+#else
             s->msg.line("%s", strerror(errno));
+#endif
             need_close = 1;
             length = 0;
             index = 0;
@@ -217,8 +220,7 @@ void ServerSocket::Client::write()
 
         if ( index == length )
         {
-            s->msg.pdebug(ServerSocket::D_CON, "daten zu client %d gesendet",
-                    fd);
+            s->msg.pdebug(ServerSocket::D_CON, "daten zu client %d gesendet", fd);
             delete buffer;
             buffer = NULL;
             index = 0;
@@ -837,22 +839,23 @@ void ServerSocket::loop()
                 else
                 {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-                	if ( errno != EINTR && errno != 0 )
+                    int lerror = WSAGetLastError();
+                	if ( ( errno != EINTR && errno != 0 ) || lerror )
 #else
                 	if ( errno != EINTR )
 #endif
                 	{
-                        msg.perror(E_CLIENT_READ,
-                                "Fehler beim lesen des clients %d",i->first);
-                        msg.line("%s", strerror(errno));
-                        ::close(i->first);
-#ifdef PTHREAD
+                        msg.perror(E_CLIENT_READ, "Fehler beim lesen des clients %d",i->first);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+                        msg.line("Fehlernummer %d", WSAGetLastError());
 #else
+                        msg.line("%s", strerror(errno));
+#endif
+                        ::close(i->first);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
                         FD_CLR((unsigned)i->first, wr_set );
 #else
                         FD_CLR(i->first, wr_set );
-#endif
 #endif
                         del_clients.push_back(i->first);
                     }

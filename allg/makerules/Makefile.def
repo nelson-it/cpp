@@ -7,6 +7,11 @@
 	      OPT_SHARED :=
            LD_SHARED :=
 
+ifeq "$(NODEBUG)" "TRUE" 
+              OPT_STD := -O
+     WITH_SHARED_LIBS := TRUE
+endif
+
 ifeq "$(UNAME)" "Linux"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
@@ -25,15 +30,15 @@ ifeq "$(UNAME)" "Darwin"
 	 OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc
-             LD_STD := $(LD_STD) -L /usr/lib -liconv
+             LD_STD := $(LD_STD)
           LD_SHARED := -shared -Wl,-soname,lib$(TARGET).so.$($(TARGET).LIBMAJOR)        
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
 endif
 
 ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
            MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -I$(EXTERN_ROOT)/include/iconv
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100 -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API
+              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
                  CPP := i686-w64-mingw32-g++
                   CC := i686-w64-mingw32-gcc
 endif
@@ -54,12 +59,16 @@ ifeq "$(WITH_PTHREADS)" ""
     WITH_PTHREADS := TRUE
 endif
 
-ifeq "$(INC_STD)" "" 
-          INC_STD := -I$(PROJECT_ROOT)/allg 
+ifdef $(TARGET).WITH_ICONV
+    WITH_ICONV := $($(TARGET).WITH_ICONV)
 endif
 
-ifdef $(TARGET).INC_STD 
-    INC_STD := $($(TARGET).INC_STD)
+ifeq "$(WITH_ICONV)" ""
+    WITH_ICONV := TRUE
+endif
+
+ifeq "$(INC_STD)" "" 
+          INC_STD := -I$(PROJECT_ROOT)/allg 
 endif
 
 ifdef $(TARGET).INC_ADD 
@@ -67,13 +76,8 @@ ifdef $(TARGET).INC_ADD
 endif
 
 ifeq "$(WITH_PTHREADS)" "TRUE" 
-    ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
-              LIB_PTH := -lpthread
-              INC_PTH := -DPTHREAD -I$(PROJECT_ROOT)/extern/include/pthreads
-    else 
               LIB_PTH := -lpthread 
               INC_PTH := -DPTHREAD
-    endif
 else
               LIB_PTH := 
               INC_PTH := 
@@ -97,9 +101,15 @@ ifeq "$($(TARGET).WITH_GD)" "TRUE"
               LIB_GD := -lgd -lpng -lz -ljpeg -lm
 endif
 
-ifeq "$(NODEBUG)" "TRUE" 
-              OPT_STD := -O
-     WITH_SHARED_LIBS := TRUE
+ifeq "$(WITH_ICONV)" "TRUE"
+	ifeq "$(UNAME)" "Darwin"
+             LD_STD := $(LD_STD) -L /usr/lib -liconv
+	endif
+
+	ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
+             OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
+              LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+	endif
 endif
 
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
@@ -125,10 +135,6 @@ else
     ifneq "$($(TARGET).LIBS)" ""
              LIB_ADD := $(LIB_ADD) -L. $(foreach l, $($(TARGET).LIBS), -l$(l))
     endif
-endif
-
-ifdef $(TARGET).LD_STD
-          LD_STD := $($(TARGET).LD_STD)
 endif
 
            LD_FLAGS := $(LD_STD) $(LD_SHARED)  \
