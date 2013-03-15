@@ -703,7 +703,7 @@ std::string Message::getSystemerror(int errornumber )
     outnum = ( innum - 1);
 
     iv = iconv_open("utf-8", "iso-8859-1");
-    iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+    iconv_value = iconv (iv, (const char **)(&ci), &innum, &co, &outnum);
     iconv_close(iv);
     *co = '\0';
 
