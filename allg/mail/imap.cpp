@@ -270,6 +270,7 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
     unsigned long on = 1;
     ioctlsocket(sock, FIONBIO, &on);
 #else
+    int i;
     i = fcntl(sock, F_GETFL, 0);
     fcntl(sock, F_SETFL, i | O_NONBLOCK);
 #endif
