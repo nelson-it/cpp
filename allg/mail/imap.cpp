@@ -217,7 +217,6 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
 #else
     struct hostent hostbuf, *hp;
     int herr;
-    int i;
 #endif
     struct sockaddr_in s_in;
     int port = 143;
