@@ -5,8 +5,6 @@
 %.o: %.c
 	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $*.c -o $@
 
-              SHARED_FLAGS := --enable-auto-import
-
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
 ifneq "$($(TARGET).ISDLL)" "TRUE"
 $(LD_OUTPUT): $(OBJECTS)

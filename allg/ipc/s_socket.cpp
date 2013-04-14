@@ -13,7 +13,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
-#ifdef Darwin
+#if defined (Darwin) || defined(LINUX)
 #include <sys/stat.h>
 #endif
 
@@ -647,7 +647,7 @@ void ServerSocket::loop()
     wr_set = &wr_set_local;
 
     char buffer[10240];
-    int rval,rsel,have_disconnect;
+    int rval,rsel;
 
     listen(sock, 5);
 
@@ -775,7 +775,6 @@ void ServerSocket::loop()
             continue;
         }
 
-        have_disconnect = 0;
         for ( i = clients.begin(); rsel > 0 && i != clients.end() ; ++i )
         {
             if ( FD_ISSET(i->first, &wr_ready ) )
