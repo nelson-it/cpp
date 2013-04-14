@@ -6,6 +6,8 @@
 	      
 	      OPT_SHARED :=
            LD_SHARED :=
+           
+           
 
 ifeq "$(NODEBUG)" "TRUE" 
               OPT_STD := -O
@@ -45,6 +47,7 @@ ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
               LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
                  CPP := i686-w64-mingw32-g++
                   CC := i686-w64-mingw32-gcc
+        SHARED_FLAGS := --enable-auto-import
 endif
 
 ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
@@ -53,6 +56,7 @@ ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
               LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
                  CPP := i686-w64-mingw32-g++
                   CC := i686-w64-mingw32-gcc
+        SHARED_FLAGS := --enable-auto-import
 endif
 
 ifdef $($(TARGET).WITH_SHARED_LIBS) 

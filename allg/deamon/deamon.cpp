@@ -13,7 +13,7 @@
 #include <signal.h>
 #include <unistd.h>
 
-#ifdef Darwin
+#if defined (Darwin) || defined(LINUX)
 #include <sys/stat.h>
 #endif
 

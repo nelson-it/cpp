@@ -105,7 +105,6 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      iconv_t iv;
      char *inbuf, *outbuf, *ci, *co;
      size_t innum,outnum;
-     size_t iconv_value;
 
      fseek( h->content, 0, SEEK_END);
      innum = ftell(h->content);
@@ -125,7 +124,7 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      outnum = ( innum * 4 - 1);
 
      iv = iconv_open("iso-8859-1", "utf-8");
-     iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+     iconv (iv, &ci, &innum, &co, &outnum);
      iconv_close(iv);
 
      *co = '\0';

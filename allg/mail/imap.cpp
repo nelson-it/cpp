@@ -378,7 +378,6 @@ std::string Imap::mk_utf8(std::string str)
     iconv_t iv;
     char *inbuf, *outbuf, *ci, *co;
     size_t innum,outnum;
-    size_t iconv_value;
     int coded = 0;
     int base64 = 0;
     while ( 1 )
@@ -404,7 +403,7 @@ std::string Imap::mk_utf8(std::string str)
                 outnum = ( str.size() * 4 - 1);
 
                 iv = iconv_open("utf-8", "iso-8859-1");
-                iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+                iconv (iv, &ci, &innum, &co, &outnum);
                 iconv_close(iv);
 
                 *co = '\0';
@@ -453,7 +452,7 @@ std::string Imap::mk_utf8(std::string str)
         iv = iconv_open("utf-8", conv.c_str());
         if ( iv != (iconv_t) -1 )
         {
-            iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+            iconv (iv, &ci, &innum, &co, &outnum);
             iconv_close(iv);
             *co = '\0';
             str.insert(i, outbuf);
