@@ -25,7 +25,8 @@ class DbHttpUtilsQuery : public DbHttpProvider
 
     enum WARNING_TYPES
     {
-      W_OLD = 1
+      W_OLD = 1,
+      W_CONV
     };
 
     void mk_export(HttpHeader *h);

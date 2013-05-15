@@ -578,7 +578,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                             msg.line("%s", buffer);
                     }
                 }
-                fclose(fp);
+                if ( fp != NULL ) fclose(fp);
         	}
 
         	fseek(h->content, 0, SEEK_END);
@@ -668,7 +668,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                         msg.line("%s", buffer);
                 }
             }
-            fclose(fp);
+            if ( fp != NULL ) fclose(fp);
         }
 
         unlink(filename);

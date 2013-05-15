@@ -12,7 +12,13 @@ class HttpUtils : public HttpProvider
 {
     enum ErrorType
     {
-        E_GDSTRING = 1
+        E_GDSTRING = 1,
+        E_ICONV,
+
+        E_OPEN,
+        E_HOST,
+        E_CONNECT,
+        E_SEND
     };
 
     enum WarningType
@@ -29,12 +35,15 @@ class HttpUtils : public HttpProvider
     std::string font;
 
     void mk_window(HttpHeader *h, char *str);
+
     void count       ( HttpHeader *h);
     void uhr         ( HttpHeader *h);
     void time        ( HttpHeader *h);
     void logout      ( HttpHeader *h);
     void file        ( HttpHeader *h);
-    void locale_xml  ( HttpHeader *h);
+    void locale      ( HttpHeader *h);
+    void proxy       ( HttpHeader *h);
+
 public:
     HttpUtils( Http *h );
     virtual ~HttpUtils();

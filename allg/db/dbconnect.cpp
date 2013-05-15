@@ -233,7 +233,12 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
     case SHORT:
     case LONG:
         if (format != NULL && *format == 't')
-            snprintf(val, l, "%s", ctime((long*) value));
+        {
+            char buf[32];
+            bzero(buf,sizeof(buf));
+            ctime_r((long*) value, buf);
+            snprintf(val, l, "%s", buf);
+        }
         else if (format != NULL && *format != '\0' )
             snprintf(val, l, format, *(long*) value);
         else
