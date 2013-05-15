@@ -65,7 +65,8 @@ public:
     int         needed_postdata;
 
     void       *user_data;
-    // Vom Provider auszuf|llen
+
+    // Vom Provider auszufüllen
     // ========================
     int status;
     int setstatus;

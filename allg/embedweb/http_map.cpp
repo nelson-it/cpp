@@ -56,9 +56,6 @@ std::string HttpMap::mkfilename(HttpHeader *h, std::string request)
     {
 	if ( ( n = request.find_last_of('/') ) != std::string::npos )
 	{
-	    if ( n == 0 )
-		filename = request.substr(1);
-	    else
 		filename = request.substr(n + 1);
 
 	    if ( filename == "" )

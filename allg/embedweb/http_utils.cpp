@@ -8,6 +8,15 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <iconv.h>
+#include <errno.h>
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#else
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#endif
 
 #include <argument/argument.h>
 #include <utils/tostring.h>
@@ -24,7 +33,8 @@ HttpUtils::HttpUtils(Http *h) :
         subprovider["logout.xml"] = &HttpUtils::logout;
         subprovider["file.html"] = &HttpUtils::file;
         subprovider["file.txt"] = &HttpUtils::file;
-        subprovider["locale.xml"] = &HttpUtils::locale_xml;
+        subprovider["locale.xml"] = &HttpUtils::locale;
+        subprovider["proxy.txt"] = &HttpUtils::proxy;
 
 		h->add_provider(this);
 }
@@ -120,6 +130,10 @@ void HttpUtils::logout(HttpHeader *h)
 void HttpUtils::file(HttpHeader *h)
 {
     std::string endtag;
+    iconv_t iv;
+    char *inbuf, *outbuf, *ci, *co;
+    size_t innum,outnum;
+    std::string str;
 
     h->status = 200;
     if ( h->filename == "file.html")
@@ -129,6 +143,29 @@ void HttpUtils::file(HttpHeader *h)
     else
     {
         h->content_type = "text/plain";
+    }
+
+    str = h->vars["data"];
+    if ( str.substr(0,10) == "##########" )
+        str = h->vars.data("data", 1).c_str();
+
+    if ( h->vars["iconv"] != "" )
+    {
+        ci = inbuf = (char *)str.c_str();
+        innum = str.length();
+
+        co = outbuf = new char[str.size() * 4];
+        outnum = ( str.size() * 4 - 1);
+
+        if ( ( iv = iconv_open("utf-8", h->vars["iconv"].c_str()) ) >= 0 )
+        {
+            iconv (iv, &ci, &innum, &co, &outnum);
+            iconv_close(iv);
+
+            *co = '\0';
+            str = outbuf;
+            delete[] outbuf;
+        }
     }
 
     if ( h->vars["script"] != "" )
@@ -142,16 +179,16 @@ void HttpUtils::file(HttpHeader *h)
         {
             h->content_type = "text/html";
             if ( h->vars["data"].substr(0,10) == "##########" )
-                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", h->vars.data("data", 1).c_str());
+                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", str.c_str());
             else
-                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(h->vars["data"].c_str()).c_str());
+                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(str.c_str()).c_str());
             return;
         }
     }
     fprintf(h->content,"%s%s",h->vars["data"].c_str(), endtag.c_str());
 }
 
-void HttpUtils::locale_xml(HttpHeader *h)
+void HttpUtils::locale(HttpHeader *h)
 {
     h->status = 200;
     h->content_type = "text/xml";
@@ -162,5 +199,74 @@ void HttpUtils::locale_xml(HttpHeader *h)
     fprintf(h->content,"<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d></head><body>",h->charset.c_str());
     fprintf(h->content, "<r><v>%s</v><v>%s</v></r></body>",l->decimal_point, l->thousands_sep);
 
+    return;
+}
+
+void HttpUtils::proxy(HttpHeader *h)
+{
+    char tmp[10240];
+#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
+    struct hostent *hp;
+#else
+    struct hostent hostbuf, *hp;
+    int herr;
+#endif
+    struct sockaddr_in s_in;
+    int port = 80;
+    int sock;
+    std::string request;
+
+    h->content_type = "text/plain";
+
+    if (h->vars["port"] != "" ) port = atoi(h->vars["port"].c_str());
+
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock < 0)
+    {
+        msg.perror(E_OPEN, "Konnte Socket nicht öffnen");
+        return;
+    }
+
+#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
+    hp = gethostbyname(h->vars["host"].c_str());
+#else
+    gethostbyname_r(h->vars["host"].c_str(), &hostbuf, tmp, sizeof(tmp), &hp, &herr);
+#endif
+    if (hp == NULL)
+    {
+        msg.perror(E_HOST, "Unbekannter Server <%s>", h->vars["host"].c_str());
+        close( sock);
+        sock = -1;
+        return;
+    }
+
+    bzero((char*) &s_in, sizeof(s_in));
+    memcpy(&s_in.sin_addr, hp->h_addr, hp->h_length);
+    s_in.sin_family = AF_INET;
+    s_in.sin_port = htons(port);
+
+    if (::connect(sock, (sockaddr*) &s_in, sizeof(struct sockaddr_in)) < 0)
+    {
+        msg.perror(E_CONNECT, "kann mich nicht mit server <%s:%d> verbinden", h->vars["host"].c_str(), port);
+        close( sock);
+        sock = -1;
+        return;
+    }
+
+    h->status = 200;
+
+    request  = "GET " + h->vars["get"] + " HTTP/1.1\r\n";
+    request += "Host: " + h->vars["host"] + "\r\n";
+    request += "User-Agent: " + h->user_agent + "\r\n";
+    request += "Accept: */*\r\n";
+    request += "\r\n";
+
+    send(sock, request.c_str(), request.length(), 0);
+
+    int l;
+    while( ( l = recv(sock, tmp, sizeof(tmp), 0)) > 0 )
+        fwrite(tmp, l, 1, h->content);
+
+    close(sock);
     return;
 }
