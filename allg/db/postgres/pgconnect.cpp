@@ -229,9 +229,9 @@ void PgConnect::close_connection()
 {
     if (con != NULL)
     {
-    	PQfinish(con);
+        PQfinish(con);
         msg.pdebug(D_CONCOUNT, "Verbindung endgültig gelöscht");
-    	connections.erase(con);
+        connections.erase(con);
     }
 
     con = NULL;
@@ -419,7 +419,7 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
     }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-   setlocale(LC_NUMERIC, loc.c_str());
+    setlocale(LC_NUMERIC, loc.c_str());
 #else
     loc = uselocale(loc);
     freelocale(loc);
@@ -433,51 +433,62 @@ char *PgConnect::mk_error(PGresult *res)
 
     if (errstr == NULL)
     {
-    	if ( res != NULL )
-    	{
-    		std::string status = PQresultErrorField(res, PG_DIAG_SQLSTATE);
-    		if ( status == "23505" || status == "23514" || status == "23503" )
-    		{
-    			DbConstraintError err;
+        if ( res != NULL )
+        {
+            std::string status = PQresultErrorField(res, PG_DIAG_SQLSTATE);
+            if ( status == "23505" || status == "23514" || status == "23503" )
+            {
+                DbConstraintError err;
 
-    			std::string::size_type i,j;
-    			std::string s;
-    			std::string f;
-    			std::string str = PQresultErrorField(res, PG_DIAG_MESSAGE_PRIMARY);
+                std::string::size_type i,j;
+                std::string s;
+                std::string f;
+                std::string str = PQresultErrorField(res, PG_DIAG_MESSAGE_PRIMARY);
 
-    			for ( j=0,i=0; i != std::string::npos && j != std::string::npos; )
-    			    {
-    			    i = str.find("»", j);
-    			    j = str.find("«", i);
-    			    f = str.substr(i+2, j - i - 2);
-    			    fprintf(stderr, "%s\n", f.c_str());
-    			    if ( ( s = err.get(msg.getLang(), f)) != "" ) break;
-    			    }
+                for ( j=0,i=0; i != std::string::npos && j != std::string::npos; )
+                {
+                    i = str.find("»", j);
+                    j = str.find("«", i);
+                    f = str.substr(i+2, j - i - 2);
+                    if ( ( s = err.get(msg.getLang(), f)) != "" ) break;
+                }
 
-    			if ( s == "" )
-    			{
-    				p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
-    				errresult = new char[strlen(PQerrorMessage(con)) + 1];
-    				strcpy(errstr, PQerrorMessage(con));
-    			}
-    			else
-    			{
-    				unsigned int size = strlen(s.c_str()) + 1;
-    				p_errstr = errstr = new char[size];
-    				errresult = new char[size];
-    				strcpy(errstr, s.c_str());
-    			}
-    		}
-    		else
-    		{
-    			p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
-    			errresult = new char[strlen(PQerrorMessage(con)) + 1];
-    			strcpy(errstr, PQerrorMessage(con));
-    		}
-    	}
-    	else
-    	{
-    		p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
+                if ( s == "" )
+                {
+                    for ( j=0,i=0; i != std::string::npos && j != std::string::npos; )
+                    {
+                        i = str.find("\"", j);
+                        j = str.find("\"", i + 1);
+                        f = str.substr(i+1, j - i - 1);
+                        if ( ( s = err.get(msg.getLang(), f)) != "" ) break;
+                        j++;
+                    }
+                }
+
+                if ( s == "" )
+                {
+                    p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
+                    errresult = new char[strlen(PQerrorMessage(con)) + 1];
+                    strcpy(errstr, PQerrorMessage(con));
+                }
+                else
+                {
+                    unsigned int size = strlen(s.c_str()) + 1;
+                    p_errstr = errstr = new char[size];
+                    errresult = new char[size];
+                    strcpy(errstr, s.c_str());
+                }
+            }
+            else
+            {
+                p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
+                errresult = new char[strlen(PQerrorMessage(con)) + 1];
+                strcpy(errstr, PQerrorMessage(con));
+            }
+        }
+        else
+        {
+            p_errstr = errstr = new char[strlen(PQerrorMessage(con)) + 1];
             errresult = new char[strlen(PQerrorMessage(con)) + 1];
             strcpy(errstr, PQerrorMessage(con));
         }
@@ -641,9 +652,9 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     if ( connections[con].in_transaction == "" )
     {
         PQexec(con, "BEGIN");
-        #ifdef PTHREAD
-            pthread_mutex_lock(&connections[con].mutex);
-        #endif
+#ifdef PTHREAD
+        pthread_mutex_lock(&connections[con].mutex);
+#endif
     }
 
     connections[con].in_transaction = connections[con].in_transaction + stm + "\n";
@@ -832,7 +843,7 @@ int PgConnect::int2ext_pgtype(int pgtype)
     case INT2OID:
         return DbConnect::SHORT;
     case OIDOID:
-    //case INF_SQL_CARDINAL:
+        //case INF_SQL_CARDINAL:
         return DbConnect::LONG;
     case INT8OID:
     case INT4OID:
@@ -870,19 +881,19 @@ int PgConnect::int2ext_pgtype(int pgtype)
     case NUMERICOID:
         return DbConnect::DOUBLE;
     case XIDOID:
-    //case INF_SQL_IDENTIFIER:
-    //case INF_CHARACTER:
+        //case INF_SQL_IDENTIFIER:
+        //case INF_CHARACTER:
         return DbConnect::CHAR;
-    //case CHARACTER_DATA:
+        //case CHARACTER_DATA:
     default:
-        {
-            std::map<long,long>::iterator i;
-            if ( ( i = pgbasetypes.find(pgtype) ) != pgbasetypes.end() )
-                return int2ext_pgtype(i->second);
+    {
+        std::map<long,long>::iterator i;
+        if ( ( i = pgbasetypes.find(pgtype) ) != pgbasetypes.end() )
+            return int2ext_pgtype(i->second);
 
-            msg.pdebug(0, "Postgres Type <%d> ist nicht bekannt", pgtype);
-            return -pgtype;
-        }
+        msg.pdebug(0, "Postgres Type <%d> ist nicht bekannt", pgtype);
+        return -pgtype;
+    }
     }
 }
 
