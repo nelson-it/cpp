@@ -235,7 +235,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
         if (format != NULL && *format == 't')
         {
             char buf[32];
-            bzero(buf,sizeof(buf));
+            memset(buf, 0, sizeof(buf));
             ctime_r((long*) value, buf);
             snprintf(val, l, "%s", buf);
         }

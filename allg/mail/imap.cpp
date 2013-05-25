@@ -253,7 +253,7 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
         return;
     }
 
-    bzero((char*) &s_in, sizeof(s_in));
+    memset((char*) &s_in, 0, sizeof(s_in));
     memcpy(&s_in.sin_addr, hp->h_addr, hp->h_length);
     s_in.sin_family = AF_INET;
     s_in.sin_port = htons(port);

@@ -70,7 +70,7 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
         if ( localtime_r(&t,&tm) == NULL )
         {
             msg.pwarning(W_CONV, "Konnte <%d> nicht in einen Zeitstruktur wandeln");
-            bzero(&tm,sizeof(tm));
+            memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), dateformat.c_str(),&tm);
         fprintf(h->content, "%s%s", sep.c_str(), str);
@@ -84,7 +84,7 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
         if ( localtime_r(&t,&tm) == NULL )
         {
             msg.pwarning(W_CONV, "Konnte <%d> nicht in einen Zeitstruktur wandeln");
-            bzero(&tm,sizeof(tm));
+            memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), "%H:%M",&tm);
         fprintf(h->content, "%s%s", sep.c_str(), str);
@@ -98,7 +98,7 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
         if ( localtime_r(&t,&tm) == NULL )
         {
             msg.pwarning(W_CONV, "Konnte <%d> nicht in einen Zeitstruktur wandeln");
-            bzero(&tm,sizeof(tm));
+            memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), (dateformat + " %H:%M").c_str(),&tm);
         fprintf(h->content, "%s%s", sep.c_str(), str);
