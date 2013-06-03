@@ -105,21 +105,21 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
 
     Imap::Headers headers;
     std::map<std::string, long> folders;
-    std::vector<std::string> addresses;
+    std::vector<std::string> addresses,raddresses;
     std::vector<std::string> refnames;
     std::vector<std::string> refids;
     std::map<std::string, Mailbox> mailboxes;
 
     unsigned long refid,emailid;
     DbConnect::ResultMat emails;
-    std::string a,e;
+    std::string a,e,re,r;
     DbConnect::ResultMat *rm;
 
     Imap::Headers::iterator i;
     Imap::Header::iterator ii;
     std::map<std::string, long>::iterator jf;
     std::map<std::string, Mailbox>::iterator mi;
-   unsigned int j,k;
+   unsigned int j,k,l,m;
    int ignore_message;
 
 #ifdef PTHREAD
@@ -215,64 +215,64 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                 this->headers.insert(Imap::Headers::value_type(i->first,i->second));
 
                 addresses.clear();
-                if ( ! jf->second )
+                raddresses.clear();
+                a = imap.getAddress(imap.getHeaderElement(&(i->second),"FROM"));
+                std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
+                ( ! jf->second ) ? addresses.push_back(a) : raddresses.push_back(a);
+                CsList cl(imap.getHeaderElement(&(i->second),"TO"));
+                for ( k = 0; k < cl.size(); k++ )
                 {
-                    a = imap.getAddress(imap.getHeaderElement(&(i->second),"FROM"));
+                    a = imap.getAddress(cl[k]);
                     std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
-                    addresses.push_back(a);
-                }
-                else
-                {
-                    msg.pdebug(1, "To %s",imap.getHeaderElement(&(i->second),"TO").c_str());
-                    msg.pdebug(1, "CC %s", imap.getHeaderElement(&(i->second),"CC").c_str());
-                    msg.pdebug(1, "BCC %s", imap.getHeaderElement(&(i->second),"BCC").c_str());
-                    CsList cl(imap.getHeaderElement(&(i->second),"TO"));
-                    for ( k = 0; k < cl.size(); k++ )
-                    {
-                        a = imap.getAddress(cl[k]);
-                        std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
-                        addresses.push_back(a);
-                    }
-
-                    cl.setString(imap.getHeaderElement(&(i->second),"CC"));
-                    for ( k = 0; k < cl.size(); k++ )
-                    {
-                        a = imap.getAddress(cl[k]);
-                        std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
-                        addresses.push_back(a);
-                    }
-
-                    cl.setString(imap.getHeaderElement(&(i->second),"BCC"));
-                    for ( k = 0; k < cl.size(); k++ )
-                    {
-                        a = imap.getAddress(cl[k]);
-                        std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
-                        addresses.push_back(a);
-                    }
+                    ( jf->second ) ? addresses.push_back(a) : raddresses.push_back(a);
                 }
 
-                ignore_message = 0;
-                for ( j = 0; ignore_message == 0 && j < addresses.size(); j++ )
+                cl.setString(imap.getHeaderElement(&(i->second),"CC"));
+                for ( k = 0; k < cl.size(); k++ )
                 {
-                    for ( k = 0; ignore_message == 0 && k < emails.size(); ++k )
-                     {
+                    a = imap.getAddress(cl[k]);
+                    std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
+                    ( jf->second ) ? addresses.push_back(a) : raddresses.push_back(a);
+                }
 
-                         e = (char *)emails[k][emailid];
-                         std::transform(e.begin(), e.end(), e.begin(), (int(*)(int)) tolower);
-                         if ( e.substr(0,1) == "-" && addresses[j] == e.substr(1) )
-                             ignore_message = 1;
-                     }
+                cl.setString(imap.getHeaderElement(&(i->second),"BCC"));
+                for ( k = 0; k < cl.size(); k++ )
+                {
+                    a = imap.getAddress(cl[k]);
+                    std::transform(a.begin(), a.end(), a.begin(), (int(*)(int)) tolower);
+                    ( jf->second ) ? addresses.push_back(a) : raddresses.push_back(a);
                 }
 
                 for ( j = 0; ignore_message == 0 && j < addresses.size(); j++ )
                 {
                     msg.pdebug(1, "check %s", addresses[j].c_str());
+
                     for ( k = 0; k < emails.size(); ++k )
                     {
                         e = (char *)emails[k][emailid];
                         std::transform(e.begin(), e.end(), e.begin(), (int(*)(int)) tolower);
                         if ( addresses[j] == e )
                         {
+                            r = (char *)emails[k][refid];
+                            ignore_message = 0;
+                            for ( l = 0; ignore_message == 0 && l < emails.size(); ++l )
+                            {
+                                if ( r == (char *)emails[l][refid])
+                                {
+                                    re = (char *)emails[l][emailid];
+                                    std::transform(re.begin(), re.end(), re.begin(), (int(*)(int)) tolower);
+                                    for ( m = 0; m < raddresses.size(); ++m )
+                                    {
+                                        if ( re.substr(0,1) == "-" && raddresses[m] == re.substr(1) )
+                                        {
+                                            ignore_message = 1;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ( ignore_message ) continue;
+
                             where.clear();
                             where["uid"] = uid;
                             rm = tab->select(&where, &where);
