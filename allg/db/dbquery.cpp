@@ -294,7 +294,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
     DbCursor *ccur, *tcur = NULL, *wcur = NULL;
     DbTable *tab = NULL;
     std::string stm;
-    DbConnect::ResultVec r, *pr, empty;
+    DbConnect::ResultVec r;
     int deepid;
     std::string lang;
     std::vector<std::string> tabs;
@@ -460,8 +460,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
     dbadmin->release(cjoin);
     wcur->open((char*) stm.c_str());
 
-    if ((pr = tcur->p_next()) != NULL) r = *pr;
-    else r = empty;
+    r = tcur->next();
 
     old_unionnum = -1;
     count_unionnum = -1;
@@ -532,14 +531,16 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
             }
         }
 
-        if ((pr = tcur->p_next()) != NULL) r = *pr;
-        else r = empty;
+        r.clear();
+        r = tcur->next();
         if (tcur->eof())
         {
             joins.push_back(act_join);
             unionnum2count[old_unionnum] = joins.size() - 1;
         }
     }
+
+    r.clear();
 
     std::vector<std::string> act_sel_field;
     std::vector<std::string> act_groupby;
@@ -549,8 +550,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
     int unionnumid;
     long sel_poscount;
 
-    if ((pr = ccur->p_next()) != NULL) r = *pr;
-    else r = empty;
+    r = ccur->next();
     old_unionnum = -1;
     count_unionnum = -1;
     first = 1;
@@ -776,8 +776,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
         }
         n++;
 
-        if ((pr = ccur->p_next()) != NULL) r = *pr;
-        else r = empty;
+        r.clear();
+        r = ccur->next();
         if (ccur->eof())
         {
             if ( sel_fields.size() > 0 && sel_field[0].size() != act_sel_field.size() )
@@ -802,8 +802,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
         }
     }
 
-    if ((pr = wcur->p_next()) != NULL) r = *pr;
-    else r = empty;
+    r.clear();
+    r = wcur->next();
     count_unionnum = -1;
     old_unionnum = -1;
     while (!wcur->eof())
@@ -912,8 +912,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
 
         }
 
-        if ((pr = wcur->p_next()) != NULL) r = *pr;
-        else r = empty;
+        r.clear();
+        r = wcur->next();
         if (wcur->eof() || (long) r[9] != old_unionnum ) boolop = "";
 
         if ( v1 == "" && t1 == "" && v2 == "" && t2 == "" )
@@ -921,6 +921,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
 
         act_join->add_where( notop, lb, t1, v1, op, t2, v2, rb, boolop);
     }
+
+    r.clear();
 
     tcur->close();
     ccur->close();
