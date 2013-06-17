@@ -103,7 +103,7 @@ public:
     ~HttpHeader()
     {
         if ( content != NULL )   fclose(content);
-        if ( post_data != NULL ) delete post_data;
+        if ( post_data != NULL ) delete[] post_data;
         if ( user_data != NULL ) delete (char *)user_data;
     }
 

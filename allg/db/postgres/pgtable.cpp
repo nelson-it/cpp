@@ -239,7 +239,7 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 	ResultMat::iterator r;
 	ColumnMapAll::iterator a;
 	Column c;
-	int error_found;
+	int error_found = 0;
 
 	if ((this->name != "" && this->name != name) || (this->schema != ""
 			&& this->schema != schema))

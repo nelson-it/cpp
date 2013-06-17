@@ -134,7 +134,7 @@ ServerSocket::Client &ServerSocket::Client::operator=( const Client &in)
 
 ServerSocket::Client::~Client()
 {
-    if ( buffer != NULL ) delete buffer;
+    if ( buffer != NULL ) delete[] buffer;
 }
 
 void ServerSocket::Client::write(char *b, int l)
@@ -147,7 +147,7 @@ void ServerSocket::Client::write(char *b, int l)
         memcpy(tmp, &buffer[index], length - index);
         memcpy(&tmp[length - index], b, l);
 
-        delete buffer;
+        delete[] buffer;
 
         buffer = tmp;
         length = length - index + l;
@@ -176,7 +176,7 @@ void ServerSocket::Client::write(FILE *f, int l)
         memcpy(tmp, &buffer[index], length - index);
         fread(&tmp[length - index], l, 1, f);
 
-        delete buffer;
+        delete[] buffer;
 
         buffer = tmp;
         length = length - index + l;
@@ -221,7 +221,7 @@ void ServerSocket::Client::write()
         if ( index == length )
         {
             s->msg.pdebug(ServerSocket::D_CON, "daten zu client %d gesendet", fd);
-            delete buffer;
+            delete[] buffer;
             buffer = NULL;
             index = 0;
             length = 0;

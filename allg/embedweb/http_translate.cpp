@@ -137,7 +137,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 
 	fwrite(old_c, ( buffer + size ) - old_c, 1, act_h->content);
 
-	delete buffer;
+	delete[] buffer;
 	return;
 
 }
