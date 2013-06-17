@@ -125,7 +125,7 @@ void PgConnect::open_connection(char *dbname, char *user, char *passwd)
 
     if (*host == '\0')
     {
-        delete host;
+        delete[] host;
         host = NULL;
     }
 
@@ -137,7 +137,7 @@ void PgConnect::open_connection(char *dbname, char *user, char *passwd)
 
     if (*port == '\0')
     {
-        delete port;
+        delete[] port;
         port = NULL;
     }
 
@@ -190,10 +190,10 @@ void PgConnect::open_connection(char *dbname, char *user, char *passwd)
     }
 
     if (port != NULL)
-        delete port;
+        delete[] port;
     if (host != NULL)
-        delete host;
-    delete db;
+        delete[] host;
+    delete[] db;
 
     if (con != NULL)
     {
@@ -303,7 +303,8 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
             {
 
                 r.length = sizeof(long);
-                r.value = (void *) new long;
+                r.value =  new char[r.length];
+                //r.value = (void *) new long;
                 if (!r.isnull)
                     *(long*) r.value = *PQgetvalue(res, k, i) == 't' ? 1 : 0;
                 else
@@ -318,7 +319,8 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
             {
 
                 r.length = sizeof(long);
-                r.value = (void *) new long;
+                r.value =  new char[r.length];
+                //r.value = (void *) new long;
                 if (!r.isnull)
                     *(long*) r.value = strtol(PQgetvalue(res, k, i), NULL, 10);
                 else
@@ -349,7 +351,8 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
                     else
                     {
                         r.length = sizeof(long);
-                        r.value = (void *) new long;
+                        r.value =  new char[r.length];
+                        //r.value = (void *) new long;
                         *(unsigned long*) r.value = id;
                         r.typ = LONG;
                     }
@@ -357,7 +360,8 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
                 else
                 {
                     r.length = sizeof(long);
-                    r.value = (void *) new long;
+                    r.value =  new char[r.length];
+                    //r.value = (void *) new long;
                     *(unsigned long*) r.value = 0;
                     r.typ = LONG;
                 }
@@ -370,7 +374,8 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
             {
 
                 r.length = sizeof(double);
-                r.value = (void *) new double;
+                r.value =  new char[r.length];
+                //r.value = (void *) new double;
                 if (!r.isnull)
                     *(double*) r.value = strtod(PQgetvalue(res, k, i), NULL);
                 else
@@ -519,8 +524,8 @@ char *PgConnect::mk_error(PGresult *res)
 
     if (*errresult == '\0')
     {
-        delete errstr;
-        delete errresult;
+        delete[] errstr;
+        delete[] errresult;
 
         errstr = NULL;
         errresult = NULL;
@@ -651,10 +656,11 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
 
     if ( connections[con].in_transaction == "" )
     {
-        PQexec(con, "BEGIN");
 #ifdef PTHREAD
         pthread_mutex_lock(&connections[con].mutex);
 #endif
+        res = PQexec(con, "BEGIN");
+        if ( res != NULL ) PQclear(res);
     }
 
     connections[con].in_transaction = connections[con].in_transaction + stm + "\n";

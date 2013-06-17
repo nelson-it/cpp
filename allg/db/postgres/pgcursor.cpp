@@ -48,7 +48,7 @@ void PgCursor::open(char *s )
     stm = new char[strlen(s) + 64];
     sprintf(stm, "DECLARE %s CURSOR FOR %s", cur, s);
     execute(stm);
-    delete stm;
+    delete[] stm;
     opened = 1;
 }
 

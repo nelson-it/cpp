@@ -83,6 +83,13 @@ public:
 
 		MessageTranslator *prg_trans;
 		MessageTranslator *msg_trans;
+	    Param()
+		{
+	        argdebug = 0;
+	        debug = 0;
+	        errorfound = 0;
+	        warningfound = 0;
+		};
 	};
 private:
 	static std::map<void *, Param> params;

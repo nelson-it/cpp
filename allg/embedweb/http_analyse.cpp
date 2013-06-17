@@ -435,7 +435,7 @@ void HttpAnalyse::read_postvalues()
 
 	if ( act_h->post_data != NULL )
 	{
-		delete act_h->post_data;
+		delete[] act_h->post_data;
 		act_h->post_data = NULL;
 	}
 }

@@ -285,6 +285,9 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
 
 DbConnect::Result::~Result()
 {
+    if ( value != NULL ) delete[] (char*) value;
+        return;
+
     switch (typ)
     {
     case DbConnect::CHAR:
