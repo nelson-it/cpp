@@ -68,7 +68,7 @@ public:
         Result();
         Result(const Result &in);
         Result &operator=(const Result &in);
-        ~Result();
+        virtual ~Result();
 
         bool operator==  (const Result &in) const;
         bool operator!=  (const Result &in) const;

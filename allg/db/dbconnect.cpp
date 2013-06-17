@@ -286,33 +286,6 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
 DbConnect::Result::~Result()
 {
     if ( value != NULL ) delete[] (char*) value;
-        return;
-
-    switch (typ)
-    {
-    case DbConnect::CHAR:
-        delete[] (char*) value;
-        break;
-
-    case DbConnect::BOOL:
-    case DbConnect::SHORT:
-    case DbConnect::LONG:
-        delete (long*) value;
-        break;
-
-    case DbConnect::DOUBLE:
-    case DbConnect::FLOAT:
-        delete (double*) value;
-        break;
-
-    case DbConnect::UNKNOWN:
-        break;
-
-    default:
-        fprintf(stderr, "Type %d im Resultdestructor nicht bekannt\n", typ);
-        exit(99);
-        break;
-    }
 }
 
 void DbConnect::mk_string(std::string &str, int nodelimter)
