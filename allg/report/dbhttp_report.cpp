@@ -544,8 +544,6 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         	if ( ui->second != "" )
 				u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
         }
-        fprintf(stderr, "%s\n", u.c_str());
-
         Process p(this->http->getServersocket());
 
         p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);
@@ -553,7 +551,8 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
         if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
         {
-        	if ( fread(str, 4, 1, h->content) != 1 )
+            char str[16];
+            if ( fread(str, 4, 1, h->content) != 1 )
         	{
         		msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
         	}
@@ -564,6 +563,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                 FILE *fp;
                 char buffer[1024];
 
+                fclose(h->content);
                 h->content = fopen(h->content_filename.c_str(), "wb+");
                 h->content_type = "text/plain";
 
@@ -581,70 +581,72 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                 }
                 if ( fp != NULL ) fclose(fp);
         	}
+        	else
+        	{
+        	    fseek(h->content, 0, SEEK_END);
+        	    if ( ( pdfschema != "" && pdftable != "" ) || h->vars["base64"] != "" )
+        	    {
+        	        DbTable::ValueMap where;
+        	        DbTable::ValueMap values;
+        	        CsList cols("pdf");
+        	        int len,clen;
 
-        	fseek(h->content, 0, SEEK_END);
-        	if ( ( pdfschema != "" && pdftable != "" ) || h->vars["base64"] != "" )
-            {
-                DbTable::ValueMap where;
-                DbTable::ValueMap values;
-                CsList cols("pdf");
-                int len,clen;
+        	        len = ftell(h->content);
+        	        clen = (((len + 3 ) / 3 * 4 + 76) / 76) * 77 + 77;
+        	        unsigned char *str = (unsigned char*)new char[len + 1];
+        	        unsigned char *crypt = (unsigned char*)new char[ clen + 2];
+        	        rewind(h->content);
 
-                len = ftell(h->content);
-                clen = (((len + 3 ) / 3 * 4 + 76) / 76) * 77 + 77;
-                unsigned char *str = (unsigned char*)new char[len + 1];
-                unsigned char *crypt = (unsigned char*)new char[ clen + 2];
-                rewind(h->content);
+        	        if ( fread(str, len, 1, h->content) != 1 )
+        	        {
+        	            msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
+        	            fseek(h->content, 0, SEEK_END);
+        	        }
+        	        else if ( strncmp((char*)str, "%PDF", 4) == 0 )
+        	        {
+        	            CryptBase64 base64;
+        	            int l;
+        	            crypt[( l = base64.encode(str, crypt, len))] = '\0';
 
-                if ( fread(str, len, 1, h->content) != 1 )
-                {
-                    msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
-                    fseek(h->content, 0, SEEK_END);
-                }
-                else if ( strncmp((char*)str, "%PDF", 4) == 0 )
-                {
-                    CryptBase64 base64;
-                    int l;
-                    crypt[( l = base64.encode(str, crypt, len))] = '\0';
+        	            if ( pdfschema != "" && pdftable != "" )
+        	            {
+        	                values["pdf"] = (char *)crypt;
+        	                DbTable::ValueMap where = mk_pdfwhere(h, &pdfwcol, &pdfwval);
+        	                tab->modify(&values, &where);
+        	                db->release(tab);
+        	                fseek(h->content, 0, SEEK_END);
+        	            }
+        	            else if ( h->vars["base64schema"] != "" && h->vars["base64table"] != "" )
+        	            {
+        	                DbTable *tab = db->p_getTable(h->vars["base64schema"],h->vars["base64table"]);
+        	                DbTable::ValueMap vals;
+        	                DbTable::ValueMap where;
 
-                    if ( pdfschema != "" && pdftable != "" )
-                    {
-                        values["pdf"] = (char *)crypt;
-                        DbTable::ValueMap where = mk_pdfwhere(h, &pdfwcol, &pdfwval);
-                        tab->modify(&values, &where);
-                        db->release(tab);
-                        fseek(h->content, 0, SEEK_END);
-                    }
-                    else if ( h->vars["base64schema"] != "" && h->vars["base64table"] != "" )
-                    {
-                        DbTable *tab = db->p_getTable(h->vars["base64schema"],h->vars["base64table"]);
-                        DbTable::ValueMap vals;
-                        DbTable::ValueMap where;
+        	                where[h->vars["base64id"]] = h->vars["base64idvalue"];
+        	                vals[h->vars["base64data"]]= std::string((char *)crypt);
 
-                        where[h->vars["base64id"]] = h->vars["base64idvalue"];
-                        vals[h->vars["base64data"]]= std::string((char *)crypt);
+        	                h->content_type = "text/plain";
+        	                rewind(h->content);
 
-                        h->content_type = "text/plain";
-                        rewind(h->content);
-
-                        if ( tab->modify(&vals, &where) == 0 )
-                        {
-                            fprintf(h->content, "ok");
-                        }
-                        else
-                        {
-                            fprintf(h->content, "error");
-                        }
-                        db->release(tab);
-                    }
-                    else
-                    {
-                        rewind(h->content);
-                        fprintf(h->content,"%s", crypt);
-                    }
-                }
-                delete str;
-                delete crypt;
+        	                if ( tab->modify(&vals, &where) == 0 )
+        	                {
+        	                    fprintf(h->content, "ok");
+        	                }
+        	                else
+        	                {
+        	                    fprintf(h->content, "error");
+        	                }
+        	                db->release(tab);
+        	            }
+        	            else
+        	            {
+        	                rewind(h->content);
+        	                fprintf(h->content,"%s", crypt);
+        	            }
+        	        }
+        	        delete str;
+        	        delete crypt;
+        	    }
             }
         }
         else
@@ -671,7 +673,6 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
             }
             if ( fp != NULL ) fclose(fp);
         }
-
         unlink(filename);
     }
     else
