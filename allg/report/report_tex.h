@@ -30,6 +30,8 @@ private:
     std::string stf;
     std::string sintf;
 
+    long landscape;
+
 	enum ERROR_TYPES
 	{
 		E_OK,
@@ -55,6 +57,8 @@ public:
 			      CsList *wcol, CsList *wval,
 			      CsList *wop, CsList *sort, Macros *macros = NULL, Macros *xml =
 				  NULL);
+
+	int getLandscape() { return landscape; }
 };
 
 #endif /*report_tex_mne */

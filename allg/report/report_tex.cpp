@@ -126,6 +126,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         sort = *s;
 
     landscape = (long) (rm[0][6]);
+    if ( ! subreport ) this->landscape = landscape;
+
     repcols.setString((char *) (rm[0][10]));
 
     if ( getFile(rtemplate, 1) == "" )
