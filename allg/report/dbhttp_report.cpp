@@ -539,6 +539,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         fclose(h->content);
 
         std::string u;
+        if ( report.getLandscape() ) u = "-landscape";
         for ( ui = report.userprefs.begin(); ui != report.userprefs.end(); ++ui)
         {
         	if ( ui->second != "" )
