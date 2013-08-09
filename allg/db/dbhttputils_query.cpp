@@ -138,7 +138,7 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      co = outbuf = new char[innum * 4];
      outnum = ( innum * 4 - 1);
 
-     iv = iconv_open("iso-8859-1", "utf-8");
+     iv = iconv_open("iso-8859-1//TRANSLIT", "utf-8");
      iconv (iv, &ci, &innum, &co, &outnum);
      iconv_close(iv);
 
