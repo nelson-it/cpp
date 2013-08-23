@@ -502,7 +502,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                                     (*rv)[i].format(&msg, NULL, 0,
                                             colformat.c_str())).c_str());
                 }
-                else if (formats[i] != "xml")
+                else if ( formats[i][0] != 'x' )
                 {
                     fprintf(out, "\\gdef\\%s{%s}%%\n",
                             ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(

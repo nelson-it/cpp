@@ -62,6 +62,7 @@ public:
     public:
         int typ;
         void *value;
+        void *rbuff;
         int length;
         int isnull;
 

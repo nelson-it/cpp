@@ -15,6 +15,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#include <xml/xmltext_html.h>
+
 #include "dbconnect.h"
 #include "dbtable.h"
 
@@ -22,6 +24,7 @@ DbConnect::Result::Result()
 {
     typ = DbConnect::UNKNOWN;
     value = NULL;
+    rbuff = NULL;
     length = 0;
     isnull = 0;
 }
@@ -31,12 +34,19 @@ DbConnect::Result::Result(const Result &in)
     typ = in.typ;
     length = in.length;
     value = in.value;
+    rbuff = in.rbuff;
     isnull = in.isnull;
 
     if (value != NULL)
     {
         value = new char[in.length];
         memcpy(value, in.value, in.length);
+    }
+
+    if (rbuff != NULL)
+    {
+        rbuff = new char[strlen((char*)in.rbuff) + 1];
+        memcpy(rbuff, in.rbuff, strlen((char*)in.rbuff) + 1);
     }
 }
 
@@ -53,11 +63,17 @@ DbConnect::Result& DbConnect::Result::operator=(const DbConnect::Result &in)
         memcpy(value, in.value, in.length);
     }
 
+    if (rbuff != NULL)
+    {
+        rbuff = new char[strlen((char*)in.rbuff) + 1];
+        memcpy(rbuff, in.rbuff, strlen((char*)in.rbuff) + 1);
+    }
+
     return *this;
 }
 
 bool DbConnect::Result::operator==  (const Result &in) const
-{
+        {
     if ( typ != in.typ  )
         return false;
 
@@ -75,10 +91,10 @@ bool DbConnect::Result::operator==  (const Result &in) const
     default:
         return (std::string((char*)value) == std::string((char*)in.value));
     }
-}
+        }
 
 bool DbConnect::Result::operator!=  (const Result &in) const
-{
+        {
     if ( typ != in.typ  )
         return true;
 
@@ -96,7 +112,7 @@ bool DbConnect::Result::operator!=  (const Result &in) const
     default:
         return (std::string((char*)value) != std::string((char*)in.value));
     }
-}
+        }
 
 bool DbConnect::Result::operator<   (const Result &in) const
 {
@@ -139,7 +155,7 @@ bool DbConnect::Result::operator>   (const Result &in) const
     }
 }
 bool DbConnect::Result::operator<=  (const Result &in) const
-{
+        {
     if ( typ != in.typ  )
         return false;
 
@@ -157,9 +173,9 @@ bool DbConnect::Result::operator<=  (const Result &in) const
     default:
         return (std::string((char*)value) <= std::string((char*)in.value));
     }
-}
+        }
 bool DbConnect::Result::operator>=  (const Result &in) const
-{
+        {
     if ( typ != in.typ  )
         return false;
 
@@ -177,20 +193,20 @@ bool DbConnect::Result::operator>=  (const Result &in) const
     default:
         return (std::string((char*)value) >= std::string((char*)in.value));
     }
-}
+        }
 
 char *DbConnect::Result::format(Message *msg, char *str, int length, const char *format)
 {
     char *val;
     unsigned int l;
-    char c[1024];
     char tc[1024];
     char *sc;
 
     if (str == NULL || length < 1)
     {
-        val = c;
-        *c = '\0';
+        rbuff = new char*[1024];
+        val = (char *)rbuff;
+        *val = '\0';
         l = 1023;
     }
     else
@@ -221,8 +237,23 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
         break;
 
     case CHAR:
-        if (format != NULL && *format == '\'' && *(char *) value == '\0')
-            return ((char*)"''");
+        if (format != NULL )
+        {
+            if ( *format == '\'' && *(char *) value == '\0')
+                return ((char*)"''");
+
+            if ( *format == 'x' && strcmp(format, "xml") != 0 )
+            {
+                std::map<std::string,std::string> classmap;
+                XmlTextHtml xml(&(format[1]), classmap);
+                xml.setXml((char*)value);
+                xml.mk_output(NULL);
+                delete[] (char*)rbuff;
+                rbuff = new char[xml.getHtml().length() + 1];
+                strcpy((char*)rbuff, xml.getHtml().c_str());
+                return (char*)rbuff;
+            }
+        }
 
         if (str == NULL)
             val = (char *) value;
@@ -286,6 +317,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
 DbConnect::Result::~Result()
 {
     if ( value != NULL ) delete[] (char*) value;
+    if ( rbuff != NULL ) delete[] (char*) rbuff;
 }
 
 void DbConnect::mk_string(std::string &str, int nodelimter)
@@ -395,7 +427,7 @@ std::string DbConnect::getValue(int typ, std::string value)
         sprintf(fval, "%40.40f", v);
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-       setlocale(LC_NUMERIC,loc.c_str());
+        setlocale(LC_NUMERIC,loc.c_str());
 #else
         loc = uselocale(loc);
         freelocale(loc);

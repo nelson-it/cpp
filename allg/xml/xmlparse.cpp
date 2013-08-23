@@ -31,92 +31,92 @@ int XmlParseNode::setXml( std::string stag, std::string content)
     childs.clear();
 
     if ( stag != "" && stag != "<>" )
-	if ( ( result = parse_attr(stag)) != 0 )
-	    return result;
+        if ( ( result = parse_attr(stag)) != 0 )
+            return result;
 
     while( content.size() != 0 )
     {
         spos = content.find('<');
         if ( spos == std::string::npos )
-	{
-	   data += content;
-	   return 0;
-	}
+        {
+            data += content;
+            return 0;
+        }
 
-	if ( spos != 0 )
-	{
-	    data += content.substr(0, spos );
-	}
+        if ( spos != 0 )
+        {
+            data += content.substr(0, spos );
+        }
 
-	if ( content[spos + 1] == '/' )
-	{
-	    msg->perror(E_TAGNOTOPEN, "Endtag ohne Starttag gefunden %s",
-	                content.substr(spos, 20).c_str());
+        if ( content[spos + 1] == '/' )
+        {
+            msg->perror(E_TAGNOTOPEN, "Endtag ohne Starttag gefunden %s",
+                    content.substr(spos, 20).c_str());
             return -E_TAGNOTOPEN;
-	}
+        }
 
-	epos = content.find_first_of("<>/", spos + 1);
-	if ( epos == std::string::npos || content[epos] == '<' )
-	{
-	    msg->perror(E_TAGNOTCLOSE,
-	               "Das Element <%s> ist nicht geschlossen",
-		       content.substr(pos1, 20).c_str());
+        epos = content.find_first_of("<>/", spos + 1);
+        if ( epos == std::string::npos || content[epos] == '<' )
+        {
+            msg->perror(E_TAGNOTCLOSE,
+                    "Das Element <%s> ist nicht geschlossen",
+                    content.substr(pos1, 20).c_str());
             return -E_TAGNOTCLOSE;
-	}
+        }
 
-	nexttag = content.substr(spos, epos - spos + 1 );
-	spos++;
+        nexttag = content.substr(spos, epos - spos + 1 );
+        spos++;
         pos1 = content.find_first_of(" /\t\n\r>", spos);
-	nextid = content.substr(spos, pos1 - spos);
+        nextid = content.substr(spos, pos1 - spos);
 
-	if ( content[epos] != '/' )
-	{
-	    pos2 = content.find("</" + nextid + ">", epos + 1);
-	    if ( pos2 == std::string::npos )
-	    {
-		msg->perror(E_NOENDTAG,
-		            "Das Element <%s> besitzt keinen Endtag",
-			   nextid.c_str());
-	        msg->line ("%s", content.substr(pos1 + 1, 60).c_str());
-		return -E_NOENDTAG;
-	    }
-	    else
-	    {
+        if ( content[epos] != '/' )
+        {
+            pos2 = content.find("</" + nextid + ">", epos + 1);
+            if ( pos2 == std::string::npos )
+            {
+                msg->perror(E_NOENDTAG,
+                        "Das Element <%s> besitzt keinen Endtag",
+                        nextid.c_str());
+                msg->line ("%s", content.substr(pos1 + 1, 60).c_str());
+                return -E_NOENDTAG;
+            }
+            else
+            {
 
-		pos1 = content.find("<" + nextid , epos + 1);
+                pos1 = content.find("<" + nextid , epos + 1);
                 while ( pos1 != std::string::npos && 
-		        ( isspace(content[pos1 + nextid.length() + 1]) ||
-			  content[pos1 + nextid.length() + 1] == '>' ) &&
-			pos1 < pos2 )
-		{
-		    pos2 = content.find("</" + nextid + ">", pos2 + 1);
-		    pos1 = content.find("<" + nextid ,  pos1 + 1);
-		}
-		    
-	        nextcontent = content.substr(epos + 1, pos2 - epos - 1);
-	        pos2 = pos2 + nextid.length() + 3;
-	    }
+                        ( isspace(content[pos1 + nextid.length() + 1]) ||
+                                content[pos1 + nextid.length() + 1] == '>' ) &&
+                                pos1 < pos2 )
+                {
+                    pos2 = content.find("</" + nextid + ">", pos2 + 1);
+                    pos1 = content.find("<" + nextid ,  pos1 + 1);
+                }
 
-	}
-	else
-	{
-	    nextcontent = "";
-	    nexttag = "<" + nextid + ">";
-	    pos2 = epos + 2;
-	}
+                nextcontent = content.substr(epos + 1, pos2 - epos - 1);
+                pos2 = pos2 + nextid.length() + 3;
+            }
 
-	if ( nexttag != "" || nextcontent != "" )
-	{
-	    XmlParseNode *node = new XmlParseNode(msg, this);
-	    int r;
+        }
+        else
+        {
+            nextcontent = "";
+            nexttag = "<" + nextid + ">";
+            pos2 = epos + 2;
+        }
 
-	    r = node->setXml(nexttag, nextcontent);
-	    if ( r < 0 ) return r;
+        if ( nexttag != "" || nextcontent != "" )
+        {
+            XmlParseNode *node = new XmlParseNode(msg, this);
+            int r;
 
-	    childs.push_back(node);
-	}
+            r = node->setXml(nexttag, nextcontent);
+            if ( r < 0 ) return r;
 
-	content = content.substr(pos2);
+            childs.push_back(node);
+        }
+
+        content = content.substr(pos2);
     }
     return 0;
 }
@@ -135,60 +135,60 @@ int XmlParseNode::parse_attr(std::string stag)
     pos2 = 0;
     while ( pos2 < stag.length() - 1)
     {
-	std::string attr,value;
+        std::string attr,value;
 
-	pos1 = stag.find_first_not_of(" \t\r\n", pos2 );
-	if ( pos1 == std::string::npos )
-	{
-	    msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
-	                           "ist fehlerhaft", id.c_str());
-	    return -E_ARGUMENT;
-	}
-
-
-	pos2 = stag.find_first_of("=", pos1);
-
-	if ( pos2 == std::string::npos )
-	{
-	    msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
-	                           "ist fehlerhaft", id.c_str());
-	    return -E_ARGUMENT;
-	}
-
-	attr = stag.substr(pos1, pos2 - pos1);
-	pos1 = pos2 + 1;
-
-	if ( stag[pos1] != '\'' && stag[pos1] != '"' )
-	{
-	    msg->perror(E_DELIMITER,
-	               "Attributwert von Attribut <%s> in Element <%s> "
-		       "begin nicht mit einem erlaubten Begrenzer",
-		       attr.c_str(), id.c_str());
-	    return -E_DELIMITER;
-	}
-
-	pos2 = stag.find(stag[pos1], pos1 + 1);
-	if ( pos2 == std::string::npos )
-	{
-	    msg->perror(E_DELIMITER,
-	               "Attributwert von Attribut <%s> in Element <%s> "
-		       "endet nicht mit dem richtigen Begrenzer",
-		       attr.c_str(), id.c_str());
-	    return -E_DELIMITER;
-	}
-	if ( stag.find_first_of(" \t\r\n>", pos2 ) != (pos2 + 1) )
+        pos1 = stag.find_first_not_of(" \t\r\n", pos2 );
+        if ( pos1 == std::string::npos )
         {
-	    msg->perror(E_DELIMITER,
-	               "Attributwert von Attribut <%s> in Element <%s> "
-		       "beinhaltet seinen Begrenzer",
-		       attr.c_str(), id.c_str());
-	    return -E_DELIMITER;
-	}
+            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
+                    "ist fehlerhaft", id.c_str());
+            return -E_ARGUMENT;
+        }
+
+
+        pos2 = stag.find_first_of("=", pos1);
+
+        if ( pos2 == std::string::npos )
+        {
+            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
+                    "ist fehlerhaft", id.c_str());
+            return -E_ARGUMENT;
+        }
+
+        attr = stag.substr(pos1, pos2 - pos1);
+        pos1 = pos2 + 1;
+
+        if ( stag[pos1] != '\'' && stag[pos1] != '"' )
+        {
+            msg->perror(E_DELIMITER,
+                    "Attributwert von Attribut <%s> in Element <%s> "
+                    "begin nicht mit einem erlaubten Begrenzer",
+                    attr.c_str(), id.c_str());
+            return -E_DELIMITER;
+        }
+
+        pos2 = stag.find(stag[pos1], pos1 + 1);
+        if ( pos2 == std::string::npos )
+        {
+            msg->perror(E_DELIMITER,
+                    "Attributwert von Attribut <%s> in Element <%s> "
+                    "endet nicht mit dem richtigen Begrenzer",
+                    attr.c_str(), id.c_str());
+            return -E_DELIMITER;
+        }
+        if ( stag.find_first_of(" \t\r\n>", pos2 ) != (pos2 + 1) )
+        {
+            msg->perror(E_DELIMITER,
+                    "Attributwert von Attribut <%s> in Element <%s> "
+                    "beinhaltet seinen Begrenzer",
+                    attr.c_str(), id.c_str());
+            return -E_DELIMITER;
+        }
 
         value = stag.substr(pos1+1, pos2 - pos1 - 1);
-	pos2++;
+        pos2++;
 
-	attrs[attr] = value;
+        attrs[attr] = value;
     }
 
     return 0;
@@ -196,8 +196,8 @@ int XmlParseNode::parse_attr(std::string stag)
 }
 
 XmlParse::XmlParse()
-         :msg("XmlParse"),
-	  root(&msg, NULL)
+:msg("XmlParse"),
+ root(&msg, NULL)
 {
     error_found = 0;
 }

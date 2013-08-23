@@ -473,6 +473,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     CsList hide(h->vars["tablehidecols"]);
     std::string dateformat;
 
+
     if ( h->vars["dyndata"] != "" )
         return dyndata_xml(db, h);
 
