@@ -45,6 +45,7 @@ int HttpXmlText::request(HttpHeader *h)
 void HttpXmlText::html(HttpHeader *h)
 {
 	std::map<std::string,std::string> classmap;
+    std::string str =  h->vars["xmltext"];
 
 	classmap["mne_font"] = h->vars["mne_font"];
 	classmap["mne_bold"] = h->vars["mne_bold"];
@@ -66,7 +67,11 @@ void HttpXmlText::html(HttpHeader *h)
 
 	h->content_type = "text/plain";
 	h->status = 200;
-	xml.setXml(h->vars["xmltext"]);
+
+	if ( str[0] != '<' )
+	    str = "<part><text size=\"n\">" + str + "</text></part>";
+
+	xml.setXml(str);
 	xml.mk_output(h->content);
 }
 

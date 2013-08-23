@@ -41,9 +41,10 @@ protected:
     std::map<std::string,std::string> fonts;
 
 public:
-    XmlTextHtml(std::string size,
-                std::map<std::string, std::string> classmap );
+    XmlTextHtml(std::string size, std::map<std::string, std::string> classmap );
     virtual ~XmlTextHtml();
+
+    std::string getHtml() { return html; }
 };
 
 #endif /* xmltext_html_mne */
