@@ -60,7 +60,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
 		if (   ic->second.host == s->getHost(client)
 			&& ic->second.browser == h->browser
-            && ic->second.user_agent == h->user_agent
+            && ( ic->second.user_agent == h->user_agent || h->browser == HttpHeader::B_IE )
 			&& ( ic->second.db->have_connection() ) )
 		{
 		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);

@@ -209,6 +209,9 @@ XmlParse::~XmlParse()
 
 int XmlParse::setXml(std::string xml)
 {
+    if ( xml[0] != '<' )
+        xml = "<part><text size=\"n\">" + xml + "</text></part>";
+
     error_found = root.setXml("", xml);
     return error_found;
 }

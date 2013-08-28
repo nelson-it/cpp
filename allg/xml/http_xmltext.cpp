@@ -68,8 +68,8 @@ void HttpXmlText::html(HttpHeader *h)
 	h->content_type = "text/plain";
 	h->status = 200;
 
-	if ( str[0] != '<' )
-	    str = "<part><text size=\"n\">" + str + "</text></part>";
+	//if ( str[0] != '<' )
+	//    str = "<part><text size=\"n\">" + str + "</text></part>";
 
 	xml.setXml(str);
 	xml.mk_output(h->content);
