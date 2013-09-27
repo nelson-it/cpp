@@ -14,7 +14,6 @@
 
 class Process : public TimeoutClient
 {
-    Message msg;
     std::string cmd;
     pid_t pid;
     int status;
@@ -33,6 +32,8 @@ class Process : public TimeoutClient
     #endif
 
 protected:
+    Message msg;
+
     enum ERROR_TYPES
     {
         E_FOLDER,
@@ -41,7 +42,9 @@ protected:
 	E_LOGFILE,
 	E_DEAD,
 	E_FORK,
-	E_PIPE
+	E_PIPE,
+
+	E_MAX = 100
     };
     int file;
 

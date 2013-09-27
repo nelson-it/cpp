@@ -55,7 +55,10 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h)
                             header.setString(str, ':' );
                             if ( header[0] == "Content-Type" || header[0] == "Content-type")
                                 h->content_type = header[1];
+                            else if ( header[0] != "X-Powered-By")
+                                msg.perror(E_PHP, str.c_str());
                             str.clear();
+
                         }
                         else
                         {
