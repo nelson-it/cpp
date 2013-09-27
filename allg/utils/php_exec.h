@@ -6,6 +6,10 @@
 
 class PhpExec : private Process
 {
+    enum ERROR_TYPES
+    {
+        E_PHP = Process::E_MAX
+    };
 public:
     PhpExec(  std::string cmd, HttpHeader *h );
     ~PhpExec();

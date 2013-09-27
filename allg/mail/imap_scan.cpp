@@ -99,6 +99,7 @@ ImapScan::~ImapScan()
 void ImapScan::scan(std::string mailboxid, int fullscan )
 {
     DbTable *tab;
+    DbTable *uidtab;
     DbQuery *query;
     CsList cols,scols;
     DbTable::ValueMap where;
@@ -198,6 +199,8 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
         db->release(tab);
 
         tab = db->p_getTable("mne_crm", "file");
+        uidtab = db->p_getTable("mne_mail", "imapuid");
+
         for ( jf = folders.begin(); jf != folders.end(); ++jf )
         {
             if ( fullscan )
@@ -275,8 +278,19 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
 
                             where.clear();
                             where["uid"] = uid;
-                            rm = tab->select(&where, &where);
-                            tab->end();
+                            where["imapmailboxid"] = mi->first;
+
+                            rm = uidtab->select(&where, &where);
+                            uidtab->end();
+
+                            if ( rm->empty() )
+                            {
+                                where.clear();
+                                where["uid"] = uid;
+                                rm = tab->select(&where, &where);
+                                tab->end();
+                            }
+
 
                             if ( rm->empty() )
                             {
@@ -326,13 +340,37 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                                 val["typ"] = "email";
                                 val["author"] = imap.getName(imap.getHeaderElement(&(i->second),"FROM"));
                                 val["uid"] = uid;
-                                tab->insert(&val,1);
+                                tab->insert(&val);
+
+                                val.clear();
+                                val["imapuidid"] = "################";
+                                val["imapmailboxid"] = mi->first;
+                                val["uid"] = uid;
+                                uidtab->insert(&val,1);
                             }
+                            else if ( fullscan )
+                            {
+                                DbTable::ValueMap val;
+                                val["imapmailboxid"] = mi->first;
+                                val["uid"] = uid;
+                                uidtab->modify(&val, &where, 1);
+                            }
+
                         }
                     }
                 }
             }
         }
+
+        if ( fullscan )
+        {
+            where.clear();
+            where["modifydate"] = (time(NULL) - 7 * 86400 );
+            uidtab->del(&where);
+            tab->end();
+        }
+
+        db->release(uidtab);
         db->release(tab);
     }
 #ifdef PTHREAD

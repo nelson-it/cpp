@@ -356,10 +356,7 @@ void Http::make_answer()
         {
             fclose(file);
             file = 0;
-            //fclose(act_h->content);
             PhpExec(str, act_h);
-            //act_h->content = fopen(act_h->content_filename.c_str(), "rb+");
-            //fseek ( act_h->content, 0, SEEK_END);
         }
 
 		if (act_h->content_type.find("text") == 0)
