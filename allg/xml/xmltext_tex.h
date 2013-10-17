@@ -16,6 +16,8 @@ class XmlTextTex : public XmlText
     std::string rightbegin;
     std::string rightend;
 
+    int emptytext;
+
 protected:
     enum ERROR_TYPES
     {
