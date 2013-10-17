@@ -31,6 +31,15 @@ void XmlTextTex::mk_text(XmlParseNode *node, int num)
 
     size = node->getAttr("size");
 
+    if ( node->getData() == "" )
+    {
+        if ( emptytext == -1 ) emptytext = 1;
+        return;
+    }
+
+
+    emptytext = 0;
+
     fprintf(fp, "{");
 
     if ( size == "xxs" )
@@ -62,6 +71,9 @@ void XmlTextTex::mk_text(XmlParseNode *node, int num)
 
 void XmlTextTex::mk_text_end(XmlParseNode *node, int num)
 {
+    if ( node->getData() == "" )
+        return;
+
     fprintf(fp, "}");
 }
 
@@ -74,6 +86,8 @@ void XmlTextTex::mk_part(XmlParseNode *node, int num)
     	fprintf(fp, "%s", centerbegin.c_str());
     if ( node->getAttr("align") == "right" )
     	fprintf(fp, "%s", rightbegin.c_str());
+
+    emptytext = -1;
 }
 
 void XmlTextTex::mk_part_end(XmlParseNode *node, int num)
@@ -82,6 +96,13 @@ void XmlTextTex::mk_part_end(XmlParseNode *node, int num)
 	    	fprintf(fp, "%s", centerend.c_str());
 	   if ( node->getAttr("align") == "right" )
 	    	fprintf(fp, "%s", rightend.c_str());
+
+       if ( emptytext == 1 )
+       {
+           fprintf(fp, "}");
+           emptytext = -1;
+       }
+       else
 	    fprintf(fp, "%s", partend.c_str());
 }
 
