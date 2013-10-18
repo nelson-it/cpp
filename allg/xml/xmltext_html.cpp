@@ -101,7 +101,7 @@ void XmlTextHtml::mk_text(XmlParseNode *node, int num)
 	if (node->getAttr("style") == "italic")
 		html += classmap["mne_italic"] + " ";
 
-	html += "\">" + ToString::mascarade(node->getData().c_str(), "'") + "</span>";
+	html += "\">" + node->getData() + "</span>";
 }
 
 void XmlTextHtml::mk_part(XmlParseNode *node, int num)
