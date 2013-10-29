@@ -309,6 +309,9 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
 
     if (  r.size() == 0 && h->vars["rowwarning"] != "false" )
         msg.pwarning(W_NOROWS, "Der Autoreport <%s> hat keine Zeilen", ( h->vars["schema"] + "." + h->vars["autoreport"]).c_str());
+    else if ( r.size() == 0 && h->vars["rowwarningtext"] != "" )
+        h->error_messages.push_back(h->vars["rowwarningtext"].c_str());
+
 
     (*h->vars.p_getVars())["sqlend"] = "0";
     (*h->vars.p_getVars())["wcol"] = repwcol;
@@ -360,7 +363,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     if ( h->content != NULL ) fclose(h->content);
     h->content_filename = content_filename;
 
-    if ( h->error_messages.size() == 0 )
+    if ( h->error_messages.size() == 0 && r.size() > 0  )
     {
         *dir = '\0';
         int status;
