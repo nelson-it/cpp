@@ -14,11 +14,14 @@ XmlTextTex::XmlTextTex()
     partbegin = "{";
     partend = "}\\par";
 
-    centerbegin = "{\\trivlist\\centering\\item";
+    centerbegin = "{\\trivlist\\centering\\item\\vspace{-\\baselineskip}";
     centerend = "\\endtrivlist}\n";
 
-    rightbegin = "{\\trivlist\\raggedleft\\item";
+    rightbegin = "{\\trivlist\\raggedleft\\item\\vspace{-\\baselineskip}";
     rightend = "\\endtrivlist}\n";
+
+    leftbegin = "{\\trivlist\\raggedright\\item\\vspace{-\\baselineskip}";
+    leftend = "\\endtrivlist}\n";
 }
 
 XmlTextTex::~XmlTextTex()
@@ -82,6 +85,8 @@ void XmlTextTex::mk_part(XmlParseNode *node, int num)
 {
     fprintf(fp, "%s", partbegin.c_str());
 
+    if ( node->getAttr("align") == "left" )
+    	fprintf(fp, "%s", leftbegin.c_str());
     if ( node->getAttr("align") == "center" )
     	fprintf(fp, "%s", centerbegin.c_str());
     if ( node->getAttr("align") == "right" )
@@ -92,6 +97,8 @@ void XmlTextTex::mk_part(XmlParseNode *node, int num)
 
 void XmlTextTex::mk_part_end(XmlParseNode *node, int num)
 {
+	   if ( node->getAttr("align") == "left" )
+	    	fprintf(fp, "%s", leftend.c_str());
 	   if ( node->getAttr("align") == "center" )
 	    	fprintf(fp, "%s", centerend.c_str());
 	   if ( node->getAttr("align") == "right" )

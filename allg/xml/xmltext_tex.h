@@ -16,6 +16,9 @@ class XmlTextTex : public XmlText
     std::string rightbegin;
     std::string rightend;
 
+    std::string leftbegin;
+    std::string leftend;
+
     int emptytext;
 
 protected:
