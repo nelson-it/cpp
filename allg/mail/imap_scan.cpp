@@ -246,7 +246,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                     ( jf->second ) ? addresses.push_back(a) : raddresses.push_back(a);
                 }
 
-                for ( j = 0; ignore_message == 0 && j < addresses.size(); j++ )
+                for ( j = 0; j < addresses.size(); j++ )
                 {
                     msg.pdebug(1, "check %s", addresses[j].c_str());
 
