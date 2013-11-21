@@ -254,7 +254,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                     {
                         e = (char *)emails[k][emailid];
                         std::transform(e.begin(), e.end(), e.begin(), (int(*)(int)) tolower);
-                        if ( addresses[j] == e )
+                        if ( ToString::pattern(addresses[j].c_str(),e.c_str()) )
                         {
                             r = (char *)emails[k][refid];
                             ignore_message = 0;

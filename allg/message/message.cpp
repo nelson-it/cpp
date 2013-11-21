@@ -702,7 +702,7 @@ std::string Message::getSystemerror(int errornumber )
     outbuf = co  = new char[innum * 4];
     outnum = ( innum - 1);
 
-    iv = iconv_open("utf-8", "iso-8859-1");
+    iv = iconv_open("utf-8//TRANSLIT", "iso-8859-1");
     iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
     iconv_close(iv);
     *co = '\0';

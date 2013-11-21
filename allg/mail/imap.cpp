@@ -320,7 +320,7 @@ Imap::Folder Imap::getFolder()
         for ( i = 0; answer.size() > 0 && i < (answer.size()-1); ++i)
         {
             CsList a = split(answer[i]);
-            std::string str;
+            std::string str,name;
             std::string::size_type j;
             char c;
 
@@ -333,11 +333,10 @@ Imap::Folder Imap::getFolder()
                 return f;
             }
 
-            str = a[4];
-            if ( str[0] == '"')
+            str =  a[4];
+            if ( str.substr(0,1) == "\"")
                 str = str.substr(1,str.size()-2);
-            a[4] = str;
-
+            name = str;
             c = a[3][1];
             j = 0;
             while ( (j = str.find(c, j) ) != std::string::npos )
@@ -346,7 +345,7 @@ Imap::Folder Imap::getFolder()
                 j += 1;
             }
 
-            f.insert(Folder::value_type(a[4],str));
+            f.insert(Folder::value_type(name,str));
         }
     }
 
@@ -407,7 +406,7 @@ std::string Imap::mk_utf8(std::string str)
                 co = outbuf = new char[str.size() * 4];
                 outnum = ( str.size() * 4 - 1);
 
-                iv = iconv_open("utf-8", "iso-8859-1");
+                iv = iconv_open("utf-8//TRANSLIT", "iso-8859-1");
                 iconv (iv, &ci, &innum, &co, &outnum);
                 iconv_close(iv);
 
