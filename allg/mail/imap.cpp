@@ -332,7 +332,12 @@ Imap::Folder Imap::getFolder()
                 sock = -1;
                 return f;
             }
+
             str = a[4];
+            if ( str[0] == '"')
+                str = str.substr(1,str.size()-2);
+            a[4] = str;
+
             c = a[3][1];
             j = 0;
             while ( (j = str.find(c, j) ) != std::string::npos )
@@ -340,9 +345,8 @@ Imap::Folder Imap::getFolder()
                 str.replace(j, 1, "/");
                 j += 1;
             }
-            str = str.substr(1,str.size()-2);
 
-            f.insert(Folder::value_type(a[4].substr(1,a[4].size()-2),str));
+            f.insert(Folder::value_type(a[4],str));
         }
     }
 
