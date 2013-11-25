@@ -1,8 +1,8 @@
 #ifndef s_socket_mne
 #define s_socket_mne
 
-#ifndef __MINGW32__
-#include <netinet/in.h>
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <winsock.h>
 #endif
 
 #include <sys/time.h>

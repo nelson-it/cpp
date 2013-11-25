@@ -2,6 +2,10 @@
 #include <pthread.h>
 #endif
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <winsock2.h>
+#endif
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

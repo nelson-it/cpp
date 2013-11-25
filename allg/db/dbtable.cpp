@@ -6,6 +6,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <time.h>
+#endif
+
+
 #include "dbtable.h"
 
 DbTable::ColumnMapAll DbTable::all_cols;

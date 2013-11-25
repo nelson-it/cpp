@@ -1,3 +1,7 @@
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <winsock2.h>
+#endif
+
 #ifdef PTHREAD
 #include <pthread.h>
 #endif
@@ -7,6 +11,11 @@
 #include <string.h>
 #include <strings.h>
 #include <unistd.h>
+
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <time.h>
+#endif
+
 #include <utils/tostring.h>
 #include <utils/cslist.h>
 #include <crypt/base64.h>

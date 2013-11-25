@@ -7,6 +7,7 @@
 #include <string.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <windows.h>
 #include <sec_api/stdio_s.h>
 #endif
 

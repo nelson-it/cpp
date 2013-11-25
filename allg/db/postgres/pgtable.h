@@ -1,6 +1,10 @@
 #ifndef pgtable_mne
 #define pgtable_mne
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <time.h>
+#endif
+
 #include <message/message.h>
 
 #include "../dbtable.h"
