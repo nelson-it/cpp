@@ -5,6 +5,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <windows.h>
+#endif
+
 #include <argument/argument.h>
 
 #include "dbconstraint_error.h"

@@ -1,3 +1,7 @@
+#if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <winsock2.h>
+#endif
+
 #ifdef PTHREAD
 #include <pthread.h>
 #endif
@@ -11,6 +15,9 @@
 #include "message.h"
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
+#include <winsock2.h>
+#include <windows.h>
+#include <time.h>
 #else
 #include <errno.h>
 #endif
@@ -684,7 +691,6 @@ std::string Message::getSystemerror(int errornumber )
     iconv_t iv;
     char *inbuf, *outbuf, *ci, *co;
     size_t innum,outnum;
-    size_t iconv_value;
 
 	FormatMessage(
 			FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,
@@ -703,7 +709,7 @@ std::string Message::getSystemerror(int errornumber )
     outnum = ( innum - 1);
 
     iv = iconv_open("utf-8//TRANSLIT", "iso-8859-1");
-    iconv_value = iconv (iv, &ci, &innum, &co, &outnum);
+    iconv (iv, &ci, &innum, &co, &outnum);
     iconv_close(iv);
     *co = '\0';
 

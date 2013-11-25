@@ -8,11 +8,7 @@
 #ifdef PTHREAD
 #include <map>
 #include <pthread.h>
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#define PTHREADID pthread_self().p
-#else
 #define PTHREADID (void*)pthread_self()
-#endif
 #endif
 
 class MessageTranslator
@@ -51,9 +47,7 @@ public:
 		}
 		void setThreadonly()
 		{
-#ifdef PTHREAD
-			tid = PTHREADID;
-#endif
+		    tid = PTHREADID;
 		}
 
 		virtual void perror(char *str) = 0;
