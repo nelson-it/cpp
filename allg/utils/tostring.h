@@ -106,7 +106,7 @@ public:
 
     static std::string mktex(std::string s)
     {
-        std::string str = mascarade(s.c_str(), "_$&%#{}^");
+        std::string str = mascarade(s.c_str(), "_$&%#{}^\\");
         std::string::size_type i = 0;
 
         while ( (i = str.find('<', i) ) != std::string::npos)
