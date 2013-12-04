@@ -111,7 +111,7 @@ public:
 
         while ( (i = str.find('<', i) ) != std::string::npos)
         {
-            str.replace(i, 1, "\\flq ");
+            str.replace(i, 1, "\\textless ");
             i += 4;
             if ( str[i] == ' ') { str.insert(i,"\\"); i++; }
         }
@@ -119,7 +119,7 @@ public:
         i = 0;
         while ( (i = str.find('>', i) ) != std::string::npos)
         {
-            str.replace(i, 1, "\\frq ");
+            str.replace(i, 1, "\\textgreater ");
             i += 4;
             if ( str[i] == ' ') { str.insert(i,"\\"); i++; }
         }
