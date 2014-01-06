@@ -59,6 +59,15 @@ ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
         SHARED_FLAGS := --enable-auto-import
 endif
 
+ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
+           MKLIBNAME  = $(1).dll
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API
+              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
+                 CPP := i686-w64-mingw32-g++
+                  CC := i686-w64-mingw32-gcc
+        SHARED_FLAGS := --enable-auto-import
+endif
+
 ifdef $($(TARGET).WITH_SHARED_LIBS) 
     WITH_SHARED_LIBS := $($(TARGET).WITH_SHARED_LIBS)
 endif
@@ -111,6 +120,10 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)/include
+    else ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
+       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
+              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
+              INC_PG := -I$(POSTGRES_ROOT)/include
     else
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql -I$(PROJECT_ROOT)/extern/include/postgres
@@ -131,10 +144,15 @@ ifeq "$(WITH_ICONV)" "TRUE"
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
 	endif
 	
-	ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
+    ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
              OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
-	endif
+    endif
+
+    ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
+             OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
+              LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+    endif
 endif
 
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
