@@ -465,7 +465,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         sprintf(str, "macro%d", i );
 
         if ( (n = h->vars[str].find(',')) != std::string::npos )
-            macros[h->vars[str].substr(0,n)] = ToString::mktex(h->vars[str].substr(n+1));
+            macros[h->vars[str].substr(0,n)] = ToString::mktex(h->vars[str].substr(n+1), 1);
         else
             break;
     }
