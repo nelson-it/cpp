@@ -104,10 +104,12 @@ public:
         return str;
     }
 
-    static std::string mktex(std::string s)
+    static std::string mktex(std::string s, int ignore_backslash = 0 )
     {
-        std::string str = mascarade(s.c_str(), "_$&%#{}^\\");
+        std::string str;
         std::string::size_type i = 0;
+
+        ( ignore_backslash ) ? str = mascarade(s.c_str(), "_$&%#{}^") : str = mascarade(s.c_str(), "_$&%#{}^\\");
 
         while ( (i = str.find('<', i) ) != std::string::npos)
         {

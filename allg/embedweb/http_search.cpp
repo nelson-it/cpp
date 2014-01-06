@@ -73,11 +73,13 @@ int HttpSearchPath::request(HttpHeader *h)
 			}
 			else
 			{
-				msg.perror(E_FILE_OPEN, "kann datei <%s> nicht öffnen", name.c_str());
+			    if ( h->vars["ignore_notfound"] == "" )
+			        msg.perror(E_FILE_OPEN, "kann datei <%s> nicht öffnen", name.c_str());
 				return 0;
 			}
 		}
 	}
-	msg.perror(E_FILE_FOUND, "kann datei <%s> nicht finden", name.c_str());
+	if ( h->vars["ignore_notfound"] == "" )
+	    msg.perror(E_FILE_FOUND, "kann datei <%s> nicht finden", name.c_str());
 	return 0;
 }

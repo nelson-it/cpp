@@ -309,8 +309,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     			ids.push_back("B" + id);
     			typs.push_back(typ);
     			formats.push_back(format);
-    			fprintf(out, "\\gdef\\H%s{%s}%%\n", ToString::mktexmacro(id).c_str(),
-    					ToString::mktex(name).c_str());
+    			fprintf(out, "\\gdef\\H%s{%s}%%\n", ToString::mktexmacro(id).c_str(), ToString::mktex(name).c_str());
     		}
     		n++;
     	}
@@ -318,8 +317,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     if (macros != NULL)
         for (mi = macros->begin(); mi != macros->end(); ++mi)
-            fprintf(out, "\\gdef\\%s{%s}%%\n", mi->first.c_str(),
-                    mi->second.c_str());
+            fprintf(out, "\\gdef\\%s{%s}%%\n", mi->first.c_str(), mi->second.c_str());
 
     if (xml != NULL)
         for (mi = xml->begin(); mi != xml->end(); ++mi)
@@ -496,25 +494,17 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                         colformat.insert(j, 1, '\'');
 
                     if ( colformat == "" ) colformat = "%'f";
-
-                    fprintf(out, "\\gdef\\%s{%s}%%\n",
-                            ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(
-                                    (*rv)[i].format(&msg, NULL, 0,
-                                            colformat.c_str())).c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*rv)[i].format(&msg, NULL, 0, colformat.c_str())).c_str());
                 }
                 else if ( formats[i][0] != 'x' )
                 {
-                    fprintf(out, "\\gdef\\%s{%s}%%\n",
-                            ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(
-                                    (*rv)[i].format(&msg, NULL, 0,
-                                            formats[i].c_str())).c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*rv)[i].format(&msg, NULL, 0, formats[i].c_str()), formats[i] == "tex").c_str());
                 }
                 else
                 {
                     XmlTextTex xml;
                     xml.setXml((char *) ((*rv)[i]));
-                    fprintf(out, "\\gdef\\%s{",
-                            ToString::mktexmacro(ids[i]).c_str());
+                    fprintf(out, "\\gdef\\%s{", ToString::mktexmacro(ids[i]).c_str());
                     xml.mk_output(out);
                     fprintf(out, "}%%\n");
                 }
@@ -522,8 +512,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             else
             {
                 msg.perror(E_NODATA, "keine Daten für id <%s> vorhanden", ids[i].c_str());
-                fprintf(out, "\\gdef\\%s{keine Daten}%%\n",
-                                            ToString::mktexmacro(ids[i]).c_str());
+                fprintf(out, "\\gdef\\%s{keine Daten}%%\n", ToString::mktexmacro(ids[i]).c_str());
             }
         }
 

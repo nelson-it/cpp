@@ -318,8 +318,8 @@ void Http::make_answer()
 
 	if ( (file = fopen(str.c_str(), "rb") ) == NULL)
 	{
-		msg.perror(E_NOTFOUND, "Kann Datei %s/%s nicht finden",
-				act_h->dirname.c_str(), act_h->filename.c_str());
+	    if ( act_h->vars["ignore_notfound"] == "" )
+            msg.perror(E_NOTFOUND, "Kann Datei %s/%s nicht finden", act_h->dirname.c_str(), act_h->filename.c_str());
 		act_h->status = 404;
 		act_h->age = 0;
 		if (act_h->filename.find(".xml") == (act_h->filename.size() - 4))
