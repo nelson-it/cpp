@@ -103,7 +103,7 @@ public:
     int stop();
 
     int getPid() { return this->pid; }
-    int getStatus() { return this->status; }
+    int getStatus() { return WEXITSTATUS(this->status); }
 };
 
 #endif /* process_mne */

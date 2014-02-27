@@ -283,11 +283,8 @@ void Http::make_answer()
 				msg.perror(E_NOTFOUND, "Provider %s unterstützt %s/%s nicht",
 						act_h->providerpath.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
 				act_h->content_type = "text/xml";
-				fprintf(act_h->content,
-						"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-						act_h->charset.c_str());
+				fprintf(act_h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", act_h->charset.c_str());
 				fprintf(act_h->content, "<body>error</body>");
-
 			}
 			else
 			{
@@ -325,11 +322,8 @@ void Http::make_answer()
 		if (act_h->filename.find(".xml") == (act_h->filename.size() - 4))
 		{
 			act_h->content_type = "text/xml";
-			fprintf(act_h->content,
-					"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-					act_h->charset.c_str());
+			fprintf(act_h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", act_h->charset.c_str());
 			fprintf(act_h->content, "<body>error</body>");
-
 		}
 		else
 		{
@@ -546,26 +540,22 @@ void Http::send()
 		if ( act_h->content_type == "text/html")
 		{
 			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n",
-						act_h->error_messages[i].c_str());
+				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
 		}
 		else if ( act_h->content_type == "text/plain")
 		{
 			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n",
-						act_h->error_messages[i].c_str());
-
+				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
 		}
 		else if (act_h->content_type == "text/xml")
 		{
 			fprintf(act_h->content, "<error>\n");
 			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n",
-						act_h->error_messages[i].c_str());
+				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
 			fprintf(act_h->content, "\n</error>");
-
 		}
 	}
+
 	if ( act_h->content_type == "text/xml")
 		fprintf(act_h->content,"</result>");
 

@@ -36,19 +36,24 @@ class DbHttpUtilsQuery : public DbHttpProvider
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
-    void dyndata_xml (Database *db, HttpHeader *h);
-    void data_xml (Database *db, HttpHeader *h);
-    void data_csv (Database *db, HttpHeader *h);
-
+protected:
     static std::map<std::string,std::string> dateformat;
     static std::map<std::string,std::string> days;
 
+    int resultcount;
+
 public:
-    DbHttpUtilsQuery( DbHttp *h );
+    DbHttpUtilsQuery( DbHttp *h, int noadd = 0 );
     virtual ~DbHttpUtilsQuery();
 
     virtual std::string getPath() { return "db/utils/query"; }
     virtual int request (Database *db, HttpHeader *h);
+
+    void dyndata_xml (Database *db, HttpHeader *h);
+    void data_xml (Database *db, HttpHeader *h);
+    void data_csv (Database *db, HttpHeader *h);
+
+    int getResultcount() { return resultcount; }
 
 };
 

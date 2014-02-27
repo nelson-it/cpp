@@ -81,19 +81,8 @@ public:
     void  add_history(std::string id, int ready = 0);
     void  del_history(int ready = 0);
 
-    DbConnect::ResultMat *select( CsList *cols,
-                                  ValueMap *where,
-				  CsList *wop = NULL,
-				  CsList *order = NULL,
-				  int distinct = 0,
-				  int ready = 0);
-
-    DbConnect::ResultMat *select( ValueMap *cols,
-                                  ValueMap *where,
-				  CsList *wop = NULL,
-				  CsList *order = NULL,
-				  int distinct = 0,
-				  int ready = 0);
+    DbConnect::ResultMat *select( CsList *cols, ValueMap *where, CsList *wop = NULL, CsList *order = NULL, int distinct = 0, int ready = 0);
+    DbConnect::ResultMat *select( ValueMap *cols, ValueMap *where, CsList *wop = NULL, CsList *order = NULL, int distinct = 0, int ready = 0);
 
     std::string getLaststatement()
     {

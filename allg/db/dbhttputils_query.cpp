@@ -17,7 +17,7 @@
 std::map<std::string,std::string> DbHttpUtilsQuery::dateformat;
 std::map<std::string,std::string> DbHttpUtilsQuery::days;
 
-DbHttpUtilsQuery::DbHttpUtilsQuery(DbHttp *h)
+DbHttpUtilsQuery::DbHttpUtilsQuery(DbHttp *h, int noadd )
 :DbHttpProvider(h),
  msg("DbHttpUtilsQuery")
  {
@@ -42,7 +42,10 @@ DbHttpUtilsQuery::DbHttpUtilsQuery(DbHttp *h)
     subprovider["data.xml"]     = &DbHttpUtilsQuery::data_xml;
     subprovider["data.csv"]     = &DbHttpUtilsQuery::data_csv;
 
-    h->add_provider(this);
+    resultcount = 0;
+
+    if ( ! noadd )
+       h->add_provider(this);
  }
 
 DbHttpUtilsQuery::~DbHttpUtilsQuery()
@@ -213,6 +216,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
 
+    resultcount = 0;
     query = db->p_getQuery();
     if ( h->vars["distinct"] != "" && ! cols.empty() )
         query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);
@@ -268,6 +272,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();
 
+        resultcount = r->size();
         if (h->vars["lastquery"] != "" )
         {
             msg.pmessage(0,"Letze Abfrage:");
@@ -493,6 +498,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
 
+    resultcount = 0;
     query = db->p_getQuery();
     if ( h->vars["distinct"] != "" && ! cols.empty() )
         query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);
@@ -610,6 +616,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         DbConnect::ResultVec::iterator rv, re;
 
         r = query->select(&wcol, &wval, &wop, &sorts );
+        resultcount = r->size();
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();
 

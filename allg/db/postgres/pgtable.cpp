@@ -1087,8 +1087,7 @@ int PgTable::del(ValueMap *w, int ready)
 	return execute(stm.c_str(), ready);
 }
 
-DbConnect::ResultMat *PgTable::select(ValueMap *cols, ValueMap *w, CsList *wop,
-		CsList *o, int distinct, int ready)
+DbConnect::ResultMat *PgTable::select(ValueMap *cols, ValueMap *w, CsList *wop, CsList *o, int distinct, int ready)
 {
 	laststm = "select ";
 	ValueMap::iterator i;
@@ -1140,8 +1139,7 @@ DbConnect::ResultMat *PgTable::select(ValueMap *cols, ValueMap *w, CsList *wop,
 	return p_get_result();
 }
 
-DbConnect::ResultMat *PgTable::select(CsList *cols, ValueMap *w, CsList *wop,
-		CsList *o, int distinct, int ready)
+DbConnect::ResultMat *PgTable::select(CsList *cols, ValueMap *w, CsList *wop, CsList *o, int distinct, int ready)
 {
 	laststm = "select ";
 	CsList::Elements::iterator i,vi;

@@ -16,7 +16,7 @@
 
 #include "dbhttputils_table.h"
 
-DbHttpUtilsTable::DbHttpUtilsTable(DbHttp *h) :
+DbHttpUtilsTable::DbHttpUtilsTable(DbHttp *h, int noadd ) :
 DbHttpProvider(h), msg("DbHttpUtilsTable")
 {
     subprovider["insert.xml"] = &DbHttpUtilsTable::insert_xml;
@@ -27,7 +27,8 @@ DbHttpProvider(h), msg("DbHttpUtilsTable")
     subprovider["modify.html"] = &DbHttpUtilsTable::modify_html;
     subprovider["file.dat"] = &DbHttpUtilsTable::file_dat;
 
-    h->add_provider(this);
+    if ( noadd == 0 )
+        h->add_provider(this);
 }
 
 DbHttpUtilsTable::~DbHttpUtilsTable()

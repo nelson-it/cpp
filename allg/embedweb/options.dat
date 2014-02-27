@@ -1,9 +1,11 @@
 // Http Optionnen
 // ================================================
-liste["EmbedwebHttpServerpath"] = Argument::Liste("-httproot", 'c', 1, "." );
-liste["EmbedwebHttpNocache"] = Argument::Liste("-httpnocache", 'l', 0, "0" );
+liste["EmbedwebHttpServerpath"] = Argument::Liste("-httproot", 'c', 1, "xxx" );
+liste["EmbedwebHttpDatapath"]   = Argument::Liste("-httpdataroot", 'c', 1, "");
+liste["EmbedwebHttpNocache"]    = Argument::Liste("-httpnocache", 'l', 0, "0" );
+
 // Welche Ordner werden gemapt
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++
 liste["EmbedwebHttpMapsRoot"] = Argument::Liste("-httpmapsroot", 'c', 1, "");
-liste["EmbedwebHttpMaps"] = Argument::Liste("-httpmaps", 'c', 1, "");
+liste["EmbedwebHttpMaps"]     = Argument::Liste("-httpmaps", 'c', 1, "");
 

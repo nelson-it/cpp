@@ -182,7 +182,6 @@ int Process::start(CsList cmd_list, const char *logfile,
             msg.perror(E_PIPE, "kann socketpair nicht öffnen");
             return 0;
         }
-        processes.insert(this);
     }
 
     signal(SIGCHLD, sig_child);
@@ -196,6 +195,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 	{
 		char **argv = new char*[cmd_list.size()+ 1];
 		unsigned int i;
+        int ifile;
 
 		for ( i=0; i< cmd_list.size(); ++i)
 			argv[i] = strdup(cmd_list[i].c_str());
@@ -204,9 +204,13 @@ int Process::start(CsList cmd_list, const char *logfile,
 
 		if ( workdir != NULL && chdir(workdir) < 0 )
 		{
-			msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
-			exit(-1);
+			 msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
+			_exit(-1);
 		}
+
+        ifile = open("/dev/null", O_RDONLY );
+        dup2(ifile,0);
+        close(ifile);
 
         if ( pipe )
         {
@@ -214,7 +218,7 @@ int Process::start(CsList cmd_list, const char *logfile,
             dup2(sockets[1],2);
 
             close(sockets[1]);
-            close(0);
+            //close(0);
         }
         else if ( logfile != NULL && *logfile != '\0' )
 		{
@@ -229,30 +233,51 @@ int Process::start(CsList cmd_list, const char *logfile,
 			lfile = open(lf.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
 			if ( lfile < 0 )
 			{
-				msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
-				exit(-1);
+			    msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
+			    _exit(-2);
 			}
 
 			dup2(lfile,1);
 			dup2(lfile,2);
 
 			close(lfile);
-			close(0);
+			//close(0);
 		}
 
-		if ( extrapath != NULL && *extrapath != '\0' )
+        if ( extrapath == NULL )
+            extrapath = "";
+
+	    std::string path = getenv("PATH");
+  	    setenv("PATH", (path + ":" + extrapath).c_str(), 1);
+
+  	    if ( access(argv[0], X_OK ) == 0)
+  	    {
+  	        execve(argv[0], argv, environ);
+
+  	         msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",argv[0]);
+  	        _exit(-3);
+  	    }
+
+  	    CsList pathlist( (path + ":" + extrapath), ':');
+  	    for ( i=0; i<pathlist.size(); ++i )
+  	    {
+  	        if ( access((pathlist[i] + "/" + argv[0]).c_str(), X_OK ) == 0)
+  	            break;
+  	    }
+
+		if ( i != pathlist.size() )
 		{
-			std::string path = getenv("PATH");
-			setenv("PATH", (path + ":" + extrapath).c_str(), 1);
+		    execve((pathlist[i] + "/" + argv[0]).c_str(), argv, environ);
+    		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(pathlist[i] + "/" + argv[0]).c_str());
 		}
+		else
+    	    msg.perror(E_START,"Kommando <%s> konnte nicht gestartet werden",argv[0]);
 
-		execve(argv[0], argv, environ);
-		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",cmd.c_str());
-
-		_exit(-1);
+		_exit(-3);
 	}
 	else
 	{
+        processes.insert(this);
 	    if ( pipe )
 	    {
 	        this->file = sockets[0];
@@ -277,22 +302,22 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
 		setInterval(0);
 	}
 #else
-	int result = waitpid(pid, &status, WNOHANG);
+    pthread_mutex_lock(&mutex);
+    int result = 0;
+    if ( pid != -1 )
+	    result = waitpid(pid, &status, WNOHANG);
 
-	if ( result == 0 )
-		return;
-
-	setInterval(0);
-
-	if ( file != 0 )
-	{
-        pthread_mutex_lock(&mutex);
-	    close(file);
-	    file = -1;
-        pthread_mutex_unlock(&mutex);
-	}
-
-	pid = -1;
+    if ( result != 0 )
+    {
+        setInterval(0);
+        pid = -1;
+        if ( file != 0 )
+        {
+           close(file);
+           file = -1;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
 
 #endif
 }
@@ -346,12 +371,12 @@ int Process::wait()
 	return exitcode;
 
 #else
-	msg.pdebug(1, "wait");
-	if ( pid == -1 ) return -1;
-	waitpid(pid, &status, 0);
-	msg.pdebug(1, "waitready");
-	pid = -1;
-	return status;
+    msg.pdebug(1, "wait");
+    if ( pid == -1 ) return -1;
+    waitpid(pid, &status, 0);
+    msg.pdebug(1, "waitready");
+    pid = -1;
+	return WEXITSTATUS(status);
 #endif
 }
 

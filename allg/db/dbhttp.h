@@ -55,7 +55,11 @@ public:
 
     DbHttpAnalyse::Client::Userprefs getUserprefs()
     {
-        return act_client->userprefs;
+        if ( act_client != NULL )
+            return act_client->userprefs;
+
+        DbHttpAnalyse::Client::Userprefs u;
+        return u;
     }
 
     void clear_cache()

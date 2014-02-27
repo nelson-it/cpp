@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <map>
 
 #include <message/message.h>
 #include <ipc/s_provider.h>
@@ -75,6 +76,8 @@ protected:
     Message msg;
 
     std::vector<std::string>  serverpath;
+    std::map<std::string,std::string>  datapath;
+
     ContentTypes content_types;
 
     Headers headers;

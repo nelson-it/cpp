@@ -27,7 +27,7 @@ class DbHttpUtilsTrust : public DbHttpProvider
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
-    void function_html  (Database *db, HttpHeader *h);
+    void execute  (Database *db, HttpHeader *h, std::string name);
 
 public:
     DbHttpUtilsTrust( DbHttp *h );

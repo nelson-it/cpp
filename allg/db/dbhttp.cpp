@@ -16,7 +16,7 @@
 #include "dbhttp_provider.h"
 
 DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
-    Http(s, analyse, 0), msg("DbHttp")
+Http(s, analyse, 0), msg("DbHttp")
 {
     Argument a;
     char str[1024];
@@ -52,7 +52,7 @@ DbHttp::~DbHttp()
 void DbHttp::init_thread()
 {
 #ifdef PTHREAD
-     msg.setMsgtranslator(this->trans);
+    msg.setMsgtranslator(this->trans);
 #endif
 }
 
@@ -71,16 +71,16 @@ void DbHttp::make_answer()
         HttpProvider *p;
         if ( (p = find_provider(&dbprovider)) != NULL )
         {
-        	int result = 1;
+            int result = 1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        	Argument a;
-        	setlocale(LC_ALL, (char*)a["locale"]);
+            Argument a;
+            setlocale(LC_ALL, (char*)a["locale"]);
 #else
-        	uselocale(this->stdloc);
+            uselocale(this->stdloc);
 #endif
-        	if ( ((DbHttpProvider *) p)->check_request(this->trans->p_getDb(), act_h) )
+            if ( ((DbHttpProvider *) p)->check_request(this->trans->p_getDb(), act_h) )
             {
-                result = ((DbHttpProvider *) p)->request(this->trans->p_getDb(), act_h);
+                result = ((DbHttpProvider *) p)->request(this->trans->p_getDb(), act_h, 1);
                 if (!result)
                 {
                     std::string str;
@@ -88,8 +88,8 @@ void DbHttp::make_answer()
 
                     act_h->status = 404;
                     str = meldungen[act_h->status];
-                    if ((pos = str.find("#request#")) != std::string::npos) str.replace(
-                            pos, 9, act_h->dirname + " " + act_h->filename);
+                    if ((pos = str.find("#request#")) != std::string::npos)
+                        str.replace(pos, 9, act_h->dirname + " " + act_h->filename);
 
                     fwrite(str.c_str(), str.size(), 1, act_h->content);
                 }
@@ -159,10 +159,18 @@ void DbHttp::make_answer()
     else
     {
         if ( act_h->dirname == "/main/login" )
-            {
+        {
             act_h->status = 404;
             Http::make_answer();
-            }
+        }
+        else
+        {
+            act_h->dirname = "/main/login";
+            act_h->filename = "login.html";
+            act_h->content_type = "text/html";
+            act_h->setstatus = 201;
+            Http::make_answer();
+        }
     }
 
     if (clear) act_client = NULL;
