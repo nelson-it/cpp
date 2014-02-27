@@ -106,6 +106,7 @@ msg("HttpAnalyse")
 
 	Argument a;
 	CsList spath;
+	CsList dele;
     unsigned int i;
 
 	spath.setString((char *)a["EmbedwebHttpServerpath"], ':');
@@ -114,6 +115,12 @@ msg("HttpAnalyse")
 		serverpath.push_back(spath[i]);
 	}
 
+	spath.setString((char *)a["EmbedwebHttpDatapath"], ':');
+	for (i=0; i<spath.size(); i++)
+	{
+	    dele.setString(spath[i],'@');
+		datapath[dele[0]] = dele[1];
+	}
 
 	content_types["gif"]  = "image/gif";
 	content_types["png"]  = "image/png";
@@ -131,6 +138,7 @@ msg("HttpAnalyse")
 	content_types["gz"]   = "application/gzip";
 	content_types["gtar"] = "application/x-gtar";
 	content_types["z"]    = "application/x-compress";
+	content_types["zip"]  = "application/octet-stream";
 
 	content_types["pdf"]  = "application/pdf";
 	content_types["ai"]   = "application/postscript";
@@ -170,6 +178,7 @@ void HttpAnalyse::analyse_requestline( std::string in, HttpHeader *h )
 	}
 
 	h->serverpath = serverpath;
+	h->datapath = datapath;
 
 	n = arg.find_first_of(' ');
 	if ( n != std::string::npos )
@@ -249,8 +258,7 @@ void HttpAnalyse::analyse_header()
 	{
 		ContentTypes::iterator c;
 
-		if ( ( c = content_types.find(act_h->filename.substr(n+1)) )
-				!= content_types.end() )
+		if ( ( c = content_types.find(act_h->filename.substr(n+1)) ) != content_types.end() )
 			act_h->content_type = c->second;
 	}
 

@@ -35,28 +35,25 @@ class DbHttpUtilsTable : public DbHttpProvider
    	std::map<std::string, long > col_dpytyps;
     std::string old_lang;
 
-    void mk_selectcolumns( Database *db, HttpHeader *h, DbTable *tab,
-                           DbTable::ColumnVec &vals,
-			   unsigned int &anzahl_vals,
-			   DbTable::ValueMap &where, CsList &wop);
+    void mk_selectcolumns( Database *db, HttpHeader *h, DbTable *tab, DbTable::ColumnVec &vals, unsigned int &anzahl_vals, DbTable::ValueMap &where, CsList &wop);
+
+public:
+    DbHttpUtilsTable( DbHttp *h, int noadd = 0 );
+    virtual ~DbHttpUtilsTable();
+
+    virtual std::string getPath() { return "db/utils/table"; }
+    virtual int request (Database *db, HttpHeader *h);
 
     void modify (Database *db, HttpHeader *h);
 
     void insert_xml (Database *db, HttpHeader *h);
     void modify_xml (Database *db, HttpHeader *h);
     void delete_xml (Database *db, HttpHeader *h);
-    void data_xml (Database *db, HttpHeader *h);
+    void data_xml   (Database *db, HttpHeader *h);
 
     void modify_html (Database *db, HttpHeader *h);
 
     void file_dat(Database *db, HttpHeader *h);
-public:
-    DbHttpUtilsTable( DbHttp *h );
-    virtual ~DbHttpUtilsTable();
-
-    virtual std::string getPath() { return "db/utils/table"; }
-    virtual int request (Database *db, HttpHeader *h);
-
 };
 
 #endif /* dbhttp_utils_table_mne */

@@ -81,6 +81,7 @@ $(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/embedweb/http_vars.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_map.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_utils.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_filesystem.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_search.cpp \
 
 $(SHLIB_PRE)mnehttpxml.$(SHLIB).ISDLL := TRUE
@@ -130,6 +131,7 @@ $(SHLIB_PRE)mnedbhttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_connect.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_table.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_query.cpp \
+                $(PROJECT_ROOT)/allg/db/dbhttputils_repository.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_trust.cpp \
                 \
                 $(PROJECT_ROOT)/allg/db/dbhttpadmin_table.cpp \

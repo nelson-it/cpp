@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <errno.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #else
@@ -14,7 +15,9 @@
 #include <arpa/inet.h>
 #endif
 
-#include <utils/tostring.h>
+#include <argument/argument.h>
+#include <utils/process.h>
+#include <utils/process.h>
 
 #include "dbconnect.h"
 #include "dbhttputils_trust.h"
@@ -23,94 +26,94 @@
 int
 inet_aton(const char *cp_arg, struct in_addr *addr)
 {
-register const u_char *cp = (u_char*)cp_arg;
-register u_long val;
-register int base;
+    register const u_char *cp = (u_char*)cp_arg;
+    register u_long val;
+    register int base;
 #ifdef WIN32
-register ULONG_PTR n;
+    register ULONG_PTR n;
 #else
-register unsigned long n;
+    register unsigned long n;
 #endif
-register u_char c;
-u_int parts[4];
-register u_int *pp = parts;
+    register u_char c;
+    u_int parts[4];
+    register u_int *pp = parts;
 
-for (;;) {
-/*
-* Collect number up to ``.''.
-* Values are specified as for C:
-* 0x=hex, 0=octal, other=decimal.
-*/
-val = 0; base = 10;
-if (*cp == '0') {
-if (*++cp == 'x' || *cp == 'X')
-base = 16, cp++;
-else
-base = 8;
-}
-while ((c = *cp) != '\0') {
-if (isascii(c) && isdigit(c)) {
-val = (val * base) + (c - '0');
-cp++;
-continue;
-}
-if (base == 16 && isascii(c) && isxdigit(c)) {
-val = (val << 4) +
-(c + 10 - (islower(c) ? 'a' : 'A'));
-cp++;
-continue;
-}
-break;
-}
-if (*cp == '.') {
-/*
-* Internet format:
-* a.b.c.d
-* a.b.c (with c treated as 16-bits)
-* a.b (with b treated as 24 bits)
-*/
-if (pp >= parts + 3 || val > 0xff)
-return (0);
-*pp++ = val, cp++;
-} else
-break;
-}
-/*
-* Check for trailing characters.
-*/
-if (*cp && (!isascii(*cp) || !isspace(*cp)))
-return (0);
-/*
-* Concoct the address according to
-* the number of parts specified.
-*/
-n = pp - parts + 1;
-switch (n) {
+    for (;;) {
+        /*
+         * Collect number up to ``.''.
+         * Values are specified as for C:
+         * 0x=hex, 0=octal, other=decimal.
+         */
+        val = 0; base = 10;
+        if (*cp == '0') {
+            if (*++cp == 'x' || *cp == 'X')
+                base = 16, cp++;
+            else
+                base = 8;
+        }
+        while ((c = *cp) != '\0') {
+            if (isascii(c) && isdigit(c)) {
+                val = (val * base) + (c - '0');
+                cp++;
+                continue;
+            }
+            if (base == 16 && isascii(c) && isxdigit(c)) {
+                val = (val << 4) +
+                        (c + 10 - (islower(c) ? 'a' : 'A'));
+                cp++;
+                continue;
+            }
+            break;
+        }
+        if (*cp == '.') {
+            /*
+             * Internet format:
+             * a.b.c.d
+             * a.b.c (with c treated as 16-bits)
+             * a.b (with b treated as 24 bits)
+             */
+            if (pp >= parts + 3 || val > 0xff)
+                return (0);
+            *pp++ = val, cp++;
+        } else
+            break;
+    }
+    /*
+     * Check for trailing characters.
+     */
+    if (*cp && (!isascii(*cp) || !isspace(*cp)))
+        return (0);
+    /*
+     * Concoct the address according to
+     * the number of parts specified.
+     */
+    n = pp - parts + 1;
+    switch (n) {
 
-case 1: /* a -- 32 bits */
-break;
+    case 1: /* a -- 32 bits */
+        break;
 
-case 2: /* a.b -- 8.24 bits */
-if (val > 0xffffff)
-return (0);
-val |= parts[0] << 24;
-break;
+    case 2: /* a.b -- 8.24 bits */
+        if (val > 0xffffff)
+            return (0);
+        val |= parts[0] << 24;
+        break;
 
-case 3: /* a.b.c -- 8.8.16 bits */
-if (val > 0xffff)
-return (0);
-val |= (parts[0] << 24) | (parts[1] << 16);
-break;
+    case 3: /* a.b.c -- 8.8.16 bits */
+        if (val > 0xffff)
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16);
+        break;
 
-case 4: /* a.b.c.d -- 8.8.8.8 bits */
-if (val > 0xff)
-return (0);
-val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
-break;
-}
-if (addr)
-addr->s_addr = htonl(val);
-return (1);
+    case 4: /* a.b.c.d -- 8.8.8.8 bits */
+        if (val > 0xff)
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
+        break;
+    }
+    if (addr)
+        addr->s_addr = htonl(val);
+    return (1);
 }
 #endif
 DbHttpUtilsTrust::DbHttpUtilsTrust(DbHttp *h)
@@ -118,8 +121,6 @@ DbHttpUtilsTrust::DbHttpUtilsTrust(DbHttp *h)
  msg("DbHttpUtilsTrust")
 {
     this->nologin = 0;
-
-    subprovider["function.html"]      = &DbHttpUtilsTrust::function_html;
     h->add_provider(this);
 }
 
@@ -145,36 +146,23 @@ int DbHttpUtilsTrust::request(Database *db, HttpHeader *h, int nologin )
 
 int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
 {
+    std::string name;
+    std::string::size_type n;
 
-    SubProviderMap::iterator i;
+    n = h->filename.find_last_of('.');
+    if ( n != std::string::npos )
 
-    if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
-    {
-        if ( h->filename.find(".xml") == strlen(h->filename.c_str()) - 4 )
-        {
-            h->status = 200;
-            h->content_type = "text/xml";
-            fprintf(h->content,
-                    "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-                    h->charset.c_str());
-            (this->*(i->second))(db, h);
-        }
-        else
-        {
-            h->status = 200;
-            (this->*(i->second))(db, h);
-        }
+        name = h->filename.substr(0, n);
 
-        return 1;
-    }
-
-    return 0;
-
+    h->status = 200;
+    this->execute(db, h, name);
+    return 1;
 }
 
-void DbHttpUtilsTrust::function_html(Database *db, HttpHeader *h)
+void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
 {
     std::string stm;
+    char buffer[1024];
 
     CsList cols;
     DbTable::ValueMap where;
@@ -185,8 +173,9 @@ void DbHttpUtilsTrust::function_html(Database *db, HttpHeader *h)
 
     cols.add("action");
     cols.add("ipaddr");
+    cols.add("typ");
 
-    where["name"] = h->vars["name"];
+    where["name"] = name;
 
     result = tab->select(&cols, &where);
     tab->end();
@@ -221,27 +210,109 @@ void DbHttpUtilsTrust::function_html(Database *db, HttpHeader *h)
 
     if ( ri == result->end() )
     {
+        h->content_type = "text/plain";
+        rewind(h->content);
         fprintf(h->content, "error");
-        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", h->vars["name"].c_str());
+        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
         return;
     }
 
-    stm = (std::string) (*ri)[0];
-
-    if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
+    if ( (std::string) (*ri)[2] == "sql" )
     {
-        DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
-        if ( r->size() == 0 )
-            fprintf(h->content,"ok");
+        stm = (std::string) (*ri)[0];
+
+        if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
+        {
+            DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
+            if ( r->size() == 0 )
+                fprintf(h->content,"ok");
+            else
+                fprintf(h->content,"%s",ToString::mkhtml(((*r)[0][0]).format(&msg)).c_str());
+        }
         else
-            fprintf(h->content,"%s",ToString::mkhtml(((*r)[0][0]).format(&msg)).c_str());
+        {
+            fprintf(h->content,"error");
+        }
+
+        db->p_getConnect()->end();
+    }
+    else if ( (std::string) (*ri)[2] == "shell" )
+    {
+        Process p(DbHttpProvider::http->getServersocket());
+        CsList cmd;
+        int anzahl;
+        HttpVars::Vars::iterator i;
+        std::map<std::string,std::string>::iterator m;
+        Argument a;
+
+        cmd.add((std::string) (*ri)[0]);
+
+        DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
+        DbHttpAnalyse::Client::Userprefs::iterator ui;
+        for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+        {
+            cmd.add("-" + ui->first);
+            cmd.add(ui->second);
+        }
+
+        for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
+        {
+            cmd.add("-datapath");
+            cmd.add(m->first);
+            cmd.add(m->second);
+        }
+
+        cmd.add("-content_type");
+        cmd.add(h->content_type);
+
+        cmd.add("-hostname");
+        cmd.add(h->hostname);
+
+        cmd.add("-port");
+        cmd.add(h->port);
+
+        for ( i= h->vars.p_getVars()->begin(); i != h->vars.p_getVars()->end(); ++i )
+        {
+            cmd.add("-" + i->first);
+            cmd.add(i->second);
+        }
+
+        p.start(cmd, "pipe", NULL, NULL, a["EmbedwebHttpMapsRoot"]);
+
+        while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
+        {
+            if ( anzahl > 0 )
+                fwrite(buffer, 1, anzahl, h->content);
+            else if ( anzahl < 0 && errno != EAGAIN ) break;
+        }
+
+        if ( p.getStatus() != 0 )
+        {
+            h->content_type = "text/plain";
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
+            fprintf(h->content, "Fehler %d", p.getStatus());
+        }
+        else
+        {
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->filename.c_str()).c_str());
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
+        }
     }
     else
     {
-        fprintf(h->content,"error");
+        h->content_type = "text/plain";
+        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
+        buffer[sizeof(buffer) -1] = '\0';
+        h->extra_header.push_back(buffer);
+
+        rewind(h->content);
+        fprintf(h->content, "error");
+        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+        return;
+
     }
-
-    db->p_getConnect()->end();
-
 }
 

@@ -87,7 +87,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
     std::string passwd = h->vars["passwd"];
     h->location = h->vars["location"];
 
-    if ( user != "" )
+    if ( user != "" && user.substr(0,6) != "mneerp")
     {
         msg.pdebug(D_CLIENT, "ist ein neuer client %d", client);
         msg.pdebug(D_CLIENT, "host %d", s->getHost(client));
@@ -138,10 +138,6 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         h->set_cookies["MneHttpSessionLoginWrong"] = "1";
     }
 
-    h->dirname = "/main/login";
-    h->filename = "login.html";
-    h->content_type = "text/html";
-    h->setstatus = 201;
     h->set_cookies[cookieid.c_str()] = "";
 
 #ifdef PTHREAD
@@ -191,6 +187,12 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 	    for ( j = 0; ( id = q->getId(j) ) != ""; j++ )
 	        cl->userprefs[id] = std::string(((*r)[0])[j].format());
 	}
+
+    if ( cl->userprefs.find("fullname") == cl->userprefs.end() || cl->userprefs["fullname"] == "" )
+        cl->userprefs["fullname"] = cl->db->p_getConnect()->getUser();
+
+    if ( cl->userprefs.find("email") == cl->userprefs.end() || cl->userprefs["email"] == "" )
+        cl->userprefs["email"] = cl->db->p_getConnect()->getUser() + "@local";
 
 	cl->db->release(q);
 	cl->db->p_getConnect()->end();

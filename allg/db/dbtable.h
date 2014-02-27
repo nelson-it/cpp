@@ -195,86 +195,51 @@ public:
     virtual int modify(ValueMap *cols, ValueMap *where, int ready = 0) = 0;
     virtual int    del(ValueMap *where, int ready = 0) = 0;
 
-    virtual DbConnect::ResultMat* select( CsList *cols,
-                                          ValueMap *where,
-					  CsList *wop = NULL,
-					  CsList *order = NULL,
-					  int distinct = 0,
-					  int ready = 0) = 0;
+    virtual DbConnect::ResultMat* select( CsList *cols, ValueMap *where, CsList *wop = NULL, CsList *order = NULL, int distinct = 0, int ready = 0) = 0;
+    virtual DbConnect::ResultMat* select(ValueMap *cols, ValueMap *where, CsList *wop = NULL, CsList *order = NULL, int distinct = 0, int ready = 0) = 0;
 
-    virtual DbConnect::ResultMat* select(ValueMap *cols,
-                                         ValueMap *where,
-					 CsList *wop = NULL,
-					 CsList *order = NULL,
-					 int distinct = 0,
-					 int ready = 0) = 0;
-
-    virtual DbConnect::ResultMat* select(std::vector<std::string> *cols,
-                                         ValueMap *where = NULL,
-					 CsList *wop = NULL,
-					 std::vector<std::string> *order = NULL,
-					 int distinct = 0,
-					 int ready = 0)
+    virtual DbConnect::ResultMat* select(std::vector<std::string> *cols, ValueMap *where = NULL, CsList *wop = NULL, std::vector<std::string> *order = NULL, int distinct = 0, int ready = 0)
     {
         CsList l(cols);
-	if ( order == NULL )
-	    return select(&l, where, wop, (CsList *)NULL, distinct, ready);
+        if ( order == NULL )
+            return select(&l, where, wop, (CsList *)NULL, distinct, ready);
 
-	CsList o(order);
-	return select(&l, where, wop, &o, distinct, ready);
-
+        CsList o(order);
+        return select(&l, where, wop, &o, distinct, ready);
     }
 
-    virtual DbConnect::ResultMat* select(ColumnVec *cols,
-                                         ValueMap *where = NULL,
-					 CsList *wop = NULL,
-					 CsList *order = NULL,
-					 int distinct = 0,
-					 int ready = 0)
+    virtual DbConnect::ResultMat* select(ColumnVec *cols, ValueMap *where = NULL, CsList *wop = NULL, CsList *order = NULL, int distinct = 0, int ready = 0)
     {
         std::vector<std::string> c;
-	ColumnVec::iterator ci;
-	for ( ci = cols->begin(); ci != cols->end(); ++ci )
-	    c.push_back(ci->name);
+        ColumnVec::iterator ci;
+        for ( ci = cols->begin(); ci != cols->end(); ++ci )
+            c.push_back(ci->name);
 
-	return select(&c, where, wop, order, distinct, ready);
+        return select(&c, where, wop, order, distinct, ready);
     }
 
-    virtual DbConnect::ResultMat* select(std::vector<std::string> *cols,
-                                         ValueMap *where,
-					 CsList *wop,
-					 CsList *order,
-					 int distinct = 0,
-					 int ready = 0)
+    virtual DbConnect::ResultMat* select(std::vector<std::string> *cols, ValueMap *where, CsList *wop, CsList *order, int distinct = 0, int ready = 0)
     {
         CsList l(cols);
-	return select(&l, where, wop, order, distinct, ready);
+        return select(&l, where, wop, order, distinct, ready);
     }
 
-    virtual DbConnect::ResultMat* select(CsList *cols,
-                                         ValueMap *where,
-					 CsList *wop,
-					 std::vector<std::string> *order,
-					 int distinct = 0, int ready = 0)
+    virtual DbConnect::ResultMat* select(CsList *cols, ValueMap *where, CsList *wop, std::vector<std::string> *order, int distinct = 0, int ready = 0)
     {
-	if ( order == NULL )
-	    return select(cols, where, wop, (CsList *)NULL, distinct, ready);
+        if ( order == NULL )
+            return select(cols, where, wop, (CsList *)NULL, distinct, ready);
 
-	CsList o(order);
-	return select(cols, where, wop, &o, distinct, ready);
+        CsList o(order);
+        return select(cols, where, wop, &o, distinct, ready);
     }
 
-    virtual DbConnect::ResultMat* select(ValueMap *cols,
-                                         ValueMap *where,
-					 CsList *wop,
-					 std::vector<std::string> *order,
-					 int distinct = 0, int ready = 0)
+    virtual DbConnect::ResultMat* select(ValueMap *cols, ValueMap *where, CsList *wop, std::vector<std::string> *order, int distinct = 0, int ready = 0)
     {
-	if ( order == NULL )
-	    return select(cols, where, wop, (CsList *)NULL, distinct, ready);
+        if ( order == NULL )
+            return select(cols, where, wop, (CsList *)NULL, distinct, ready);
 
-	CsList o(order);
-	return select(cols, where, wop, &o, distinct, ready);
+        CsList o(order);
+        return select(cols, where, wop, &o, distinct, ready);
     }
 };
 

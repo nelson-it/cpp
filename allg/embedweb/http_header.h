@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <map>
 
 #include "http_cookie.h"
 #include "http_vars.h"
@@ -34,6 +35,7 @@ public:
     typedef std::map<std::string, std::string> SetCookies;
 
     std::vector<std::string> serverpath;
+    std::map<std::string,std::string> datapath;
 
     // Wird gesendet
     // =============
@@ -113,6 +115,7 @@ public:
 
         id = "";
         serverpath.clear();
+        datapath.clear();
         typ       = "";
         providerpath = "";
         dirname   = "";

@@ -136,9 +136,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
         }
         else if (str == "") // ab hier beginnen die Daten
         {
-            for (c_old = c; strncmp(c, boundary.c_str(), boundary.size())
-                    != 0; c++)
-                ;
+            for (c_old = c; strncmp(c, boundary.c_str(), boundary.size()) != 0; c++);
 
             if (content_type != "")
             {
@@ -161,12 +159,10 @@ HttpVars::setMultipart(std::string boundary, char *data)
 #endif
                 if ((f = fopen(tmp, "wb")) == NULL)
                 {
-                	msg.perror(FILEOPEN,
-                            "konnte temporäre Datei %s nicht öffnen", tmp);
+                	msg.perror(FILEOPEN, "konnte temporäre Datei %s nicht öffnen", tmp);
                 }
                 else
                 {
-
                     fwrite(c_old, 1, c - c_old - 2, f);
                     fclose(f);
                     files[name] = tmp;
@@ -194,10 +190,10 @@ HttpVars::setMultipart(std::string boundary, char *data)
                 value = name.substr(npos + 1);
                 name = name.substr(6, npos - 7);
                 npos = value.find("filename");
-                if (npos != std::string::npos) value = value.substr(npos + 10,
-                        value.size() - 12);
+                if (npos != std::string::npos) value = value.substr(npos + 10, value.size() - 12);
                 else value = "";
-
+                if ( value.rfind('\\') != std::string::npos )
+                    value = value.substr(value.rfind('\\') + 1);
             }
             else
             {
