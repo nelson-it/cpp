@@ -262,6 +262,9 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
             cmd.add(m->second);
         }
 
+        cmd.add("-db");
+        cmd.add(a["DbDatabase"]);
+
         cmd.add("-content_type");
         cmd.add(h->content_type);
 
