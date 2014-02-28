@@ -148,7 +148,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
 
         if ( dirp.d_type == DT_DIR )
             dirs.insert(dirp.d_name);
-        else if ( dirp.d_type == DT_REG )
+        else if ( dirp.d_type == DT_REG || dirp.d_type == DT_UNKNOWN )
             files.insert(dirp.d_name);
     }
     closedir(dp);
