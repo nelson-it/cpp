@@ -250,6 +250,8 @@ std::string HttpVars::data(const char *name, int raw)
         {
             CryptBase64 base64;
             int size;
+            int i;
+            int length;
 
             size = lseek(f, 0, SEEK_END);
             lseek(f, 0, SEEK_SET);
@@ -257,7 +259,10 @@ std::string HttpVars::data(const char *name, int raw)
             unsigned char *in = (unsigned char *)new char[size];
             unsigned char *out = (unsigned char *)new char[base64.encode_needsize(size) + 1];
 
-            read(f, in, size);
+            i = 0;
+            length=0;
+            while ( ( i = read(f, &(in[length]), size - length )) > 0 )
+                length += i;
             close(f);
 
             out[base64.encode(in, out, size)] = '\0';

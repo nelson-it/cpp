@@ -233,7 +233,11 @@ int CryptBase64::decode (const unsigned char *in, unsigned char *out, int len)
 			}
 			i++;
 
-			if ( in[i] == '=' ) break;
+			if ( in[i] == '=' )
+			{
+			    n++;
+			    break;
+			}
 		}
 		memcpy(&(out[count]), buffer, n - 1);
 		count += n - 1;
