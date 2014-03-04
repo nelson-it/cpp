@@ -138,7 +138,7 @@ msg("HttpAnalyse")
 	content_types["gz"]   = "application/gzip";
 	content_types["gtar"] = "application/x-gtar";
 	content_types["z"]    = "application/x-compress";
-	content_types["zip"]  = "application/octet-stream";
+	content_types["zip"]  = "application/zip";
 
 	content_types["pdf"]  = "application/pdf";
 	content_types["ai"]   = "application/postscript";
