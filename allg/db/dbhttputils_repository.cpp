@@ -738,13 +738,11 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     }
     else
     {
-        while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
+        while ( ( rlen = p.read(buffer, sizeof(buffer))) != 0 )
         {
             if ( rlen > 0 )
-            {
-                fwrite(buffer, rlen, 1,  h->content);
-            }
-            else if ( rlen < 0 && errno != EAGAIN ) break;
+                fwrite(buffer, 1, rlen,  h->content);
+            else if ( ( rlen < 0 && errno != EAGAIN ) ) break;
         }
     }
 }
