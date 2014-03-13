@@ -1,6 +1,8 @@
 #ifndef dbconnect_mne
 #define dbconnect_mne
 
+#include <iconv.h>
+
 #include <string>
 #include <vector>
 
@@ -93,6 +95,7 @@ public:
 protected:
     Message msg;
     ResultMat result;
+    iconv_t iv;
 
 public:
     DbConnect() : msg("DbConnect") {};
