@@ -327,11 +327,31 @@ DbConnect::Result::~Result()
 void DbConnect::mk_string(std::string &str, int nodelimter)
 {
     std::string::iterator i;
+    char *inbuf, *outbuf, *ci, *co;
+    size_t innum,outnum;
+
     if ( str.find("E'") == 0 )
     {
         msg.pdebug(0, "Wahrscheinlich doppelter Aufruf von mk_string für <%s>", str.c_str());
         return;
     }
+
+    if (nodelimter)
+      str = str.substr(1, str.length() - 2);
+
+    ci = inbuf = (char *)str.c_str();
+    innum = str.length();
+
+    co = outbuf = new char[str.size() * 4];
+    outnum = ( str.size() * 4 - 1);
+
+    iv = iconv_open("utf-8//TRANSLIT", "UTF-8");
+    iconv (iv, &ci, &innum, &co, &outnum);
+    iconv_close(iv);
+
+    *co = '\0';
+    str = outbuf;
+    delete[] outbuf;
 
     for (i = str.begin(); i != str.end(); ++i)
     {
@@ -346,13 +366,8 @@ void DbConnect::mk_string(std::string &str, int nodelimter)
             ++i;
         }
     }
-    if (!nodelimter)
-    {
-        str.insert(str.begin(), '\'');
-        str.push_back('\'');
-    }
 
-    str.insert(str.begin(), 'E');
+    str = "E\'" + str + "\'";
 }
 
 std::string DbConnect::getValue(int typ, std::string value)

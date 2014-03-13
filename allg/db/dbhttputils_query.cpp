@@ -97,7 +97,10 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
     {
         char str[64];
         struct tm tm;
-        time_t t = (long)r;
+        long val = (long)r;
+
+        time_t t = val;
+        fprintf(stderr, "%s\n", r.format(&msg));
         if ( localtime_r(&t,&tm) == NULL )
         {
             msg.pwarning(W_CONV, "Konnte <%d> nicht in einen Zeitstruktur wandeln");
@@ -180,7 +183,10 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
     std::string::size_type i,j,k;
     std::string::size_type pos;
 
+    DbConnect::Result     rr;
     DbConnect::ResultMat *r;
+    DbConnect::ResultMat::iterator rm;
+
     DbQuery *query;
     std::vector<std::string::size_type> vals;
     std::vector<std::string> colfs;
@@ -190,10 +196,10 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 
     std::string dateformat;
 
-    DbConnect::ResultMat::iterator rm;
-    std::map<DbConnect::Result, DbConnect::ResultMat> headmap;
-    std::map<DbConnect::Result, DbConnect::ResultMat>::iterator hi;
-    std::string::size_type rlength;
+    std::map<int, DbConnect::ResultMat> headmap;
+    std::map<int, DbConnect::ResultMat>::iterator hi;
+    std::set<DbConnect::Result> colset;
+    std::set<DbConnect::Result>::iterator ci;
 
     int exports = ( h->vars["exports"] != "" );
     CsList hide(h->vars["tablehidecols"]);
@@ -282,82 +288,76 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 
         for (rm = r->begin(), j=0; rm != r->end(); ++rm, ++j)
         {
-            if ( ( hi = headmap.find((*rm)[vals[0]]) ) == headmap.end() )
+            if ( ( ci = colset.find((*rm)[vals[0]]) ) == colset.end() )
+                colset.insert((*rm)[vals[0]]);
+        }
+
+        for (rm = r->begin(), j=0; rm != r->end(); ++rm )
+        {
+            if ( rr != ((*rm)[vals[1]]) )
             {
+                rr = (*rm)[vals[1]];
                 DbConnect::ResultMat v;
-                headmap.insert(std::make_pair((*rm)[vals[0]], v));
-                hi = headmap.find((*rm)[vals[0]]);
+                headmap.insert(std::make_pair(j, v));
+                hi = headmap.find(j++);
             }
             hi->second.push_back((*rm));
         }
 
         if ( headmap.size() == 0 ) return;
 
-        rlength = j / headmap.size();
+        if ( exports )
+            fprintf(h->content,"\"%s\"", ToString::mkcsv(keyname).c_str());
+        else
+            fprintf(h->content, "<head>\n<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(),"", "");
 
-        if ( ! exports ) fprintf(h->content, "<head>\n");
-
-        for ( hi = headmap.begin(), i=0; hi != headmap.end(); ++hi, ++i )
+        for ( k=3; k<cols.size(); ++k)
         {
-            DbConnect::Result rr = hi->first;
-           if ( hi->second.size() < rlength )
-                msg.perror(E_DYNDATA_COLSSIZE, "Ergebnispalten sind nicht gleich gross <%s> <%d:%d>", rr.format(), (int)hi->second.size(), (int)rlength);
-
-            if ( i == 0 )
+            pos = query->ofind(cols[k]);
+            if ( pos != std::string::npos )
             {
-                if ( exports )
-                    fprintf(h->content,"\"%s\"", ToString::mkcsv(keyname).c_str());
-                else
-                    fprintf(h->content, "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(),"", "");
-            }
+                colformat = query->getFormat(pos);
+                coltyp = query->getColtyp(pos);
+                if (  coltyp == DbConnect::FLOAT || coltyp == DbConnect::DOUBLE )
+                {
+                    std::string::size_type j;
+                    if ( ( j = colformat.find('%',0) != std::string::npos ))
+                        colformat.insert(j, 1, '\'');
+                }
 
+                if ( exports )
+                {
+                    char str[100];
+                    snprintf(str, sizeof(str), "%ld", (long)k );
+                    if ( hide.find(str) == std::string::npos )
+                    {
+                        fprintf(h->content,";\"%s\"",ToString::mkcsv(query->getName(pos)).c_str());
+                    }
+                }
+                else
+                    fprintf(h->content,
+                            "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
+                            query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
+                            query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str());
+
+                if ( h->vars["distinct"] == "" ) vals.push_back(pos); else vals.push_back(0);
+                colfs.push_back(colformat);
+                dpytyp.push_back(coltyp);
+
+            }
+            else
+            {
+                msg.perror(E_WRONG_COLUMN, "Spaltenid <%s> unbekannt", cols[i].c_str());
+            }
+        }
+
+        for ( ci = colset.begin(), i=0; ci != colset.end(); ++ci, ++i )
+        {
+            DbConnect::Result rr = *ci;
             if ( exports )
                 fprintf(h->content,";\"%s\"",ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str());
             else
                 fprintf(h->content, "<d><id>%s%d</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n", colids[0].c_str(), (int)i, dpytyp[2], colfs[2].c_str(), ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str(),"", "");
-
-            if ( i == ( headmap.size() - 1 ) )
-            {
-                for ( k=3; k<cols.size(); ++k)
-                {
-                    pos = query->ofind(cols[k]);
-                    if ( pos != std::string::npos )
-                    {
-                        colformat = query->getFormat(pos);
-                        coltyp = query->getColtyp(pos);
-                        if (  coltyp == DbConnect::FLOAT || coltyp == DbConnect::DOUBLE )
-                        {
-                            std::string::size_type j;
-                            if ( ( j = colformat.find('%',0) != std::string::npos ))
-                                colformat.insert(j, 1, '\'');
-                        }
-
-                        if ( exports )
-                        {
-                            char str[100];
-                            snprintf(str, sizeof(str), "%ld", (long)k );
-                            if ( hide.find(str) == std::string::npos )
-                            {
-                                fprintf(h->content,";\"%s\"",ToString::mkcsv(query->getName(pos)).c_str());
-                            }
-                        }
-                        else
-                            fprintf(h->content,
-                                    "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
-                                    query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
-                                    query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str());
-
-                        if ( h->vars["distinct"] == "" ) vals.push_back(pos); else vals.push_back(0);
-                        colfs.push_back(colformat);
-                        dpytyp.push_back(coltyp);
-
-                    }
-                    else
-                    {
-                        msg.perror(E_WRONG_COLUMN, "Spaltenid <%s> unbekannt", cols[i].c_str());
-                    }
-                }
-            }
         }
 
         if ( h->vars["distinct"] != "" && h->error_found == 0 )
@@ -390,67 +390,77 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
             fprintf(h->content,"\n");
         }
 
-        for (i = 0; i<rlength && h->error_found == 0; ++i )
+        for ( hi = headmap.begin(); hi != headmap.end(); ++hi )
         {
-            if ( ! exports )
-                fprintf(h->content, "<r>");
-
-            for ( hi = headmap.begin(); hi != headmap.end(); ++hi )
+            for ( i = 0; i < hi->second.size(); )
             {
-                if ( hi == headmap.begin() )
+                if ( exports )
+                {
+                    mk_exportvalue(h, (hi->second[i])[vals[1]],  dpytyp[1], colfs[1], "", dateformat );
+                }
+                else
+                {
+                    if ( dpytyp[1] != DbConnect::BINARY )
+                        fprintf(h->content, "<r><v>%s</v>", ToString::mkxml( (hi->second[i])[vals[1]].format(&msg, NULL, 0, colfs[1].c_str())).c_str());
+                    else
+                        fprintf(h->content, "<v>binary</v>");
+                }
+
+                for ( k=3; k<vals.size(); k++)
                 {
                     if ( exports )
                     {
-                            mk_exportvalue(h, (hi->second[i])[vals[1]],  dpytyp[1], colfs[1], "", dateformat );
+                        char str[100];
+                        snprintf(str, sizeof(str), "%ld", (long)k );
+                        if ( hide.find(str) == std::string::npos )
+                        {
+                            mk_exportvalue(h, (hi->second[i])[vals[k]],  dpytyp[k], colfs[k], ";" , dateformat );
+                        }
                     }
                     else
                     {
-                        if ( dpytyp[1] != DbConnect::BINARY )
-                            fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[1]].format(&msg, NULL, 0, colfs[1].c_str())).c_str());
+                        if ( dpytyp[vals[k]] != DbConnect::BINARY )
+                            fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[k]].format(&msg, NULL, 0, colfs[k].c_str())).c_str());
                         else
                             fprintf(h->content, "<v>binary</v>");
                     }
                 }
 
-                if ( exports )
+                for ( ci = colset.begin(); ci != colset.end(); ++ci )
                 {
-                    mk_exportvalue(h, (hi->second[i])[vals[2]],  dpytyp[2], colfs[2], ";", dateformat );
-                }
-                else
-                {
-                    if ( dpytyp[2] != DbConnect::BINARY )
-                        fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[2]].format(&msg, NULL, 0, colfs[2].c_str())).c_str());
-                    else
-                        fprintf(h->content, "<v>binary</v>");
-                }
-            }
-
-            hi = headmap.begin();
-            for ( k=3; k<vals.size(); k++)
-            {
-                if ( exports )
-                {
-                    char str[100];
-                    snprintf(str, sizeof(str), "%ld", (long)k );
-                    if ( hide.find(str) == std::string::npos )
+                    DbConnect::Result rr = *ci;
+                    if ( hi->second.size() > i && hi->second[i][vals[0]] == rr )
                     {
-                        mk_exportvalue(h, (headmap.begin()->second[i])[vals[k]],  dpytyp[k], colfs[k], ";" , dateformat );
+                        if ( exports )
+                        {
+                            mk_exportvalue(h, (hi->second[i])[vals[2]],  dpytyp[2], colfs[2], ";", dateformat );
+                        }
+                        else
+                        {
+                            if ( dpytyp[0] != DbConnect::BINARY )
+                                fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[2]].format(&msg, NULL, 0, colfs[2].c_str())).c_str());
+                            else
+                                fprintf(h->content, "<v>binary</v>");
+                        }
+                        i++;
+                    }
+                    else
+                    {
+                        DbConnect::Result r;
+                        if ( exports )
+                            fprintf(h->content, ";");
+                        else
+                            fprintf(h->content, "<v></v>");
                     }
                 }
-                else
-                {
-                    if ( dpytyp[k] != DbConnect::BINARY )
-                        fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[k]].format(&msg, NULL, 0, colfs[k].c_str())).c_str());
-                    else
-                        fprintf(h->content, "<v>binary</v>");
-                }
-            }
 
-            if ( exports )
-                fprintf(h->content, "\n");
-            else
-                fprintf(h->content, "</r>");
+                if ( exports )
+                    fprintf(h->content, "\n");
+                else
+                    fprintf(h->content, "</r>");
+            }
         }
+
         if ( ! exports )
             fprintf(h->content, "</body>");
         else

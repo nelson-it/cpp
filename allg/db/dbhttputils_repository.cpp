@@ -596,6 +596,8 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
     DbTable *tab;
     DbTable::ValueMap where, vals;
     DbConnect::ResultMat *r;
+    std::string lasthash;
+    CsList l;
 
     execlog = "";
     if (( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  )
@@ -607,9 +609,25 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             return;
         }
 
+        cmd.add("git");
+
+        cmd.add("log");
+        cmd.add("--pretty=%H");
+
+        result = exec(&cmd, getRoot(h).c_str());
+
+        if ( result != 0 )
+        {
+            msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
+            msg.line("%s", execlog.c_str());
+            return;
+        }
+        l.setString(execlog, '\n');
+        lasthash = l[0];
+
         if ( check_path(h, h->vars["filenameInput.old"], 0, 0 ) != "" )
         {
-            cmd.add("git");
+            cmd.setString("git");
 
             cmd.add("log");
             cmd.add("--pretty=%H@%an@%at@%s");
@@ -638,22 +656,53 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
     tab->del(&where);
     if ( h->vars["status"] != "" )
-            tab->insert(&vals);
+        tab->insert(&vals);
 
-    CsList l(execlog, '\n');
+    where.clear();
+    where["repositoryid"] = vals["repositoryid"] = h->vars["repositoryidInput.old"];
+    where["filename"] = vals["filename"] = h->vars["filenameInput.old"];
+
+    l.setString (execlog, '\n');
     for ( i=0; i<l.size(); ++i )
     {
         if ( l[i] != "" )
         {
             CsList ele(l[i],'@');
-            where["hash"] = vals["hash"] = ele[0];
+            CsList svals("hash,repnote");
+
+            vals["hash"] = ele[0];
             vals["repauthor"] = ele[1];
             vals["repdate"] = ele[2];
             vals["repnote"] = ele[3];
 
-            r = tab->select(&vals, &where);
+            where["repdate"] = ele[2];
+
+            r = tab->select(&svals, &where);
             if (r->empty() )
                 tab->insert(&vals);
+            else
+            {
+                if ( ele[0] !=  (char*)(((*r)[0])[0]) )
+                    tab->modify(&vals, &where);
+
+                if ( i == 0 && ele[0] == lasthash && ele[3] != (std::string)(((*r)[0])[1]) )
+                {
+                    cmd.setString("git");
+                    cmd.add("commit");
+                    cmd.add("--amend");
+                    cmd.add("-m");
+                    cmd.add((std::string)(((*r)[0])[1]));
+
+                    exec(&cmd, getRoot(h).c_str());
+                    if ( result != 0 )
+                    {
+                        msg.perror(E_MKREPOSITORY,"Fehler während des Korrigierens der Änderungsnotiz");
+                        msg.line("%s", execlog.c_str());
+                        msg.line("%s", cmd.getString().c_str());
+                        return;
+                    }
+                }
+            }
 
             vals["shortrev"] = "";
         }
@@ -906,7 +955,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
     if ( h->error_found == 0 && h->vars["autocommitInput"] != "" )
     {
         if ( h->vars["commitmessageInput"] == "" )
-            (*h->vars.p_getVars())["commitmessageInput"] = msg.get("Neu hinzugefügt");
+            (*h->vars.p_getVars())["commitmessageInput"] = msg.get("Neue Version hinzugefügt");
         commit(db, h);
     }
 
