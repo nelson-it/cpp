@@ -6,6 +6,7 @@
 
 #include <embedweb/http_provider.h>
 #include <embedweb/http_filesystem.h>
+#include <utils/process.h>
 #include "dbhttputils_query.h"
 #include "dbhttputils_table.h"
 
@@ -45,9 +46,9 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
     void read_name(Database *db, HttpHeader *h);
 
     int need_root;
+    std::string execlog;
 
     int exec(const CsList *cmd, const char *workdir);
-    std::string execlog;
 
     void insert_xml (Database *db, HttpHeader *h);
     void modify_xml (Database *db, HttpHeader *h);

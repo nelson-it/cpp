@@ -13,9 +13,136 @@
 #include <dirent.h>
 #include <fcntl.h>
 
-//#if defined(__MINGW32__) || defined(__CYGWIN__)
-//#else
-//#endif
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <windows.h>
+
+#define DIRSEP   "\\"
+
+char *realpath(const char *path, char resolved_path[PATH_MAX])
+{
+  char *return_path = 0;
+
+  if (path) //Else EINVAL
+  {
+    if (resolved_path)
+    {
+      return_path = (char *)resolved_path;
+    }
+    else
+    {
+      //Non standard extension that glibc uses
+      return_path = (char *)malloc(PATH_MAX);
+    }
+
+    if (return_path) //Else EINVAL
+    {
+      //This is a Win32 API function similar to what realpath() is supposed to do
+      size_t size = GetFullPathNameA(path, PATH_MAX, return_path, 0);
+
+      //GetFullPathNameA() returns a size larger than buffer if buffer is too small
+      if (size > PATH_MAX)
+      {
+        if (return_path != resolved_path) //Malloc'd buffer - Unstandard extension retry
+        {
+          size_t new_size;
+
+          free(return_path);
+          return_path = (char *)malloc(size);
+
+          if (return_path)
+          {
+            new_size = GetFullPathNameA(path, size, return_path, 0); //Try again
+
+            if (new_size > size) //If it's still too large, we have a problem, don't try again
+            {
+              free(return_path);
+              return_path = 0;
+              errno = ENAMETOOLONG;
+            }
+            else
+            {
+              size = new_size;
+            }
+          }
+          else
+          {
+            //I wasn't sure what to return here, but the standard does say to return EINVAL
+            //if resolved_path is null, and in this case we couldn't malloc large enough buffer
+            errno = EINVAL;
+          }
+        }
+        else //resolved_path buffer isn't big enough
+        {
+          return_path = 0;
+          errno = ENAMETOOLONG;
+        }
+      }
+
+      //GetFullPathNameA() returns 0 if some path resolve problem occured
+      if (!size)
+      {
+        if (return_path != resolved_path) //Malloc'd buffer
+        {
+          free(return_path);
+        }
+
+        return_path = 0;
+
+        //Convert MS errors into standard errors
+        switch (GetLastError())
+        {
+          case ERROR_FILE_NOT_FOUND:
+            errno = ENOENT;
+            break;
+
+          case ERROR_PATH_NOT_FOUND: case ERROR_INVALID_DRIVE:
+            errno = ENOTDIR;
+            break;
+
+          case ERROR_ACCESS_DENIED:
+            errno = EACCES;
+            break;
+
+          default: //Unknown Error
+            errno = EIO;
+            break;
+        }
+      }
+
+      //If we get to here with a valid return_path, we're still doing good
+      if (return_path)
+      {
+        struct stat stat_buffer;
+
+        //Make sure path exists, stat() returns 0 on success
+        if (stat(return_path, &stat_buffer))
+        {
+          if (return_path != resolved_path)
+          {
+            free(return_path);
+          }
+
+          return_path = 0;
+          //stat() will set the correct errno for us
+        }
+        //else we succeeded!
+      }
+    }
+    else
+    {
+      errno = EINVAL;
+    }
+  }
+  else
+  {
+    errno = EINVAL;
+  }
+
+  return return_path;
+}
+#else
+#define DIRSEP   "/"
+#endif
 
 #include <argument/argument.h>
 
@@ -77,7 +204,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
     std::string root = getRoot(h);
 
     if ( dir != "" )
-        root =  root + "/";
+        root =  root + DIRSEP;
 
 
     if ( root == ""
@@ -108,7 +235,7 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
         return "";
     }
 
-    if ( name != "" )  dir = dir + "/" + name;
+    if ( name != "" )  dir = dir + DIRSEP + name;
     if ( stat(dir.c_str(), &buf) == 0 )
         return dir;
 
@@ -124,17 +251,41 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
 
 void HttpFilesystem::readdir(HttpHeader *h)
 {
-    DIR *dp;
-    struct dirent dirp;
-    struct dirent *result;
-
     int pointdir = ( h->vars["pointdirInput.old"] != "" );
-
     files.clear();
     dirs.clear();
 
     if ( getDir(h) == "" )
         return;
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    HANDLE hh;
+    WIN32_FIND_DATA d;
+    std::string str;
+
+    str = path + "\\*";
+    hh = FindFirstFile(str.c_str(), &d);
+    if (hh == INVALID_HANDLE_VALUE)
+    {
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + h->vars["dirInput.old"] ).c_str());
+        return;
+    }
+
+    do
+    {
+        if ( ( !pointdir && (std::string(d.cFileName))[0] == '.' )|| (std::string(d.cFileName)) == "." || (std::string(d.cFileName)) == ".." ) continue;
+
+        if ( d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+            dirs.insert(d.cFileName);
+        else
+            files.insert(d.cFileName);
+    }
+    while (FindNextFile(hh, &d) );
+    FindClose(hh);
+#else
+    DIR *dp;
+    struct dirent dirp;
+    struct dirent *result;
 
     if((dp  = opendir(path.c_str())) == NULL)
     {
@@ -153,6 +304,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
     }
     closedir(dp);
     return;
+#endif
 }
 
 void HttpFilesystem::ls(HttpHeader *h)
@@ -192,8 +344,8 @@ void HttpFilesystem::ls(HttpHeader *h)
     fprintf(h->content,"</head><body>");
 
     dir = this->dir;
-    if ( dir != "" && dir[dir.length() -1] != '/' )
-        dir = dir + "/";
+    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
+        dir = dir + DIRSEP;
 
     i = 0;
     for ( is= dirs.begin(); is != dirs.end(); ++is )
@@ -223,7 +375,15 @@ void HttpFilesystem::mkdir(HttpHeader *h)
         return;
     }
 
-    if ( ::mkdir((dir + "/" + name).c_str(), 0777 ) != 0 )
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( ! CreateDirectory((dir + DIRSEP + name).c_str(), NULL) )
+    {
+        msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
+        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        return;
+    }
+#else
+    if ( ::mkdir((dir + DIRSEP + name).c_str(), 0777 ) != 0 )
     {
         char buf[1024];
         char *str = strerror_r(errno, buf, sizeof(buf));
@@ -232,7 +392,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
-
+#endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 
 
@@ -247,6 +407,15 @@ void HttpFilesystem::rmdir(HttpHeader *h)
         return;
     }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    SetFileAttributes(name.c_str(), FILE_ATTRIBUTE_NORMAL);
+    if ( ! RemoveDirectory(name.c_str()) )
+    {
+        msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
+        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        return;
+    }
+#else
     if ( ::rmdir(name.c_str()) != 0 )
     {
         char buf[1024];
@@ -257,11 +426,10 @@ void HttpFilesystem::rmdir(HttpHeader *h)
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
-
+#endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
-
-
 }
+
 void HttpFilesystem::mv(HttpHeader *h)
 {
     std::string oldname = h->vars["filenameInput.old"];
@@ -278,7 +446,15 @@ void HttpFilesystem::mv(HttpHeader *h)
         return;
     }
 
-    if ( ::rename((path + "/" + oldname).c_str(), (path + "/" + newname).c_str()) != 0 )
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( ! MoveFile((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) )
+     {
+         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Dateis");
+         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+         return;
+     }
+#else
+   if ( ::rename((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) != 0 )
     {
         char buf[1024];
         char *str = strerror_r(errno, buf, sizeof(buf));
@@ -287,7 +463,7 @@ void HttpFilesystem::mv(HttpHeader *h)
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
-
+#endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 
 
@@ -307,6 +483,18 @@ void HttpFilesystem::mkfile(HttpHeader *h)
     }
     else
     {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        std::string name = h->vars["filenameInput"];
+        if ( getDir(h) == "" || name == "" )
+        {
+            str = msg.get("Benötige einen Dateinamen");
+        }
+        if ( ! CopyFile(str.c_str(), (path + DIRSEP + name).c_str(), FALSE) )
+        {
+            str = msg.getSystemerror(errno);
+        }
+        str = "ok";
+#else
         int file1;
         if ( ( file1 = open(str.c_str(), O_RDONLY)) < 0 )
         {
@@ -322,7 +510,7 @@ void HttpFilesystem::mkfile(HttpHeader *h)
             }
             else
             {
-                int file2 = open((path + "/" + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+                int file2 = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
                 if ( file2 < 0 )
                 {
                     str = msg.getSystemerror(errno);
@@ -334,7 +522,6 @@ void HttpFilesystem::mkfile(HttpHeader *h)
                     mask = umask(0);
                     umask(mask);
                     fchmod(file2, (0666 & ~ mask));
-
                     int i,n;
                     char buf[1024];
                     while ( ( i = read(file1, &buf, sizeof(buf))) > 0 )
@@ -352,6 +539,7 @@ void HttpFilesystem::mkfile(HttpHeader *h)
                 }
             }
         }
+#endif
     }
 
     if ( h->vars["script"] != "" )
@@ -376,6 +564,14 @@ void HttpFilesystem::rmfile(HttpHeader *h)
         return;
     }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( ! DeleteFile(name.c_str()) )
+    {
+        msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
+        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        return;
+    }
+#else
     if ( ::unlink(name.c_str()) != 0 )
     {
         char buf[1024];
@@ -386,7 +582,7 @@ void HttpFilesystem::rmfile(HttpHeader *h)
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
-
+#endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 }
 

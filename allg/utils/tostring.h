@@ -1,7 +1,9 @@
 #ifndef tostring_mne
 #define tostring_mne
 
+#include <string.h>
 #include <string>
+#include <iconv.h>
 
 class ToString
 {
@@ -191,6 +193,22 @@ public:
         return str;
     }
 
+    static std::string substitute(std::string s, const char *from = "/", const char *to = "\\")
+    {
+        std::string str = s;
+        std::string::size_type i = 0;
+        std::string::size_type fl = strlen(from);
+        std::string::size_type tl = strlen(to);
+
+        while ( (i = str.find(from, i) ) != std::string::npos)
+        {
+            str.replace(i, fl, to);
+            i += tl;
+        }
+
+        return str;
+
+    }
     static int pattern( const char *string, const char *pattern)
     {
         const char *str = NULL, *ptr = NULL;
@@ -230,6 +248,54 @@ public:
             pattern++;
 
         return ( *pattern == '\0' );
+    }
+
+    static std::string to_utf8( std::string str, const char *encoding = "iso-8859-1" )
+    {
+        iconv_t iv;
+        char *inbuf, *outbuf, *ci, *co;
+        size_t innum,outnum;
+
+        ci = inbuf = (char *)str.c_str();
+        innum = str.length();
+
+        co = outbuf = new char[str.size() * 4];
+        outnum = ( str.size() * 4 - 1);
+
+        iv = iconv_open("utf-8//TRANSLIT", encoding);
+        iconv (iv, &ci, &innum, &co, &outnum);
+        iconv_close(iv);
+
+        *co = '\0';
+        str = outbuf;
+        delete[] outbuf;
+
+        return str;
+    }
+
+    static std::string from_utf8( std::string str, const char *encoding = "iso-8859-1" )
+    {
+        iconv_t iv;
+        char *inbuf, *outbuf, *ci, *co;
+        size_t innum,outnum;
+
+        ci = inbuf = (char *)str.c_str();
+        innum = str.length();
+
+        co = outbuf = new char[str.size() * 4];
+        outnum = ( str.size() * 4 - 1);
+
+        iv = iconv_open( (std::string(encoding) + "//TRANSLIT").c_str(), "utf-8");
+        if ( iv != (iconv_t) -1 )
+        {
+            iconv (iv, &ci, &innum, &co, &outnum);
+            iconv_close(iv);
+            *co = '\0';
+            str = outbuf;
+        }
+
+        delete[] outbuf;
+        return str;
     }
 
 };

@@ -39,6 +39,7 @@ protected:
 	E_WRITEHEADER,
 	E_NOTFOUND,
 	E_STATUS,
+	E_CONTENTLENGTH,
 
 	MAX_ERROR = 100
     };

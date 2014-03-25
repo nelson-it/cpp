@@ -3,6 +3,7 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <windows.h>
+#include <unistd.h>
 #else
 #include <sys/types.h>
 #include <unistd.h>
@@ -28,7 +29,10 @@ class Process : public TimeoutClient
     PROCESS_INFORMATION     pi;
     STARTUPINFO             si;
     int                     have_logfile;
-
+    int                     have_pipe;
+    HANDLE piper, pipew;
+    pthread_t waitid;
+    CRITICAL_SECTION    cs;
     #endif
 
 protected:
@@ -54,6 +58,11 @@ public:
 	  msg("PROCESS")
 	  {
             pid = -1;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            have_pipe = 0;
+            have_logfile = 0;
+            InitializeCriticalSection(&cs);
+#endif
             #ifdef PTHREAD
             pthread_mutex_init(&mutex,NULL);
             #endif
@@ -61,7 +70,7 @@ public:
 
     ~Process()
     {
-#ifndef WINDOWS
+#if ! defined(__MINGW32__) && !! defined(__CYGWIN__)
         if ( file >=0 )
         {
             pthread_mutex_lock(&mutex);
@@ -83,27 +92,22 @@ public:
 
     void timeout( long sec, long usec, long w_sec, long w_usec);
 
-    int write(const char *buffer, int size)
-    {
-#ifndef WINDOWS
-    	if ( file >= 0 ) return ::write(file, buffer, size);
-#endif
-        return 0;
-    	}
-
-    int read( char *buffer, int size)
-    {
-#ifndef WINDOWS
-    	if ( file >= 0 ) return ::read(file, buffer, size);
-#endif
-        return 0;
-    }
+    int write(const char *buffer, int size);
+    int read( char *buffer, int size);
 
     int wait();
     int stop();
 
     int getPid() { return this->pid; }
-    int getStatus() { return WEXITSTATUS(this->status); }
+    int getStatus()
+    {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( have_pipe )
+            pthread_join(waitid, NULL);
+            pthread_detach(waitid);
+#endif
+        return this->status;
+    }
 };
 
 #endif /* process_mne */

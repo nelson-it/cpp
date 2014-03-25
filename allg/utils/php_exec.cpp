@@ -1,4 +1,3 @@
-#define WINVER 0x0500
 #ifdef PTHREAD
 #include <pthread.h>
 #endif
