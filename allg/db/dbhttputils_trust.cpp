@@ -245,6 +245,10 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
         std::map<std::string,std::string>::iterator m;
         Argument a;
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        cmd.add("execute_shell.bat");
+        cmd.add(a["EmbedwebHttpMapsRoot"]);
+#endif
         cmd.add((std::string) (*ri)[0]);
 
         DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
@@ -259,7 +263,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
         {
             cmd.add("-datapath");
             cmd.add(m->first);
-            cmd.add(m->second);
+            cmd.add(ToString::substitute(ToString::substitute(m->second.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
         }
 
         cmd.add("-db");
@@ -280,7 +284,11 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
             cmd.add(i->second);
         }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        p.start(cmd, "pipe");
+#else
         p.start(cmd, "pipe", NULL, NULL, a["EmbedwebHttpMapsRoot"]);
+#endif
 
         while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
         {
@@ -289,6 +297,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
             else if ( anzahl < 0 && errno != EAGAIN ) break;
         }
 
+        fprintf(stderr, "status %d\n", p.getStatus());
         if ( p.getStatus() != 0 )
         {
             h->content_type = "text/plain";

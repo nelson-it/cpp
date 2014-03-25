@@ -23,6 +23,12 @@
 #include "dbquery.h"
 #include "dbhttputils_repository.h"
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#define DIRSEP   "\\"
+#else
+#define DIRSEP   "/"
+#endif
+
 DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
                       :HttpFilesystem(h, 1),
                        DbHttpProvider(h),
@@ -61,9 +67,7 @@ DbHttpUtilsRepository::~DbHttpUtilsRepository()
 
 int DbHttpUtilsRepository::request(Database *db, HttpHeader *h)
 {
-
     SubProviderMap::iterator i;
-
     if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
     {
         h->status = 200;
@@ -76,6 +80,29 @@ int DbHttpUtilsRepository::request(Database *db, HttpHeader *h)
     return 0;
 
 }
+int DbHttpUtilsRepository::exec(const CsList *cmd, const char *workdir)
+{
+    char buffer[1025];
+    int anzahl;
+    int retval;
+
+    execlog = "";
+    Process p(DbHttpProvider::http->getServersocket());
+    p.start(*cmd, "pipe", workdir);
+    while( ( anzahl = p.read(buffer, sizeof(buffer) - 1)) != 0 )
+    {
+        if ( anzahl > 0 )
+        {
+            buffer[anzahl] = '\0';
+            execlog += buffer;
+        }
+        else if ( anzahl < 0 && errno != EAGAIN ) break;
+    }
+
+    retval = p.getStatus();
+    return retval;
+}
+
 void DbHttpUtilsRepository::read_name(Database *db, HttpHeader *h)
 {
     DbConnect::ResultMat *r;
@@ -98,28 +125,6 @@ void DbHttpUtilsRepository::read_name(Database *db, HttpHeader *h)
 
 }
 
-int DbHttpUtilsRepository::exec(const CsList *cmd, const char *workdir)
-{
-    char buffer[1025];
-    int anzahl;
-
-    Process p(DbHttpProvider::http->getServersocket());
-    p.start(*cmd, "pipe", workdir);
-
-    execlog = "";
-    while( ( anzahl = p.read(buffer, sizeof(buffer) - 1)) != 0 )
-    {
-        if ( anzahl > 0 )
-        {
-            buffer[anzahl] = '\0';
-            execlog += buffer;
-        }
-        else if ( anzahl < 0 && errno != EAGAIN ) break;
-    }
-
-    return p.getStatus();
-}
-
 std::string DbHttpUtilsRepository::getRoot(HttpHeader *h)
 {
     std::string dir = HttpFilesystem::getRoot(h);
@@ -137,7 +142,7 @@ std::string DbHttpUtilsRepository::getRoot(HttpHeader *h)
         return "";
     }
 
-    return dir + "/" + rep;
+    return dir + DIRSEP + rep;
 }
 
 void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
@@ -212,7 +217,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             cmd.add("add");
             cmd.add(".");
 
-            p.start(cmd, NULL, ( root + "/" + h->vars["nameInput"]).c_str());
+            p.start(cmd, NULL, ( root + DIRSEP + h->vars["nameInput"]).c_str());
             result = p.wait();
 
             if ( result != 0 )
@@ -230,7 +235,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             cmd.add(msg.get("Initialversion aus Vorlage"));
             cmd.add("--author=\"" + userprefs["fullname"] + " <" + userprefs["email"] + ">\"" );
 
-            p.start(cmd, NULL, ( root + "/" + h->vars["nameInput"]).c_str());
+            p.start(cmd, NULL, ( root + DIRSEP + h->vars["nameInput"]).c_str());
             result = p.wait();
 
             if ( result != 0 )
@@ -336,13 +341,29 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
     {
         msg.pwarning(E_DELREPOSITORY,"Der Aktenordner <%s> existiert nicht", h->vars["nameInput.old"].c_str());
     }
-    else if ( rename( ( root +"/" + h->vars["nameInput.old"] ).c_str(), ( root +"/.trash/" + h->vars["nameInput.old"] + "_" + buffer).c_str()) != 0 )
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    else
     {
+        SetFileAttributes(( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), FILE_ATTRIBUTE_NORMAL);
+        if ( ! MoveFile(( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), ( root + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) )
+        {
+            std::string str = msg.getSystemerror(GetLastError());
+            msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
+            msg.line("%s", str.c_str());
+            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            return;
+        }
+    }
+#else
+    else if ( rename( ( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), ( root + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) != 0 )
+    {
+        std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
+        msg.line("%s", str.c_str());
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
-
+#endif
     (*h->vars.p_getVars()).erase("rootInput.old");
     (*h->vars.p_getVars()).erase("nameInput.old");
 
@@ -501,14 +522,15 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     fprintf(h->content,"</head><body>");
 
     dir = this->dir;
-    if ( dir != "" && dir[dir.length() -1] != '/' )
-        dir = dir + "/";
+    if ( dir != "" && dir.substr(dir.length() - 2) != DIRSEP )
+        dir = dir + DIRSEP;
 
     i = 0;
     for ( is= dirs.begin(); is != dirs.end(); ++is )
     {
-        std::string fullname = (dir + (*is));
+        std::string fullname = dir + (*is);
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
+        fullname = ToString::substitute(fullname, DIRSEP, "/");
 
         if ( singledir )
             fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + fullname + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
@@ -518,8 +540,9 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
     {
-        std::string fullname = (dir + (*is));
+        std::string fullname = dir + (*is);
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
+        fullname = ToString::substitute(fullname, DIRSEP, "/");
        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + fullname + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
     }
 
@@ -547,7 +570,7 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
         cmd.add("git");
         cmd.add("log");
         cmd.add("--pretty=%H@%an@%at@%s");
-        cmd.add(path + "/" + h->vars["filenameInput.old"]);
+        cmd.add(path + DIRSEP + h->vars["filenameInput.old"]);
 
         result = exec(&cmd, getRoot(h).c_str());
 
@@ -630,8 +653,9 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             cmd.setString("git");
 
             cmd.add("log");
+            cmd.add("--follow");
             cmd.add("--pretty=%H@%an@%at@%s");
-            cmd.add(getRoot(h) + "/" + h->vars["filenameInput.old"]);
+            cmd.add(getRoot(h) + DIRSEP + ToString::substitute(h->vars["filenameInput.old"].c_str(), "/", DIRSEP));
 
             result = exec(&cmd, getRoot(h).c_str());
 
@@ -743,8 +767,8 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     h->content_type = "text/html";
 
     name = h->vars["filenameInput.old"];
-    if ( name.rfind("/") != std::string::npos )
-        name = name.substr(name.rfind("/") + 1);
+    if ( name.rfind(DIRSEP) != std::string::npos )
+        name = name.substr(name.rfind(DIRSEP + 1));
 
     h->content_type = "application/octet-stream";
     snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(name.c_str()).c_str());
@@ -757,12 +781,14 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         return;
     }
 
+    h->content_type = "application/octet-stream";
     if ( h->vars["hash"] == "" )
     {
-        if ( ( file = open ((path + "/" + h->vars["filenameInput.old"]).c_str(), O_RDONLY)) < 0 )
+        if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY)) < 0 )
         {
             fprintf(h->content, msg.get("Datei <%s> wurde nicht gefunden").c_str(), h->vars["filenameInput.old"].c_str());
             h->status = 404;
+            h->content_type = "text/plain";
             return;
         }
     }
@@ -773,26 +799,21 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         cmd.add("show");
         cmd.add(h->vars["hash"] + ":" + h->vars["filenameInput.old"]);
 
-        p.start(cmd, "pipe", getRoot(h).c_str());
+        fclose(h->content);
+        p.start(cmd, h->content_filename.c_str(), getRoot(h).c_str());
+        p.wait();
+        h->content = fopen(h->content_filename.c_str(), "rb+");
+        fseek(h->content, 0, SEEK_END);
+        if ( p.getStatus() != 0 )
+            h->content_type = "text/plain";
     }
 
-    //h->content_type = (char*)(((*r)[0])[1]);
-    h->content_type = "application/octet-stream";
 
     if ( h->vars["hash"] == "" )
     {
         while ( ( rlen = ::read(file, buffer, sizeof(buffer))) > 0 )
             fwrite(buffer, rlen, 1,  h->content);
         close(file);
-    }
-    else
-    {
-        while ( ( rlen = p.read(buffer, sizeof(buffer))) != 0 )
-        {
-            if ( rlen > 0 )
-                fwrite(buffer, 1, rlen,  h->content);
-            else if ( ( rlen < 0 && errno != EAGAIN ) ) break;
-        }
     }
 }
 
@@ -855,13 +876,13 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
     {
         rewind(h->content);
         if ( h->vars["filenameInput.old"] == "" )
-            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + "/.gitignore";
+            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
         else
-            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + "/" + h->vars["filenameInput"] + "/.gitignore";
+            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"] + DIRSEP ".gitignore";
 
         std::string name = h->vars["filenameInput"];
 
-        int file = open((path + "/" + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
         close(file);
         addfile(db, h);
     }
@@ -879,7 +900,7 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
         return;
     }
 
-    d = opendir(( path + + "/" + h->vars["filenameInput.old"]).c_str() );
+    d = opendir(( path + + DIRSEP + h->vars["filenameInput.old"]).c_str() );
     if (d == NULL)
     {
         std::string e = msg.getSystemerror(errno);
@@ -903,7 +924,7 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
     std::string hdir = h->vars["dirInput.old"];
     std::string hname = h->vars["filenameInputfile.old"];
 
-    (*h->vars.p_getVars())["dirInput.old"] = h->vars["dirInput.old"] + "/" + h->vars["filenameInput.old"];
+    (*h->vars.p_getVars())["dirInput.old"] = h->vars["dirInput.old"] + DIRSEP + h->vars["filenameInput.old"];
     (*h->vars.p_getVars())["filenameInput.old"] = ".gitignore";
     rewind(h->content);
 
@@ -935,7 +956,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
         return;
     }
 
-    std::string filename = path + "/" + h->vars["filenameInput"];
+    std::string filename = path + DIRSEP + h->vars["filenameInput"];
 
     cmd.add("git");
     cmd.add("add");
@@ -966,7 +987,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
     }
 
     (*h->vars.p_getVars())["dirInput.old"] = "";
-    (*h->vars.p_getVars())["filenameInput.old"] = filename.substr(getRoot(h).size() + 1);
+    (*h->vars.p_getVars())["filenameInput.old"] = ToString::substitute(filename.substr(getRoot(h).size() + 1), DIRSEP, "/");
 
     dblog_update(db,h);
 
@@ -1004,7 +1025,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     cmd.add("git");
     cmd.add("rm");
     cmd.add("--quiet");
-    cmd.add((path + "/" + h->vars["filenameInput.old"]).c_str());
+    cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
 
     result = exec(&cmd, getRoot(h).c_str());
 
@@ -1033,7 +1054,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
 
     tab = db->p_getTable("mne_repository", "filedata");
     where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = (path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1);
+    where["filename"] = (path + DIRSEP + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1);
 
     tab->del(&where,1);
     db->release(tab);
@@ -1064,8 +1085,8 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
 
     cmd.add("git");
     cmd.add("mv");
-    cmd.add((path + "/" + oldname));
-    cmd.add((path + "/" + newname).c_str());
+    cmd.add((path + DIRSEP + oldname));
+    cmd.add((path + DIRSEP + newname).c_str());
 
     result = exec(&cmd, getRoot(h).c_str());
 
@@ -1093,8 +1114,8 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
     }
 
     where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = (path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1);
-    vals["filename"]  = (path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1);
+    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
+    vals["filename"]  = ToString::substitute((path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
 
     tab = db->p_getTable("mne_repository", "filedata");
     tab->modify(&vals, &where, 1);
@@ -1104,7 +1125,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
     tab->modify(&vals, &where, 1);
     db->release(tab);
 
-    (*h->vars.p_getVars())["filenameInput.old"] = (path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1);
+    (*h->vars.p_getVars())["filenameInput.old"] = ToString::substitute((path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
     dblog_update(db, h);
 
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
@@ -1121,7 +1142,11 @@ void DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
     cmd.add("commit");
     cmd.add("-a");
     cmd.add("-m");
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    cmd.add(ToString::from_utf8((h->vars["commitmessageInput"] == "" ) ? msg.get("Keine Notiz") : h->vars["commitmessageInput"] ));
+#else
     cmd.add((h->vars["commitmessageInput"] == "" ) ? msg.get("Keine Notiz") : h->vars["commitmessageInput"] );
+#endif
     cmd.add("--author=\"" + userprefs["fullname"] + " <" + userprefs["email"] + ">\"" );
 
     if ( ( result = exec(&cmd, getRoot(h).c_str())) == 0 ) execlog = "";

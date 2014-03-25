@@ -385,6 +385,15 @@ void Http::write_header()
 	if (act_h->content != NULL)
 	{
 		act_h->content_length = ftell(act_h->content);
+		if ( act_h->content_length < 0 )
+		{
+		    msg.perror(E_CONTENTLENGTH, "Kann Content-Length nicht ermitteln - versuche File neu zu öffenen");
+		    fclose(act_h->content);
+		    act_h->content = fopen(act_h->content_filename.c_str(), "rb+");
+		    fseek(act_h->content, 0, SEEK_END);
+   		    act_h->content_length = ftell(act_h->content);
+		    if ( act_h->content_length < 0 ) act_h->content_length = 0;
+		}
 		fseek(act_h->content, 0, SEEK_SET);
 	}
 	else
@@ -560,7 +569,7 @@ void Http::send()
 		fprintf(act_h->content,"</result>");
 
 	write_header();
-	if (act_h->content != NULL)
+	if (act_h->content != NULL && act_h->content_length > 0 )
 		s->write(act_h->client, act_h->content, act_h->content_length);
 	write_trailer();
 
@@ -579,7 +588,6 @@ void Http::get(HttpHeader *h)
 
 	struct timeval t1, t2;
 	long diff;
-	char str[512];
 
 	gettimeofday(&t1, NULL);
 
@@ -590,7 +598,7 @@ void Http::get(HttpHeader *h)
 	if ( getenv ("TEMP") != NULL)
 	{
 		strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
-		strncat(filename, "\\HttpXXXXXX", sizeof(filename) - strlen(str) - 1);
+		strncat(filename, "\\HttpXXXXXX", sizeof(filename) - strlen(filename) - 1);
 	}
 	_mktemp_s(filename, strlen(filename) + 1);
 	filename[sizeof(filename) - 1] = '\0';
@@ -611,6 +619,10 @@ void Http::get(HttpHeader *h)
 		return;
 	}
 	act_h->content_filename = filename;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	if ( ! SetHandleInformation((HANDLE)_get_osfhandle(fileno(h->content)), HANDLE_FLAG_INHERIT, 0) )
+		msg.pwarning(E_TEMPFILE, "SetHandleInformation schlug fehl");
+#endif
 
 	send();
 
