@@ -74,12 +74,17 @@ public:
         if ( file >=0 )
         {
             pthread_mutex_lock(&mutex);
-            close(file);
+           close(file);
             file = -1;
             pthread_mutex_unlock(&mutex);
         }
+#else
+        pthread_mutex_lock(&mutex);
 #endif
         stop();
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            pthread_mutex_unlock(&mutex);
+#endif
     }
 
     int  start(const char* cmd, const char *logfile = NULL,
