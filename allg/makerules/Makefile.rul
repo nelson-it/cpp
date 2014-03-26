@@ -82,7 +82,7 @@ depend_single::
 	  if ! [ "$($(TARGET).ISDLL)" = "TRUE" ];  then mkd=1; fi;\
 	  if   [ "$(WITH_SHARED_LIBS)" = "TRUE" ]; then mkd=1; fi; \
 	  if [ $$mkd = 1 ] ; then \
-	     $(PROJECT_ROOT)/allg/makerules/mkdep -cpp $(CPP) $(INC_FLAGS) "$(OPT_FLAGS)"\
+	     $(PROJECT_ROOT)/allg/makerules/mkdep -cpp $(CPP) $(INC_FLAGS) $(OPT_FLAGS)\
 	                                          -o Makefile.dep $(SOURCES);\
 	  fi;
 
