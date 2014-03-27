@@ -2,6 +2,7 @@
 #include <pthread.h>
 #endif
 
+
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -71,7 +72,6 @@ int Process::start(CsList cmd_list, const char *logfile,
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)
 
-
 	SECURITY_ATTRIBUTES psa;
 	SECURITY_ATTRIBUTES tsa;
 	char path[1024];
@@ -85,6 +85,9 @@ int Process::start(CsList cmd_list, const char *logfile,
 
 	TCHAR actdir[MAX_PATH];
 	DWORD dwRet;
+
+	if ( waitidvalid )
+	        	pthread_join(waitid,NULL);
 
 	if ( workdir != NULL && *workdir != '\0' )
 	{
@@ -114,8 +117,6 @@ int Process::start(CsList cmd_list, const char *logfile,
 		SetEnvironmentVariable("PATH", ((std::string)path + ";" + (std::string)extrapath).c_str());
 	}
 
-    EnterCriticalSection(&cs);
-
 	si.cb = sizeof(STARTUPINFO);
 	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
 	si.wShowWindow = SW_HIDE;
@@ -127,15 +128,9 @@ int Process::start(CsList cmd_list, const char *logfile,
     {
         std::string lf;
 
-        //SECURITY_ATTRIBUTES sa;
-        //sa.nLength = sizeof(sa);
-        //sa.lpSecurityDescriptor = NULL;
-        //sa.bInheritHandle = TRUE;
-
         if ( ! CreatePipe(&si.hStdInput, &pipew, NULL, 0) )
         {
             msg.perror(E_PIPE, "kann Pipe nicht erzeugen");
-            LeaveCriticalSection(&cs);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                     msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -146,7 +141,6 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( ! SetHandleInformation(si.hStdInput, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT) )
         {
             msg.perror(E_PIPE, "kann Handleinformationen nicht setzen");
-            LeaveCriticalSection(&cs);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                     msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -157,7 +151,6 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( ! CreatePipe(&piper, &si.hStdOutput, NULL, 0) )
         {
             msg.perror(E_PIPE, "kann Pipe nicht erzeugen");
-            LeaveCriticalSection(&cs);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                     msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -168,7 +161,6 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( ! SetHandleInformation(si.hStdOutput, HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT) )
         {
             msg.perror(E_PIPE, "kann Handleinformationen nicht setzen");
-            LeaveCriticalSection(&cs);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                     msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -206,7 +198,6 @@ int Process::start(CsList cmd_list, const char *logfile,
         {
             msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
             SetEnvironmentVariable("PATH", path);
-            LeaveCriticalSection(&cs);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                     msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -298,15 +289,14 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                 msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
-        if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
-        if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
+        //if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
+        //if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
-       LeaveCriticalSection(&cs);
 		return 0;
 	}
 
-    if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
-    if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
+    //if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
+    //if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
     if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
         msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -314,10 +304,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 	if ( extrapath != NULL && *extrapath != '\0' )
 	    SetEnvironmentVariable("PATH", path);
 
-	if ( have_pipe )
-	    pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this);
-
-    LeaveCriticalSection(&cs);
+	waitidvalid = ( pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this) == 0 );
 	return 1;
 
 #else
@@ -446,16 +433,9 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
 {
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-
-	DWORD result;
-
-	if ( ( result = WaitForSingleObject( pi.hProcess, 0 )) == WAIT_OBJECT_0 )
-	{
-	    msg.perror(E_DEAD, "Prozess <%s> wurde abgebrochen", cmd.c_str());
-		setInterval(0);
-	}
+    return;
 #else
-    pthread_mutex_lock(&mutex);
+    Pthread_mutex_lock("timeout", &mutex);
     int result = 0;
     if ( pid != -1 )
     {
@@ -473,7 +453,7 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
            file = -1;
         }
     }
-    pthread_mutex_unlock(&mutex);
+    Pthread_mutex_unlock(&mutex);
 
 #endif
 }
@@ -485,10 +465,11 @@ int Process::stop()
     if ( pi.hProcess == INVALID_HANDLE_VALUE )
         return -1;
 
-    setInterval(0);
-
     TerminateProcess(pi.hProcess, 0 );
-    return wait();
+    Pthread_mutex_lock("stop", &mutex);
+    Pthread_mutex_unlock("stop", &mutex);
+
+    return status;
 
 #else
     if ( pid == -1 )
@@ -502,24 +483,16 @@ int Process::stop()
 
 int Process::wait()
 {
-   setInterval(0);
    #if defined(__MINGW32__) || defined(__CYGWIN__)
-
-   pthread_mutex_lock(&mutex);
-   DWORD exitcode;
+    lock("wait");
 
 	if ( pi.hProcess == INVALID_HANDLE_VALUE )
 		return -1;
 
+    DWORD exitcode;
 	WaitForSingleObject( pi.hProcess, INFINITE );
 	GetExitCodeProcess ( pi.hProcess, &exitcode);
 	status = exitcode;
-
-	// Close process and thread handles.
-	CloseHandle( pi.hProcess );
-	CloseHandle( pi.hThread );
-
-    pi.hProcess = INVALID_HANDLE_VALUE;
 
 	if ( have_logfile )
 	{
@@ -537,11 +510,15 @@ int Process::wait()
         CloseHandle(piper);
     }
 
-	pthread_mutex_unlock(&mutex);
+	CloseHandle( pi.hProcess );
+	CloseHandle( pi.hThread );
+	pi.hProcess = INVALID_HANDLE_VALUE;
 
+	unlock("wait");
 	return exitcode;
 
 #else
+    setInterval(0);
     msg.pdebug(1, "wait");
     if ( pid == -1 ) return -1;
     waitpid(pid, &status, 0);
