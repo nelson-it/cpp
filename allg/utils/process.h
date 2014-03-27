@@ -13,6 +13,16 @@
 #include <message/message.h>
 #include <utils/cslist.h>
 
+#if 1
+#define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);
+#define Pthread_mutex_unlock(x,y)  pthread_mutex_unlock(y);
+#else
+#define Pthread_mutex_lock(x,y)  fprintf(stderr, "lock %s %x\n", x, (unsigned int)y);\
+		pthread_mutex_lock(y);
+#define Pthread_mutex_unlock(x, y)  fprintf(stderr, "unlock %s %x\n", x, (unsigned int)y);\
+		pthread_mutex_unlock(y);
+#endif
+
 class Process : public TimeoutClient
 {
     std::string cmd;
@@ -32,7 +42,7 @@ class Process : public TimeoutClient
     int                     have_pipe;
     HANDLE piper, pipew;
     pthread_t waitid;
-    CRITICAL_SECTION    cs;
+    int waitidvalid;
     #endif
 
 protected:
@@ -61,7 +71,7 @@ public:
 #if defined(__MINGW32__) || defined(__CYGWIN__)
             have_pipe = 0;
             have_logfile = 0;
-            InitializeCriticalSection(&cs);
+            waitidvalid = 1;
 #endif
             #ifdef PTHREAD
             pthread_mutex_init(&mutex,NULL);
@@ -79,12 +89,10 @@ public:
             pthread_mutex_unlock(&mutex);
         }
 #else
-        pthread_mutex_lock(&mutex);
+        if ( waitidvalid )
+        	pthread_join(waitid,NULL);
 #endif
         stop();
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-            pthread_mutex_unlock(&mutex);
-#endif
     }
 
     int  start(const char* cmd, const char *logfile = NULL,
@@ -103,13 +111,25 @@ public:
     int wait();
     int stop();
 
+    void lock(const char* str)
+    {
+    	Pthread_mutex_lock(str, &mutex);
+    }
+
+    void unlock(const char *str)
+    {
+    	Pthread_mutex_unlock(str, &mutex);
+    }
+
     int getPid() { return this->pid; }
     int getStatus()
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         if ( have_pipe )
-            pthread_join(waitid, NULL);
-            pthread_detach(waitid);
+        {
+        	Pthread_mutex_lock("status", &mutex);
+        	Pthread_mutex_unlock("status", &mutex);
+        }
 #endif
         return this->status;
     }

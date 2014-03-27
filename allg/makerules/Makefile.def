@@ -50,6 +50,13 @@ ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
         SHARED_FLAGS := --enable-auto-import
 endif
 
+ifeq "$(UNAME)" "MINGW32_NT-6.1"
+           MKLIBNAME  = $(1).dll
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
+              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
+        SHARED_FLAGS := --enable-auto-import
+endif
+
 ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
            MKLIBNAME  = $(1).dll
              OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
@@ -119,18 +126,27 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
     ifeq "$(UNAME)" "Darwin"
               LIB_PG := -L/Library/PostgreSQL/8.4/lib -lpq.5.2
               INC_PG := -I/Library/PostgreSQL/8.4/include 
+
     else ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)/include
+
+    else ifeq "$(UNAME)" "MINGW32_NT-6.1"
+       POSTGRES_ROOT := "/c/Program Files/PostgreSQL/8.4/"
+              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
+              INC_PG := -I$(POSTGRES_ROOT)/include
+
     else ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)/include
+
     else ifeq "$(UNAME)" "MINGW32_NT-6.2"
        POSTGRES_ROOT := "/c/Program Files (x86)/PostgreSQL/8.4/"
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)/include
+
     else ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
@@ -155,6 +171,11 @@ ifeq "$(WITH_ICONV)" "TRUE"
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
 	endif
 	
+    ifeq "$(UNAME)" "MINGW32_NT-6.1"
+             OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
+              LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+    endif
+    
     ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
              OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
