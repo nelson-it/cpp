@@ -75,6 +75,8 @@ public:
 
     unsigned int empty() { return list.empty(); }
     unsigned int size() { return list.size(); }
+    void clear() { list.clear(); cs_string_valid = 0; }
+
     void reset() { f = list.end(); }
     std::string::size_type find( std::string str, int next = 0);
 

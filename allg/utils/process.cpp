@@ -58,15 +58,15 @@ void *ProcessWaitStop(void *param)
 
 int Process::start(const char *cmd, const char *logfile,
 		const char *workdir, const char *logdir,
-		const char *extrapath)
+		const char *extrapath, int nomask )
 {
     CsList cmd_list(cmd, ' ');
-    return start(cmd_list, logfile, workdir, logdir, extrapath);
+    return start(cmd_list, logfile, workdir, logdir, extrapath, nomask);
 }
 
 int Process::start(CsList cmd_list, const char *logfile,
         const char *workdir, const char *logdir,
-        const char *extrapath)
+        const char *extrapath, int nomask )
 {
     this->status = -1;
 
@@ -87,7 +87,8 @@ int Process::start(CsList cmd_list, const char *logfile,
 	DWORD dwRet;
 
 	if ( waitidvalid )
-	        	pthread_join(waitid,NULL);
+	    pthread_join(waitid,NULL);
+	waitidvalid = 0;
 
 	if ( workdir != NULL && *workdir != '\0' )
 	{
@@ -250,9 +251,16 @@ int Process::start(CsList cmd_list, const char *logfile,
 	tsa.nLength = sizeof(tsa);
 	tsa.bInheritHandle = true;
 
-	cmd = ToString::mascarade(cmd_list[0].c_str(), "\"");
-	for ( i =1; i<cmd_list.size(); i++)
-	    cmd += " \"" + ToString::mascarade(cmd_list[i].c_str(), "\"") + "\"";
+	if ( nomask )
+	{
+	    cmd = cmd_list.getString(' ');
+	}
+	else
+	{
+	    cmd = ToString::mascarade(cmd_list[0].c_str(), "\"");
+	    for ( i =1; i<cmd_list.size(); i++)
+	        cmd += " \"" + ToString::mascarade(cmd_list[i].c_str(), "\"") + "\"";
+	}
 
 	if( ! fSuccess || !CreateProcess( NULL,   // No module name (use command line).
 			(CHAR *)cmd.c_str(),              // Command line.
@@ -289,14 +297,14 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
                 msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
-        //if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
-        //if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
+        if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
+        if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
 		return 0;
 	}
 
-    //if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
-    //if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
+    if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
+    if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
     if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
         msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
@@ -304,7 +312,9 @@ int Process::start(CsList cmd_list, const char *logfile,
 	if ( extrapath != NULL && *extrapath != '\0' )
 	    SetEnvironmentVariable("PATH", path);
 
-	waitidvalid = ( pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this) == 0 );
+	if ( have_pipe )
+	    waitidvalid = ( pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this) == 0 );
+
 	return 1;
 
 #else
@@ -466,10 +476,7 @@ int Process::stop()
         return -1;
 
     TerminateProcess(pi.hProcess, 0 );
-    Pthread_mutex_lock("stop", &mutex);
-    Pthread_mutex_unlock("stop", &mutex);
-
-    return status;
+    return wait();
 
 #else
     if ( pid == -1 )
@@ -487,7 +494,10 @@ int Process::wait()
     lock("wait");
 
 	if ( pi.hProcess == INVALID_HANDLE_VALUE )
-		return -1;
+	{
+	    unlock("wait invalid");
+	    return status;
+	}
 
     DWORD exitcode;
 	WaitForSingleObject( pi.hProcess, INFINITE );
@@ -514,13 +524,13 @@ int Process::wait()
 	CloseHandle( pi.hThread );
 	pi.hProcess = INVALID_HANDLE_VALUE;
 
-	unlock("wait");
+	unlock("wait valid");
 	return exitcode;
 
 #else
     setInterval(0);
     msg.pdebug(1, "wait");
-    if ( pid == -1 ) return -1;
+    if ( pid == -1 ) return status;
     waitpid(pid, &status, 0);
     msg.pdebug(1, "waitready");
     pid = -1;

@@ -71,7 +71,7 @@ public:
 #if defined(__MINGW32__) || defined(__CYGWIN__)
             have_pipe = 0;
             have_logfile = 0;
-            waitidvalid = 1;
+            waitidvalid = 0;
 #endif
             #ifdef PTHREAD
             pthread_mutex_init(&mutex,NULL);
@@ -97,11 +97,11 @@ public:
 
     int  start(const char* cmd, const char *logfile = NULL,
            const char *workdir = NULL, const char *logdir = NULL,
-           const char *extrapath = NULL);
+           const char *extrapath = NULL, int nomask = 0);
 
     int  start(CsList cmd, const char *logfile = NULL,
            const char *workdir = NULL, const char *logdir = NULL,
-           const char *extrapath = NULL);
+           const char *extrapath = NULL, int nomask = 0);
 
     void timeout( long sec, long usec, long w_sec, long w_usec);
 
@@ -124,14 +124,7 @@ public:
     int getPid() { return this->pid; }
     int getStatus()
     {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        if ( have_pipe )
-        {
-        	Pthread_mutex_lock("status", &mutex);
-        	Pthread_mutex_unlock("status", &mutex);
-        }
-#endif
-        return this->status;
+        return wait();
     }
 };
 

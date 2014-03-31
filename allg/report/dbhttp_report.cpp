@@ -16,18 +16,15 @@
 #include <utils/tostring.h>
 #include <crypt/base64.h>
 
+#define MKREPORT "mkreport"
+#define MKHEADER "mkheader"
+#define MKPDF    "mkpdf"
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <unistd.h>
-#define MKREPORT "mkreport.bat "
-#define MKHEADER "mkheader.bat "
-#define MKPDF    "mkpdf.bat "
 #define DIRSEP   "\\"
 #define unlink DeleteFile
 #else
-#define MKREPORT "mkreport "
-#define MKHEADER "mkheader "
-#define MKPDF    "mkpdf "
 #define DIRSEP   "/"
 #endif
 
@@ -156,8 +153,8 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     std::string u;
     DbHttpAnalyse::Client::Userprefs::iterator ui;
     DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
-    std::string typ;
     int result;
+    CsList cmd;
 
     h->content_type = "text/plain";
 
@@ -167,20 +164,40 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
         return;
     }
 
+    cmd.add(MKHEADER);
     userprefs["uowncompanyownprefix"] = h->vars["companyownprefix"];
     for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
     {
-    	if ( ui->second != "" )
-			u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
+        if ( ui->second != "" )
+        {
+            cmd.add("-" + ui->first);
+            cmd.add(ui->second);
+        }
     }
 
-    typ = h->vars["typ"];
-    if ( typ == "" ) typ = "report";
+    cmd.add("-typ");
+    cmd.add((h->vars["typ"] == "" ) ? "report" : h->vars["typ"]);
+
+    cmd.add("-filetyp");
+    cmd.add(h->vars["data"].substr(10));
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    cmd.add(ToString::substitute(ToString::substitute(h->vars.getFile("data").c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+    std::string s = "bash -c 'export PATH=`pwd`:$PATH; ";
+    unsigned int j;
+    for ( j = 0; j<cmd.size(); j++)
+        s += " \"" + ToString::mascarade(cmd[j].c_str(), "\"") + "\"";
+    s += "'";
+    cmd.clear();
+    cmd.add(s);
+#else
+    cmd.add(h->vars.getFile("data").c_str());
+#endif
 
     fclose(h->content);
 
     Process p(this->http->getServersocket());
-    p.start( (MKHEADER + u + " -typ " + typ + " -filetyp " + h->vars["data"].substr(10) + " " + h->vars.getFile("data")).c_str(), h->content_filename.c_str());
+    p.start( cmd, h->content_filename.c_str(), NULL, NULL, NULL, 1);
     result = p.wait();
 
     if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
@@ -191,8 +208,8 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
         else
             fprintf(h->content, "notok");
     }
-
 }
+
 void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     {
 
@@ -367,8 +384,20 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     {
         *dir = '\0';
         int status;
+        CsList cmd;
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        cmd.add(std::string("bash -c 'export PATH=`pwd`:$PATH; ") + MKPDF);
+        cmd.add(ToString::substitute(ToString::substitute(h->content_filename.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+        cmd.add(ToString::substitute(ToString::substitute(str, "\\", "/"), "C:", "/cygdrive/c"));
+#else
+        cmd.add(MKPDF);
+        cmd.add(h->content_filename);
+        cmd.add(str);
+#endif
+
         Process p(this->http->getServersocket());
-        p.start( (MKPDF + h->content_filename + " " + str).c_str());
+        p.start(cmd, NULL, NULL, NULL, NULL, 1);
         if ( ( status = p.wait()) != 0 )
             msg.perror(E_AUTO_STATUS, "Status des Kindprozesses ist <%d>", status);
     }
@@ -541,16 +570,35 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
         fclose(h->content);
 
-        std::string u;
-        if ( report.getLandscape() ) u = "-landscape";
+        CsList cmd;
+        cmd.add(MKREPORT);
+
+        if ( report.getLandscape() )
+            cmd.add("-landscape");
+
         for ( ui = report.userprefs.begin(); ui != report.userprefs.end(); ++ui)
         {
         	if ( ui->second != "" )
-				u += " -" + ui->first + " " + ToString::mascarade(ui->second.c_str(), " ");
+        	{
+        	    cmd.add("-" + ui->first);
+        	    cmd.add(ui->second);
+        	}
         }
-        Process p(this->http->getServersocket());
 
-        p.start( (MKREPORT + u + " " + h->content_filename).c_str(), filename);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        cmd.add(ToString::substitute(ToString::substitute(h->content_filename.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+        std::string s = "bash -c 'export PATH=`pwd`:$PATH; ";
+        unsigned int j;
+        for ( j = 0; j<cmd.size(); j++)
+            s += " \"" + ToString::mascarade(cmd[j].c_str(), "\"") + "\"";
+        s += "'";
+        cmd.clear();
+        cmd.add(s);
+#else
+        cmd.add(h->content_filename);
+#endif
+        Process p(this->http->getServersocket());
+        p.start(cmd, filename, NULL, NULL, NULL, 1);
         p.wait();
 
         if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
