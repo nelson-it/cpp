@@ -87,12 +87,12 @@ int Process::start(CsList cmd_list, const char *logfile,
 	DWORD dwRet;
 
 	if ( waitidvalid )
-	    pthread_join(waitid,NULL);
+	    Pthread_join(waitid,NULL);
 	waitidvalid = 0;
 
 	if ( workdir != NULL && *workdir != '\0' )
 	{
-	    dwRet = GetCurrentDirectory(MAX_PATH, actdir);
+		dwRet = GetCurrentDirectory(MAX_PATH, actdir);
 
 	    if ( dwRet == 0 || dwRet > MAX_PATH )
 	        msg.pwarning(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
@@ -313,7 +313,10 @@ int Process::start(CsList cmd_list, const char *logfile,
 	    SetEnvironmentVariable("PATH", path);
 
 	if ( have_pipe )
-	    waitidvalid = ( pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this) == 0 );
+	{
+		pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this);
+		waitidvalid = 1;
+	}
 
 	return 1;
 
@@ -495,6 +498,11 @@ int Process::wait()
 
 	if ( pi.hProcess == INVALID_HANDLE_VALUE )
 	{
+        if ( waitidvalid )
+        {
+        	Pthread_join(waitid,NULL);
+        	waitidvalid = 0;
+        }
 	    unlock("wait invalid");
 	    return status;
 	}
@@ -548,7 +556,10 @@ int Process::write(const char *buffer, int size)
     if ( WriteFile(pipew, buffer, size, &anzahl, NULL) )
         return anzahl;
     else
-        return -1;
+        {
+        	Sleep(10); // Wartethread zeit geben zu terminieren.
+            return -1;
+        }
     }
 #else
     if ( file >= 0 ) return ::write(file, buffer, size);
@@ -565,7 +576,10 @@ int Process::read( char *buffer, int size)
         if ( ReadFile(piper, buffer, size, &anzahl, NULL) )
             return anzahl;
         else
+        {
+        	Sleep(10); // Wartethread zeit geben zu terminieren.
             return -1;
+        }
     }
 #else
     if ( file >= 0 ) return ::read(file, buffer, size);

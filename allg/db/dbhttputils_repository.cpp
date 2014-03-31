@@ -655,7 +655,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             cmd.add("log");
             cmd.add("--follow");
             cmd.add("--pretty=%H@%an@%at@%s");
-            cmd.add(getRoot(h) + DIRSEP + ToString::substitute(h->vars["filenameInput.old"].c_str(), "/", DIRSEP));
+            cmd.add(ToString::substitute(h->vars["filenameInput.old"].c_str(), "/", DIRSEP));
 
             result = exec(&cmd, getRoot(h).c_str());
 
