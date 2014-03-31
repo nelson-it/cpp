@@ -16,11 +16,13 @@
 #if 1
 #define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);
 #define Pthread_mutex_unlock(x,y)  pthread_mutex_unlock(y);
+#define Pthread_join(x, y) pthread_join(x,y);
 #else
 #define Pthread_mutex_lock(x,y)  fprintf(stderr, "lock %s %x\n", x, (unsigned int)y);\
 		pthread_mutex_lock(y);
 #define Pthread_mutex_unlock(x, y)  fprintf(stderr, "unlock %s %x\n", x, (unsigned int)y);\
 		pthread_mutex_unlock(y);
+#define Pthread_join(x,y) fprintf(stderr, "join to thread %x\n", (unsigned int)x); pthread_join(x,y);
 #endif
 
 class Process : public TimeoutClient
@@ -90,7 +92,10 @@ public:
         }
 #else
         if ( waitidvalid )
-        	pthread_join(waitid,NULL);
+        {
+        	Pthread_join(waitid,NULL);
+        	waitidvalid = 0;
+        }
 #endif
         stop();
     }
