@@ -603,6 +603,7 @@ void Http::get(HttpHeader *h)
 	_mktemp_s(filename, strlen(filename) + 1);
 	filename[sizeof(filename) - 1] = '\0';
 #else
+	char str[32];
 	strcpy(str, "/tmp/HttpXXXXXX");
 	char *filename = mktemp(str);
 #endif

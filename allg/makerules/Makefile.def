@@ -21,7 +21,7 @@ endif
 ifeq "$(UNAME)" "Linux"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
-            OPT_STD := $(OPT_STD) -D LINUX
+            OPT_STD := $(OPT_STD) -DLINUX
 	     OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc

@@ -10,8 +10,9 @@ do
      -o) out=$2; shift;;
    -cpp) cpp=$2; shift;;
      -*) i=`echo $1 | awk '
-                           /^-I/ { printf("%s'\''%s'\''",substr($0,0,2),substr($0,3)); next}
+                           /^-I/ { printf("%s'\''%s'\''",substr($0,1,2),substr($0,3)); next}
                            { print $0}' `;
+         echo $1
          inc="$inc $i";;
       *) break;
     esac
