@@ -466,7 +466,7 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
            file = -1;
         }
     }
-    Pthread_mutex_unlock(&mutex);
+    Pthread_mutex_unlock("timeout", &mutex);
 
 #endif
 }

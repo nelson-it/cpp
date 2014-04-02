@@ -82,19 +82,19 @@ public:
 
     ~Process()
     {
-#if ! defined(__MINGW32__) && !! defined(__CYGWIN__)
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( waitidvalid )
+        {
+        	Pthread_join(waitid,NULL);
+        	waitidvalid = 0;
+        }
+#else
         if ( file >=0 )
         {
             pthread_mutex_lock(&mutex);
            close(file);
             file = -1;
             pthread_mutex_unlock(&mutex);
-        }
-#else
-        if ( waitidvalid )
-        {
-        	Pthread_join(waitid,NULL);
-        	waitidvalid = 0;
         }
 #endif
         stop();
