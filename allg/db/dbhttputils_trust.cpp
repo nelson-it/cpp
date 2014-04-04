@@ -174,6 +174,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     cols.add("action");
     cols.add("ipaddr");
     cols.add("typ");
+    cols.add("validpar");
 
     where["name"] = name;
 
@@ -240,6 +241,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     {
         Process p(DbHttpProvider::http->getServersocket());
         CsList cmd;
+        CsList validpar((char *)((*ri)[3]));
         int anzahl;
         HttpVars::Vars::iterator i;
         std::map<std::string,std::string>::iterator m;
@@ -276,8 +278,19 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
 
         for ( i= h->vars.p_getVars()->begin(); i != h->vars.p_getVars()->end(); ++i )
         {
-            cmd.add("-" + i->first);
-            cmd.add(i->second);
+            if ( validpar.empty() || validpar.find(i->first) != std::string::npos )
+            {
+                cmd.add("-" + i->first);
+                cmd.add(i->second);
+            }
+            else
+            {
+                h->content_type = "text/plain";
+                rewind(h->content);
+                fprintf(h->content, "error");
+                msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+                return;
+            }
         }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
