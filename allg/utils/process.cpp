@@ -323,6 +323,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 #else
     int sockets[2];
     int pipe = 0;
+    char cwd[PATH_MAX + 1];
 
     this->file = -1;
     this->cmd = cmd_list.getString(' ');
@@ -355,10 +356,20 @@ int Process::start(CsList cmd_list, const char *logfile,
 
 		argv[i] = NULL;
 
+
 		if ( workdir != NULL && chdir(workdir) < 0 )
 		{
 			 msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
 			_exit(-1);
+		}
+
+		if ( workdir == NULL )
+		{
+		    if ( ( workdir = getcwd(cwd, sizeof(cwd))) == NULL )
+		    {
+		        msg.perror(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
+		        _exit(-1);
+		    }
 		}
 
         ifile = open("/dev/null", O_RDONLY );
@@ -403,9 +414,9 @@ int Process::start(CsList cmd_list, const char *logfile,
 	    std::string path = getenv("PATH");
   	    setenv("PATH", (path + ":" + extrapath).c_str(), 1);
 
-  	    if ( access(argv[0], X_OK ) == 0)
+  	    if ( access((std::string(workdir) + "/" + argv[0]).c_str(), X_OK ) == 0)
   	    {
-  	        execve(argv[0], argv, environ);
+  	        execve((std::string(workdir) + "/" + argv[0]).c_str(), argv, environ);
 
   	         msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",argv[0]);
   	        _exit(-3);

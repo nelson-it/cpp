@@ -764,11 +764,9 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
     Process p(DbHttpProvider::http->getServersocket());
 
-    h->content_type = "text/html";
-
     name = h->vars["filenameInput.old"];
-    if ( name.rfind(DIRSEP) != std::string::npos )
-        name = name.substr(name.rfind(DIRSEP + 1));
+    if ( name.rfind("/") != std::string::npos )
+        name = name.substr(name.rfind("/")+ 1);
 
     h->content_type = "application/octet-stream";
     snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(name.c_str()).c_str());
@@ -781,7 +779,6 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         return;
     }
 
-    h->content_type = "application/octet-stream";
     if ( h->vars["hash"] == "" )
     {
         if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY)) < 0 )
@@ -1054,7 +1051,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
 
     tab = db->p_getTable("mne_repository", "filedata");
     where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = (path + DIRSEP + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1);
+    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
 
     tab->del(&where,1);
     db->release(tab);
