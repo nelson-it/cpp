@@ -385,10 +385,9 @@ void HttpFilesystem::mkdir(HttpHeader *h)
 #else
     if ( ::mkdir((dir + DIRSEP + name).c_str(), 0777 ) != 0 )
     {
-        char buf[1024];
-        char *str = strerror_r(errno, buf, sizeof(buf));
+        std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
-        msg.line("%s", str);
+        msg.line("%s", str.c_str());
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
@@ -418,10 +417,9 @@ void HttpFilesystem::rmdir(HttpHeader *h)
 #else
     if ( ::rmdir(name.c_str()) != 0 )
     {
-        char buf[1024];
-        char *str = strerror_r(errno, buf, sizeof(buf));
+        std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        msg.line("%s", str);
+        msg.line("%s", str.c_str());
 
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
@@ -456,10 +454,9 @@ void HttpFilesystem::mv(HttpHeader *h)
 #else
    if ( ::rename((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) != 0 )
     {
-        char buf[1024];
-        char *str = strerror_r(errno, buf, sizeof(buf));
+        std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Dateis");
-        msg.line("%s", str);
+        msg.line("%s", str.c_str());
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
@@ -574,10 +571,9 @@ void HttpFilesystem::rmfile(HttpHeader *h)
 #else
     if ( ::unlink(name.c_str()) != 0 )
     {
-        char buf[1024];
-        char *str = strerror_r(errno, buf, sizeof(buf));
+        std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        msg.line("%s", str);
+        msg.line("%s", str.c_str());
 
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
