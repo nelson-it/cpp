@@ -11,12 +11,17 @@
 #if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 #include <sys/wait.h>
 #include <sys/socket.h>
-#else
-#include <utils/tostring.h>
-#endif
 
 #if defined (MACOS)
 extern char **environ;
+#endif
+
+#if defined (LINUX)
+#include <linux/limits.h>
+#endif
+
+#else
+#include <utils/tostring.h>
 #endif
 
 #include <signal.h>
