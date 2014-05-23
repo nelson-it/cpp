@@ -274,7 +274,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
             ctime_r((long*) value, buf);
             snprintf(val, l, "%s", buf);
         }
-        else if (format != NULL && *format != '\0' )
+        else if (format != NULL && *format != '\0' && *format != 'l' )
             snprintf(val, l, format, *(long*) value);
         else
             snprintf(val, l, "%ld", *(long*) value);

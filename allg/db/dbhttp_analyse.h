@@ -97,13 +97,16 @@ protected:
 #ifdef PTHREAD
 	void releaseHeader(HttpHeader *h)
 	{
-		Clients::iterator i;
-		msg.pdebug(D_MUTEX, "mutex release %s", h->id.c_str());
-		if ( ( i = clients.find(h->id) ) != clients.end() )
-		{
-			pthread_mutex_unlock(&i->second.mutex);
-		}
-		HttpAnalyse::releaseHeader(h);
+	    if ( ! h->vars.exists("asynchron") )
+	    {
+	        Clients::iterator i;
+	        msg.pdebug(D_MUTEX, "mutex release %s", h->id.c_str());
+	        if ( ( i = clients.find(h->id) ) != clients.end() )
+	        {
+	            pthread_mutex_unlock(&i->second.mutex);
+	        }
+	    }
+	    HttpAnalyse::releaseHeader(h);
 	}
 #endif
 

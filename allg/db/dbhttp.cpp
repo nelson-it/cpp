@@ -137,7 +137,14 @@ void DbHttp::make_answer()
         {
             result = ((DbHttpProvider *) p)->request(act_client->db, act_h);
         }
-        else Http::make_answer();
+        else
+        {
+#ifdef PTHREAD
+            if ( act_h->vars.exists("asynchron") )
+                pthread_mutex_unlock(&(act_client->mutex));
+#endif
+            Http::make_answer();
+        }
 
         if (!result)
         {

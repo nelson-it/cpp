@@ -37,6 +37,9 @@ public:
     std::vector<std::string> serverpath;
     std::map<std::string,std::string> datapath;
 
+    typedef std::vector<std::string> Header;
+    Header rawheader;
+
     // Wird gesendet
     // =============
     HttpCookie  cookies;
@@ -75,6 +78,7 @@ public:
     int translate;
     int age;
     int connection;
+    int proxy;
 
     std::string location;
     std::string realm;
@@ -113,6 +117,8 @@ public:
     {
         client = -1;
 
+        rawheader.clear();
+
         id = "";
         serverpath.clear();
         datapath.clear();
@@ -146,6 +152,7 @@ public:
         translate = 0;
         age = 0;
         connection = 1;
+        proxy = 0;
 
         realm = "";
         location = "";

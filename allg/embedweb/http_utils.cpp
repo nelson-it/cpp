@@ -36,7 +36,8 @@ HttpUtils::HttpUtils(Http *h) :
         subprovider["locale.xml"] = &HttpUtils::locale;
         subprovider["proxy.txt"] = &HttpUtils::proxy;
 
-		h->add_provider(this);
+		if ( h != NULL )
+		    h->add_provider(this);
 }
 
 HttpUtils::~HttpUtils()
@@ -217,6 +218,8 @@ void HttpUtils::proxy(HttpHeader *h)
     std::string request;
 
     h->content_type = "text/plain";
+    h->translate = 0;
+    h->proxy = 1;
 
     if (h->vars["port"] != "" ) port = atoi(h->vars["port"].c_str());
 
@@ -254,18 +257,24 @@ void HttpUtils::proxy(HttpHeader *h)
     }
 
     h->status = 200;
+    h->translate = 0;
+
+    HttpHeader::Header::iterator i;
 
     request  = "GET " + h->vars["get"] + " HTTP/1.1\r\n";
     request += "Host: " + h->vars["host"] + "\r\n";
-    request += "User-Agent: " + h->user_agent + "\r\n";
-    request += "Accept: */*\r\n";
+    for ( i=h->rawheader.begin(),++i,++i; i != h->rawheader.end(); ++i)
+        if ( ! ( i->find("Host:") == 0 ) )
+        request += (*i) + "\r\n";
     request += "\r\n";
 
     send(sock, request.c_str(), request.length(), 0);
 
     int l;
     while( ( l = recv(sock, tmp, sizeof(tmp), 0)) > 0 )
+    {
         fwrite(tmp, l, 1, h->content);
+    }
 
     close(sock);
     return;
