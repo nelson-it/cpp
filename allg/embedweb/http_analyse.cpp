@@ -252,6 +252,8 @@ void HttpAnalyse::analyse_header()
 		return;
 	}
 
+	act_h->rawheader = h->second;
+
 	analyse_requestline( h->second[1], act_h );
 
 	if ( ( n = act_h->filename.find_last_of('.')) != std::string::npos )

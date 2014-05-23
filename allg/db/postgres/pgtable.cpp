@@ -468,9 +468,9 @@ int PgTable::chk_column(std::string name, Column col, int modify, int ready)
 
 	if ((c = cols.find(name)) != cols.end())
 	{
-		msg.pdebug(D_STM, "Spalte %s beim modifizieren vorhanden\n",
-				name.c_str());
-		if (c->second.typ != col.typ || c->second.size != col.size)
+		msg.pdebug(D_STM, "Spalte %s beim modifizieren vorhanden\n", name.c_str());
+		Column ocol = c->second;
+		if (ocol.typ != col.typ || ocol.size != col.size)
 		{
 			if (modify)
 			{
@@ -483,40 +483,27 @@ int PgTable::chk_column(std::string name, Column col, int modify, int ready)
 				mv_column(name, name + "_o", 0);
 				add_column(name, ncol, 0);
 
-				if ((ncol.typ == DbConnect::SHORT || ncol.typ
-						== DbConnect::LONG) && c->second.typ == CHAR)
-					stm = "update " + getDbfullname() + " set " + name
-							+ " = to_number(" + name + "_o, '99999999999999')";
+				if ((ncol.typ == DbConnect::SHORT || ncol.typ == DbConnect::LONG) && ocol.typ == DbConnect::CHAR)
+					stm = "update " + getDbfullname() + " set " + name + " = to_number(COALESCE(NULLIF(" + name + "_o, ''),'0'), '99999999999999')";
 
-				else if ((ncol.typ == DbConnect::FLOAT || ncol.typ
-						== DbConnect::DOUBLE) && c->second.typ == CHAR)
-					stm = "update " + getDbfullname() + " set " + name
-							+ " = to_number(" + name
-							+ "_o, '999999999999999.999999999999999')";
-				else if ((c->second.typ == DbConnect::BOOL ) &&
-						  (    ncol.typ == DbConnect::SHORT
-						    || ncol.typ == DbConnect::LONG
-						    || ncol.typ == DbConnect::FLOAT
-						    || ncol.typ == DbConnect::DOUBLE))
+				else if ((ncol.typ == DbConnect::FLOAT || ncol.typ == DbConnect::DOUBLE) && ocol.typ == DbConnect::CHAR)
+					stm = "update " + getDbfullname() + " set " + name + " = to_number(COALESCE(NULLIF(" + name + "_o, ''),'0'), '999999999999999.999999999999999')";
+
+				else if ((ocol.typ == DbConnect::BOOL ) && (    ncol.typ == DbConnect::SHORT || ncol.typ == DbConnect::LONG || ncol.typ == DbConnect::FLOAT || ncol.typ == DbConnect::DOUBLE))
 					stm = "update " + getDbfullname() + " set " + name + " = "
 							+ "CASE WHEN " + name + "_o = true THEN 1 ELSE 0 END";
-				else if ((ncol.typ == DbConnect::BOOL ) &&
-						  (    c->second.typ == DbConnect::SHORT
-						    || c->second.typ == DbConnect::LONG
-						    || c->second.typ == DbConnect::FLOAT
-						    || c->second.typ == DbConnect::DOUBLE))
-					stm = "update " + getDbfullname() + " set " + name + " = "
-							 + name + "_o != 0";
+
+				else if ((ncol.typ == DbConnect::BOOL ) && (    ocol.typ == DbConnect::SHORT || ocol.typ == DbConnect::LONG || ocol.typ == DbConnect::FLOAT || ocol.typ == DbConnect::DOUBLE))
+					stm = "update " + getDbfullname() + " set " + name + " = " + name + "_o != 0";
+
 				else
-					stm = "update " + getDbfullname() + " set " + name + " = "
-							+ name + "_o";
+					stm = "update " + getDbfullname() + " set " + name + " = " + name + "_o";
 
 				execute(stm.c_str());
 
 				if (col.can_null == Column::NOTNULL_NOTDEF)
 				{
-					stm = "ALTER TABLE " + getDbfullname() + " ALTER " + name
-							+ " " + "DROP DEFAULT";
+					stm = "ALTER TABLE " + getDbfullname() + " ALTER " + name + " " + "DROP DEFAULT";
 					execute(stm.c_str());
 				}
 
@@ -527,29 +514,25 @@ int PgTable::chk_column(std::string name, Column col, int modify, int ready)
 			}
 			else
 			{
-				if (c->second.typ != col.typ)
+				if (ocol.typ != col.typ)
 					result |= Column::D_TYP;
-				if (c->second.size != col.size)
+				if (ocol.size != col.size)
 					result |= Column::D_SIZE;
 			}
 		}
 
-		if (result == Column::D_OK && (c->second.can_null != col.can_null
-				|| c->second.value != col.value))
+		if (result == Column::D_OK && (ocol.can_null != col.can_null || ocol.value != col.value))
 		{
-
 			if (modify)
 			{
 				std::string stm;
 				stm = "ALTER TABLE " + getDbfullname() + " ALTER " + name;
 
-				if (col.can_null == Column::NOTNULL_DEF || col.can_null
-						== Column::NULL_DEF)
+				if (col.can_null == Column::NOTNULL_DEF || col.can_null == Column::NULL_DEF)
 				{
 					stm += " SET " + getDefaultstring(&col);
 					if (execute(stm.c_str()))
 						result |= Column::D_VALUE;
-
 				}
 				else
 				{
@@ -559,38 +542,23 @@ int PgTable::chk_column(std::string name, Column col, int modify, int ready)
 						result |= Column::D_VALUE;
 				}
 
-				if (((col.can_null == Column::NULL_DEF || col.can_null
-						== Column::NULL_NOTDEF) && !c->second.can_null)
-						|| ((col.can_null == Column::NOTNULL_DEF
-								|| col.can_null == Column::NOTNULL_NOTDEF)
-								&& c->second.can_null))
+				if (((col.can_null == Column::NULL_DEF || col.can_null == Column::NULL_NOTDEF) && !ocol.can_null) || ((col.can_null == Column::NOTNULL_DEF || col.can_null == Column::NOTNULL_NOTDEF) && ocol.can_null))
 				{
 
-					if (col.can_null == Column::NULL_DEF || col.can_null
-							== Column::NULL_NOTDEF)
+					if (col.can_null == Column::NULL_DEF || col.can_null == Column::NULL_NOTDEF)
 					{
-						stm = "ALTER TABLE " + getDbfullname() + " ALTER "
-								+ name;
-						stm += " DROP NOT NULL";
-
+						stm = "ALTER TABLE " + getDbfullname() + " ALTER " + name + " DROP NOT NULL";
 						if (execute(stm.c_str()))
 							result |= Column::D_VALUE;
 
 					}
 					else
 					{
-						stm = "UPDATE " + getDbfullname() + " SET " + name
-								+ " = ";
-						stm += DbTable::getValue(&col);
-						stm += " WHERE " + name + " IS NULL";
-
+						stm = "UPDATE " + getDbfullname() + " SET " + name + " = " + DbTable::getValue(&col) + " WHERE " + name + " IS NULL";
 						if (execute(stm.c_str()))
 							result |= Column::D_VALUE;
 
-						stm = "ALTER TABLE " + getDbfullname() + " ALTER "
-								+ name;
-						stm += " SET NOT NULL";
-
+						stm = "ALTER TABLE " + getDbfullname() + " ALTER " + name + " SET NOT NULL";
 						if (execute(stm.c_str()))
 							result |= Column::D_NULL;
 					}
@@ -598,7 +566,7 @@ int PgTable::chk_column(std::string name, Column col, int modify, int ready)
 			}
 			else
 			{
-				if (c->second.can_null != col.can_null)
+				if (ocol.can_null != col.can_null)
 					result |= Column::D_NULL;
 				else
 					result |= Column::D_VALUE;

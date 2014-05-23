@@ -401,6 +401,9 @@ void Http::write_header()
 		act_h->content_length = 0;
 	}
 
+	if ( act_h->proxy )
+	    return;
+
 	status = act_h->status;
 	if (act_h->status < 0)
 	{
@@ -542,7 +545,7 @@ void Http::write_trailer()
 void Http::send()
 {
 	make_answer();
-	if ( !act_h->error_messages.empty() && act_h->content != NULL)
+	if ( !act_h->error_messages.empty() && act_h->content != NULL && act_h->proxy == 0 )
 	{
 		unsigned int i;
 
@@ -565,10 +568,10 @@ void Http::send()
 		}
 	}
 
-	if ( act_h->content_type == "text/xml")
+	if ( act_h->content_type == "text/xml" && act_h->proxy == 0 )
 		fprintf(act_h->content,"</result>");
 
-	write_header();
+    write_header();
 	if (act_h->content != NULL && act_h->content_length > 0 )
 		s->write(act_h->client, act_h->content, act_h->content_length);
 	write_trailer();
@@ -689,7 +692,8 @@ void Http::mk_error(const char *typ, char *str)
 	if (act_h->client < 0)
 		return;
 
-	act_h->status = -200;
+	if ( act_h->status > 0 )
+	    act_h->status = - act_h->status;
 
 	if (act_h->content_type == "text/xml")
 	{
