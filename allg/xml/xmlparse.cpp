@@ -50,17 +50,14 @@ int XmlParseNode::setXml( std::string stag, std::string content)
 
         if ( content[spos + 1] == '/' )
         {
-            msg->perror(E_TAGNOTOPEN, "Endtag ohne Starttag gefunden %s",
-                    content.substr(spos, 20).c_str());
+            msg->perror(E_TAGNOTOPEN, "Endtag ohne Starttag gefunden %s", content.substr(spos, 20).c_str());
             return -E_TAGNOTOPEN;
         }
 
         epos = content.find_first_of("<>/", spos + 1);
         if ( epos == std::string::npos || content[epos] == '<' )
         {
-            msg->perror(E_TAGNOTCLOSE,
-                    "Das Element <%s> ist nicht geschlossen",
-                    content.substr(pos1, 20).c_str());
+            msg->perror(E_TAGNOTCLOSE, "Das Element <%s> ist nicht geschlossen", content.substr(pos1, 20).c_str());
             return -E_TAGNOTCLOSE;
         }
 
@@ -68,22 +65,19 @@ int XmlParseNode::setXml( std::string stag, std::string content)
         spos++;
         pos1 = content.find_first_of(" /\t\n\r>", spos);
         nextid = content.substr(spos, pos1 - spos);
-
         if ( content[epos] != '/' )
         {
             pos2 = content.find("</" + nextid + ">", epos + 1);
             if ( pos2 == std::string::npos )
             {
-                msg->perror(E_NOENDTAG,
-                        "Das Element <%s> besitzt keinen Endtag",
-                        nextid.c_str());
-                msg->line ("%s", content.substr(pos1 + 1, 60).c_str());
+                msg->perror(E_NOENDTAG, "Das Element <%s> besitzt keinen Endtag", nextid.c_str());
+                msg->line ("%s", content.substr(pos1 + 1).c_str());
                 return -E_NOENDTAG;
             }
             else
             {
-
                 pos1 = content.find("<" + nextid , epos + 1);
+                while ( pos1 != std::string::npos && isalpha(content[pos1 + nextid.length() + 1]) && content[pos1 + nextid.length() + 1] != '>' ) pos1 = content.find("<" + nextid , pos1 + 1);
                 while ( pos1 != std::string::npos && 
                         ( isspace(content[pos1 + nextid.length() + 1]) ||
                                 content[pos1 + nextid.length() + 1] == '>' ) &&
@@ -91,6 +85,7 @@ int XmlParseNode::setXml( std::string stag, std::string content)
                 {
                     pos2 = content.find("</" + nextid + ">", pos2 + 1);
                     pos1 = content.find("<" + nextid ,  pos1 + 1);
+                    while ( pos1 != std::string::npos && isalpha(content[pos1 + nextid.length() + 1])  && content[pos1 + nextid.length() + 1] != '>' ) pos1 = content.find("<" + nextid , pos1 + 1);
                 }
 
                 nextcontent = content.substr(epos + 1, pos2 - epos - 1);
