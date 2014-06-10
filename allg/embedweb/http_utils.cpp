@@ -264,7 +264,7 @@ void HttpUtils::proxy(HttpHeader *h)
     request  = "GET " + h->vars["get"] + " HTTP/1.1\r\n";
     request += "Host: " + h->vars["host"] + "\r\n";
     for ( i=h->rawheader.begin(),++i,++i; i != h->rawheader.end(); ++i)
-        if ( ! ( i->find("Host:") == 0 ) )
+        if ( ! ( i->find("Host:") == 0 )  && ! ( i->find("Content-Length:") == 0 ))
         request += (*i) + "\r\n";
     request += "\r\n";
 
