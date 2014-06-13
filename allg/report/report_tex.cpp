@@ -70,8 +70,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     Macros::iterator mi;
 
-    DbConnect::ResultVec *rv;
-    DbConnect::ResultMat rm;
+    DbConnect::ResultMat rm,prm;
+    DbConnect::ResultMat::iterator iprm;
     FILE *fp, *pre, *post;
 
     char buffer[10240];
@@ -91,7 +91,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     std::string langsave;
     CsList      repcols;
     int have_query;
-    int record_count;
+    unsigned int record_count;
 
     record_count = 0;
 
@@ -173,11 +173,12 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     if ( have_query )
     {
-        query->open(wcol, wval, wop, &sort);
-        rv = query->p_next();
+        prm = *(query->select(wcol, wval, wop, &sort));
+        iprm = prm.begin();
+        db->p_getConnect()->end();
     }
 
-    if ((long) (rm[0][4]) != 0  && query->eof())
+    if ((long) (rm[0][4]) != 0  && iprm == prm.end())
     {
         db->release(reptab);
         db->release(query);
@@ -185,26 +186,26 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         return -1;
     }
 
-    if ( (! query->eof())  && !subreport )
+    if ( iprm != prm.end() && !subreport )
     {
         std::map<std::string, std::string>::iterator ui;
         for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
         {
             if ( query->find(ui->first) != std::string::npos  )
             {
-                userprefs[ui->first] = ((*rv)[query->find(ui->first)]).format(&msg);
+                userprefs[ui->first] = ((*iprm)[query->find(ui->first)]).format(&msg);
             }
         }
         for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
             fprintf(out, "\\gdef\\upref%s{%s}%%\n", ui->first.c_str(), ui->second.c_str());
     }
 
-    if ( (! query->eof()) && query->find("language") != std::string::npos  && !subreport )
+    if ( (iprm != prm.end()) && query->find("language") != std::string::npos  && !subreport )
     {
-    	std::string l = (std::string)(*rv)[query->find("language")];
+    	std::string l = (std::string)((*iprm)[query->find("language")]);
     	if ( l != "" && l != langid )
     	{
-    		msg.setLang((char *)(*rv)[query->find("language")]);
+    		msg.setLang((char *)((*iprm)[query->find("language")]));
     		langid = msg.getLang();
     		fprintf(out, "\\gdef\\mnelangid{%s}%%\n", langid.c_str());
     	}
@@ -233,14 +234,14 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         fclose(fp);
 
-        if ( (! query->eof()) )
+        if ( iprm != prm.end() )
         {
             std::map<std::string, std::string>::iterator ui;
             for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
             {
                 if ( query->find(ui->first) != std::string::npos  )
                 {
-                    userprefs[ui->first] = (std::string)(*rv)[query->find(ui->first)];
+                    userprefs[ui->first] = (std::string)((*iprm)[query->find(ui->first)]);
                 }
             }
             for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
@@ -367,10 +368,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     for (i = 0; i < sort.size(); ++i)
         sortlist.push_back("###############");
 
-    for (; !query->eof(); rv = query->p_next())
+    for ( ; iprm != prm.end(); ++iprm, record_count++ )
     {
-        record_count++;
-
         if (pre != NULL)
         {
             fseek(pre, SEEK_SET, 0);
@@ -401,7 +400,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                 if ((pcols[n])[0] == '#')
                     pvals.add(pcols[n].substr(1));
                 else if ( (f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end())
-                    pvals.add(((*rv)[f - ids.begin()]).format());
+                    pvals.add(((*iprm)[f - ids.begin()]).format());
                 else
                     pvals.add("");
             }
@@ -412,8 +411,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         for (str = "i", i = 0; i < sortlist.size(); ++i)
         {
-            if (sortlist[i] != (*rv)[sortid[i]].format(&msg, buffer,
-                    sizeof(buffer)))
+            if (sortlist[i] != (*iprm)[sortid[i]].format(&msg, buffer, sizeof(buffer)))
             {
                 sortlist[i] = buffer;
                 fprintf(out, "\\gdef\\repgroupname%s{%s}%%\n", str.c_str(),
@@ -428,20 +426,20 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         for (i = 0; i < ids.size(); ++i)
         {
-            if ( i < rv->size() )
+            if ( i < (*iprm).size() )
             {
                 int t = typs[i];
                 char str[64];
                 struct tm tm;
                 time_t val;
 
-                if ( ((*rv)[i]).isnull )
+                if ( ((*iprm)[i]).isnull )
                 {
                     fprintf(out, "\\gdef\\%s{}%%\n",ToString::mktexmacro(ids[i]).c_str());
                 }
                 else if ( t == DbConnect::DATETIME )
                 {
-                    val = (long)((*rv)[i]);
+                    val = (long)((*iprm)[i]);
                     if ( formats[i] != "l" )
                         strftime(str, sizeof(str), sdtf.c_str(), localtime_r(&val, &tm));
                     else
@@ -450,13 +448,13 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                 }
                 else if ( t == DbConnect::DATE )
                 {
-                    val = (long)((*rv)[i]);
+                    val = (long)((*iprm)[i]);
                     strftime(str, sizeof(str), df.c_str(), localtime_r(&val, &tm));
                     fprintf(out, "\\gdef\\%s{%s}%%\n",ToString::mktexmacro(ids[i]).c_str(),ToString::mktex(str).c_str());
                 }
                 else if ( t == DbConnect::TIME )
                 {
-                    val = (long)((*rv)[i]);
+                    val = (long)((*iprm)[i]);
                     if ( formats[i] != "l" )
                         strftime(str, sizeof(str), stf.c_str(), localtime_r(&val, &tm));
                     else
@@ -465,7 +463,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                 }
                 else if ( t == DbConnect::INTERVAL )
                 {
-                    val = (long)((*rv)[i]);
+                    val = (long)((*iprm)[i]);
                     if ( val < 0 )
                     {
                         val = -val;
@@ -494,16 +492,16 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                         colformat.insert(j, 1, '\'');
 
                     if ( colformat == "" ) colformat = "%'f";
-                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*rv)[i].format(&msg, NULL, 0, colformat.c_str())).c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*iprm)[i].format(&msg, NULL, 0, colformat.c_str())).c_str());
                 }
                 else if ( formats[i][0] != 'x' )
                 {
-                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*rv)[i].format(&msg, NULL, 0, formats[i].c_str()), formats[i] == "tex").c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*iprm)[i].format(&msg, NULL, 0, formats[i].c_str()), formats[i] == "tex").c_str());
                 }
                 else
                 {
                     XmlTextTex xml;
-                    xml.setXml((char *) ((*rv)[i]));
+                    xml.setXml((char *) ((*iprm)[i]));
                     fprintf(out, "\\gdef\\%s{", ToString::mktexmacro(ids[i]).c_str());
                     xml.mk_output(out);
                     fprintf(out, "}%%\n");
@@ -542,7 +540,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                 if ((pcols[n])[0] == '#')
                     pvals.add(pcols[n].substr(1));
                 else if ( (f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end())
-                    pvals.add(((*rv)[f - ids.begin()]).format());
+                    pvals.add(((*iprm)[f - ids.begin()]).format());
                 else
                     pvals.add("");
             }
