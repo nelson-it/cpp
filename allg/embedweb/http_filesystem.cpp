@@ -12,6 +12,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <windows.h>
