@@ -125,44 +125,43 @@ public:
     }
     std::string getId(unsigned int num)
     {
-        if (num >= 0 && num < sel_id.size()) return sel_id[num];
+        if ( num < sel_id.size()) return sel_id[num];
         else return "";
     }
 
     std::string getName(unsigned int num)
     {
-        if (num >= 0 && num < sel_name.size()) return sel_name[num];
+        if ( num < sel_name.size()) return sel_name[num];
         else return "";
     }
 
     long getColtyp(unsigned int num)
     {
-        if (num >= 0 && num < sel_typ.size())
-            return sel_typ[num];
+        if ( num < sel_typ.size()) return sel_typ[num];
         else return DbConnect::UNKNOWN;
     }
 
     long getOrigcoltyp(unsigned int num)
     {
-        if (num >= 0 && num < sel_typ.size()) return sel_typ[num];
+        if ( num < sel_typ.size()) return sel_typ[num];
         else return DbConnect::UNKNOWN;
     }
 
     std::string getFormat(unsigned int num)
     {
-        if (num >= 0 && num < sel_format.size()) return sel_format[num];
+        if ( num < sel_format.size()) return sel_format[num];
         else return "";
     }
 
     std::string getRegexp(unsigned int num)
     {
-        if (num >= 0 && num < sel_regexp.size()) return sel_regexp[num];
+        if ( num < sel_regexp.size()) return sel_regexp[num];
         else return "";
     }
 
     std::string getRegexphelp(unsigned int num)
     {
-        if (num >= 0 && num < sel_regexphelp.size()) return sel_regexphelp[num];
+        if ( num < sel_regexphelp.size()) return sel_regexphelp[num];
         else return "";
     }
 
