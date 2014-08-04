@@ -81,7 +81,7 @@
 #define ANYNONARRAYOID  2776
 #define ANYENUMOID      3500
 #else
-#include <postgresql/c.h>
+#include <c.h>
 #include <catalog/pg_type.h>
 #endif
 

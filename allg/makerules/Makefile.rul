@@ -23,7 +23,7 @@ endif
 
 target:: Makefile.dep
 	@for T in $(TARGETS); \
-           do \
+       do \
 	   echo make target $$T; \
 	   $(MAKE) --no-print-directory $(MAKEFLAGS) TARGET=$$T; \
        echo $$T ready; \

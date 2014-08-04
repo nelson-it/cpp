@@ -12,6 +12,7 @@
 #endif
 
 #include <fcntl.h>
+#include <unistd.h>
 #include <sys/time.h>
 
 #include <crypt/base64.h>

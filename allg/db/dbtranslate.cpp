@@ -4,6 +4,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <windows.h>
