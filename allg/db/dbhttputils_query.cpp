@@ -131,8 +131,9 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      innum = ftell(h->content);
      fseek( h->content, 0, SEEK_SET);
 
+#ifndef MACOS
      if ( innum < 0 ) innum = 0;
-
+#endif
      ci = inbuf = new char[innum + 1];
      inbuf[innum] = '\0';
      fread(inbuf, innum, 1, h->content);

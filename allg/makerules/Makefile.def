@@ -32,7 +32,7 @@ endif
 ifeq "$(UNAME)" "Darwin"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
-            OPT_STD := $(OPT_STD) -DMACOS -DDarwin -m32
+            OPT_STD := $(OPT_STD) -DMACOS -DDarwin 
 	 OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc
@@ -124,8 +124,8 @@ endif
 
 ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE" 
     ifeq "$(UNAME)" "Darwin"
-              LIB_PG := -L/Library/PostgreSQL/8.4/lib -lpq.5.2
-              INC_PG := -I/Library/PostgreSQL/8.4/include 
+              LIB_PG := -L/Library/PostgreSQL/9.3/lib -lpq
+              INC_PG := -I/Library/PostgreSQL/9.3/include 
 
     else ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
@@ -163,7 +163,7 @@ endif
 
 ifeq "$(WITH_ICONV)" "TRUE"
 	ifeq "$(UNAME)" "Darwin"
-             LD_STD := $(LD_STD) -L /usr/lib -liconv
+             LD_STD := $(LD_STD) -L/Library/PostgreSQL/9.3/lib -liconv
 	endif
 
 	ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"

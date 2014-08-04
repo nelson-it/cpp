@@ -1,5 +1,5 @@
 #ifndef dbhttp_utils_repository_mne
-#define dbhttp_utils_repository__mne
+#define dbhttp_utils_repository_mne
 
 #include <map>
 #include <string>
@@ -82,6 +82,7 @@ public:
     virtual ~DbHttpUtilsRepository();
 
     virtual std::string getPath() { return "db/utils/repository"; }
+    virtual int request (HttpHeader *h) { return HttpFilesystem::request(h); };
     virtual int request (Database *db, HttpHeader *h);
 
 };

@@ -264,7 +264,7 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
     int result;
 
     h->status = 200;
-    h->content_type == "text/xml";
+    h->content_type = "text/xml";
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     root = h->vars["rootInput.old"];
