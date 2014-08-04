@@ -151,9 +151,14 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I$(POSTGRES_ROOT)/include
+
+    else ifeq "$(CODENAME)" "trusty"
+             LIB_PG := -lpq
+             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.3/server
+
     else
              LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql -I$(PROJECT_ROOT)/extern/include/postgres
+             INC_PG := -I/usr/include/postgresql
   endif
 endif
 
