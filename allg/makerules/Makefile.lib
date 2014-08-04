@@ -1,5 +1,6 @@
 
               UNAME  := $(shell uname -s)
+           CODENAME  := $(shell lsb_release -c | sed -e "s/[ \t]//g" | cut -d: -f2)
 
 ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
          EXTERN_ROOT := $(PROJECT_ROOT)/../extern/i686-pc-mingw32
