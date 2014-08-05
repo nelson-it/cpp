@@ -168,7 +168,7 @@ endif
 
 ifeq "$(WITH_ICONV)" "TRUE"
 	ifeq "$(UNAME)" "Darwin"
-             LD_STD := $(LD_STD) -L/Library/PostgreSQL/9.3/lib -liconv
+             LD_STD := $(LD_STD) -L/usr/lib -liconv
 	endif
 
 	ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
