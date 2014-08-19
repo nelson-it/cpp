@@ -132,6 +132,9 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
    unsigned int j,k,l,m;
    int ignore_message;
 
+   if ( this->db->have_connection() != true )
+       return;
+
 #ifdef PTHREAD
    if ( pthread_mutex_trylock(&this->mutex) != 0 )
    {
@@ -155,7 +158,8 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
 
     if ( rm->size() == 0 )
     {
-        msg.perror(E_MAILBOX, "Die Mailbox <%s> wurde nicht gefunden",mailboxid.c_str());
+        if ( mailboxid != "" )
+            msg.perror(E_MAILBOX, "Die Mailbox <%s> wurde nicht gefunden",mailboxid.c_str());
         db->release(tab);
 #ifdef PTHREAD
         pthread_mutex_unlock(&this->mutex);
