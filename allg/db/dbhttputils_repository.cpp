@@ -533,7 +533,7 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         fullname = ToString::substitute(fullname, DIRSEP, "/");
 
         if ( singledir )
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + fullname + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
         else
             fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), "submenu", "", i++, st.c_str() );
     }
@@ -543,7 +543,7 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         std::string fullname = dir + (*is);
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
         fullname = ToString::substitute(fullname, DIRSEP, "/");
-       fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + fullname + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
     }
 
     fprintf(h->content,"</body>");
