@@ -34,6 +34,7 @@ public:
 	char typ; // c = strings, d,f=double, i,l=long
 	int anzahl;
 	std::string defaults;
+	std::string orig_defaults;
     public:
         Liste() {};
 	Liste(std::string a )
@@ -42,7 +43,7 @@ public:
 	}
 	Liste(std::string a, char t, int n, std::string d )
 	{
-	    alias = a; typ = t; anzahl = n; defaults = d;
+	    alias = a; typ = t; anzahl = n; defaults = orig_defaults = d;
 	}
     };
 
