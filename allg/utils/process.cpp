@@ -38,16 +38,19 @@ static std::set<Process*> processes;
 static void sig_child(int signum)
 {
     std::set<Process*>::iterator i;
-    for ( i = processes.begin(); i != processes.end(); ++i )
+    i = processes.begin();
+    while ( i != processes.end() )
     {
-        (*i)->timeout(0,0,0,0);
-        if ( (*i)->getPid() == -1 )
+        for ( i = processes.begin(); i != processes.end(); ++i )
         {
-            processes.erase(i);
-            return;
+            (*i)->timeout(0,0,0,0);
+            if ( (*i)->getPid() == -1 )
+            {
+                processes.erase(i);
+                break;
+            }
         }
     }
-
 }
 #else
 
