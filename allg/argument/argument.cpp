@@ -196,6 +196,9 @@ void Argument::reset(ListeMap *liste)
     dval.clear();
     lval.clear();
 
+    for ( l = liste->begin(); l != liste->end(); ++l )
+        l->second.defaults = l->second.orig_defaults;
+
     gethostname(host, sizeof(host));
     for ( i=0; i<sizeof(host); i++ )
       if ( host[i] == '.' || host[i] == '\0' ) break;
@@ -267,9 +270,8 @@ void Argument::reset(ListeMap *liste)
                     if (par.find_first_not_of(" \t") != std::string::npos) par
                             = par.substr(par.find_first_not_of(" \t"));
 
-                    if ((l = liste->find(arg)) == liste->end()) msg.perror(
-                            UNKOWN_ARGUMENT, "%s ist kein Parameter",
-                            arg.c_str());
+                    if ((l = liste->find(arg)) == liste->end())
+                        msg.perror( UNKOWN_ARGUMENT, "%s ist kein Parameter", arg.c_str());
                     else if (l->second.anzahl != 0) l->second.defaults = par;
                     else l->second.defaults = "1";
                 }
