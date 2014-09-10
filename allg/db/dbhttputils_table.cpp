@@ -281,7 +281,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
             db->p_getConnect()->end();
         return;
     }
-    cols.add(cols[0]+ "type");
+    cols.add(cols[0] + "type");
     (*h->vars.p_getVars())["cols"] = cols.getString();
 
     mk_selectcolumns(db, h, tab, vals, anzahl_cols, where, wop);
