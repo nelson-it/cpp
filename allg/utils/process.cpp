@@ -35,19 +35,26 @@ extern char **environ;
 #if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 static std::set<Process*> processes;
 
+static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
 static void sig_child(int signum)
 {
+    Message msg("Sigschild");
+    Pthread_mutex_lock("signal", &signal_mutex);
     std::set<Process*>::iterator i;
-    for ( i = processes.begin(); i != processes.end(); ++i )
+    i = processes.begin();
+    while ( i != processes.end() )
     {
-        (*i)->timeout(0,0,0,0);
-        if ( (*i)->getPid() == -1 )
+        for ( i = processes.begin(); i != processes.end(); ++i )
         {
-            processes.erase(i);
-            return;
+            (*i)->timeout(0,0,0,0);
+            if ( (*i)->getPid() == -1 )
+            {
+                processes.erase(i);
+                break;
+            }
         }
     }
-
+    Pthread_mutex_unlock("signal", &signal_mutex);
 }
 #else
 
