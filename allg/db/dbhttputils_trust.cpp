@@ -121,6 +121,7 @@ DbHttpUtilsTrust::DbHttpUtilsTrust(DbHttp *h)
  msg("DbHttpUtilsTrust")
 {
     this->nologin = 0;
+    subprovider["checkuser.html"] = &DbHttpUtilsTrust::check_user;
     h->add_provider(this);
 }
 
@@ -149,6 +150,19 @@ int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
     std::string name;
     std::string::size_type n;
 
+    SubProviderMap::iterator i;
+
+    if ( (i = subprovider.find(h->filename)) != subprovider.end() )
+    {
+        h->status = 200;
+        (this->*(i->second))(db, h);
+
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
+
+        return 1;
+    }
+
     n = h->filename.find_last_of('.');
     if ( n != std::string::npos )
 
@@ -159,6 +173,18 @@ int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
     return 1;
 }
 
+void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
+{
+    Database *d = db->getDatabase();
+    d->p_getConnect("", h->user, h->passwd);
+    if ( d->have_connection() )
+        h->status = 200;
+    else
+        h->status = 401;
+
+    delete d;
+
+}
 void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
 {
     std::string stm;
@@ -212,6 +238,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     if ( ri == result->end() )
     {
         h->content_type = "text/plain";
+        h->status = 404;
         rewind(h->content);
         fprintf(h->content, "error");
         msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
@@ -286,6 +313,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
             else
             {
                 h->content_type = "text/plain";
+                h->status = 404;
                 rewind(h->content);
                 fprintf(h->content, "error");
                 msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
