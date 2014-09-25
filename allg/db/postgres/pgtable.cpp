@@ -9,6 +9,7 @@
 typedef signed int int32;
 #define VARHDRSZ ((int32) sizeof(int32))
 #else
+#define PG_PORT_H
 #include <postgres.h>
 #endif
 

@@ -23,20 +23,19 @@ Argument::Element::Element(const char *name, Argument *a)
     this->a = a;
 }
 
-Argument::Element::operator Argument::StringWerte()
+Argument::StringWerte Argument::Element::getStringWerte()
 {
     Argument::StringWerteMap::iterator i;
 
     if ((i = a->sval.find(name)) != a->sval.end()) return i->second;
     else
     {
-        a->msg.perror(Argument::NO_STRINGARG,
-                "%s ist keinen Zeichenkettenargument", name);
+        a->msg.perror(Argument::NO_STRINGARG, "%s ist keinen Zeichenkettenargument", name);
         return StringWerte();
     }
 }
 
-Argument::Element::operator Argument::DoubleWerte()
+Argument::DoubleWerte Argument::Element::getDoubleWerte()
 {
     Argument::DoubleWerteMap::iterator i;
 
@@ -49,7 +48,7 @@ Argument::Element::operator Argument::DoubleWerte()
     }
 }
 
-Argument::Element::operator Argument::LongWerte()
+Argument::LongWerte Argument::Element::getLongWerte()
 {
     Argument::LongWerteMap::iterator i;
 
@@ -332,8 +331,7 @@ void Argument::mkvalue(std::string name, char typ, std::string str, int oanzahl)
         {
             if (oanzahl > 0 && i != (anzahl - 1))
             {
-                msg.perror(LESS_DEF, "Zu wenige default Werte für Argument "
-                    "%s vorhanden", name.c_str());
+                msg.perror(LESS_DEF, "Zu wenige default Werte für Argument %s vorhanden", name.c_str());
                 exit(1);
             }
             else if ( oanzahl < 0 && str == "" )
@@ -368,8 +366,7 @@ void Argument::mkvalue(std::string name, char typ, std::string str, int oanzahl)
         }
         }
     }
-    if (str != "") msg.perror(MORE_ARGS, "Zu viele Werte in %s für Argument "
-        "%s vorhanden", str.c_str(), name.c_str());
+    if (str != "") msg.perror(MORE_ARGS, "Zu viele Werte in %s für Argument %s vorhanden", str.c_str(), name.c_str());
 }
 
 int Argument::scan(int &argc, char **&argv)

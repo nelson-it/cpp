@@ -68,10 +68,6 @@ protected:
     public:
         Element(const char *name, Argument *a);
 
-	operator StringWerte ();
-	operator DoubleWerte();
-	operator LongWerte();
-
 	operator std::string();
 	operator char *();
 	operator double();
@@ -80,6 +76,10 @@ protected:
 	operator int();
 	operator short();
 	operator bool();
+
+	Argument::StringWerte getStringWerte();
+	Argument::DoubleWerte getDoubleWerte();
+	Argument::LongWerte   getLongWerte();
     };
 
     static std::string fullname;
