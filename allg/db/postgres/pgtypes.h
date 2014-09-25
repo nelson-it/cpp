@@ -81,6 +81,7 @@
 #define ANYNONARRAYOID  2776
 #define ANYENUMOID      3500
 #else
+#define PG_PORT_H
 #include <c.h>
 #include <catalog/pg_type.h>
 #endif

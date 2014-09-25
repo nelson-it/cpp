@@ -211,7 +211,10 @@ void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
     unsigned int i;
     int host;
 
-    CsList ips((char *)a["DbTrustCheckUserip"]);
+    Argument::StringWerte ips;
+
+    ips = (a["DbTrustCheckUserip"]).getStringWerte();
+
     host = this->http->getServersocket()->getHost(h->client);
     for ( i = 0; i < ips.size(); ++i )
         if (  check_ip(ips[i].c_str(), host ) ) break;
