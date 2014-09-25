@@ -8,3 +8,5 @@ liste["DbHttpRealm"]        = Argument::Liste("-dbrealm", 'c', 1, "Nelson techni
 
 liste["DbTranslateUser"]    = Argument::Liste("-dbtruser", 'c', 1, "");
 liste["DbTranslatePasswd"]  = Argument::Liste("-dbtrpasswd", 'c', 1, "");
+
+liste["DbTrustCheckUserip"]  = Argument::Liste("-dbcuip", 'c', 1, "127.0.0.1/32");
