@@ -27,6 +27,8 @@ class DbHttpUtilsTrust : public DbHttpProvider
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
+    int check_ip(const char *ip, int host);
+
     void check_user(Database *db, HttpHeader *h);
     void execute  (Database *db, HttpHeader *h, std::string name);
 

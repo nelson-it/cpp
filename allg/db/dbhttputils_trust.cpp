@@ -173,11 +173,52 @@ int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
     return 1;
 }
 
+int DbHttpUtilsTrust::check_ip(const char *ip, int host)
+{
+    struct in_addr taddr, caddr;
+    unsigned long mask = -1;
+    CsList ipaddr (ip, '/');
+
+    if ( this->nologin == 0 || ipaddr.size() == 0 ) return 1;
+
+    CsList addr(ipaddr[0],'.');
+    if ( addr.size() != 4 )
+    {
+        msg.perror(E_PERM, "IP Addresse <%> in falschem Format", ip);
+        return 0;
+    }
+
+    if ( ipaddr.size() == 2 )
+        mask = htonl(mask << ( 32 - atoi(ipaddr[1].c_str()) ));
+
+    caddr.s_addr = host;
+    caddr.s_addr &= mask;
+
+    inet_aton(ipaddr[0].c_str(), &taddr );
+    taddr.s_addr &= mask;
+
+    if ( caddr.s_addr == taddr.s_addr )
+        return 1;
+
+    return 0;
+}
+
+
 void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
 {
+    Argument a;
     Database *d = db->getDatabase();
+    unsigned int i;
+    int host;
+
+    CsList ips((char *)a["DbTrustCheckUserip"]);
+    host = this->http->getServersocket()->getHost(h->client);
+    for ( i = 0; i < ips.size(); ++i )
+        if (  check_ip(ips[i].c_str(), host ) ) break;
+
     d->p_getConnect("", h->user, h->passwd);
-    if ( d->have_connection() )
+
+    if ( i != ips.size() && d->have_connection() )
         h->status = 200;
     else
         h->status = 401;
@@ -194,6 +235,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     DbTable::ValueMap where;
     DbConnect::ResultMat* result;
     DbConnect::ResultMat::iterator ri;
+    int host;
 
     DbTable *tab = db->p_getTable("mne_application", "trustrequest");
 
@@ -207,32 +249,10 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     result = tab->select(&cols, &where);
     tab->end();
 
+    host = this->http->getServersocket()->getHost(h->client);
     for ( ri = result->begin(); ri != result->end(); ++ri )
     {
-        struct in_addr taddr, caddr;
-        unsigned long mask = -1;
-        CsList ipaddr ((std::string) (*ri)[1], '/');
-
-        if ( this->nologin == 0 || ipaddr.size() == 0 ) break;
-
-        CsList addr(ipaddr[0],'.');
-        if ( addr.size() != 4 )
-        {
-            msg.perror(E_PERM, "IP Addresse <%> in falschem Format", (char *)(*ri)[1]);
-            continue;
-        }
-
-        if ( ipaddr.size() == 2 )
-            mask = htonl(mask << ( 32 - atoi(ipaddr[1].c_str()) ));
-
-        caddr.s_addr = this->http->getServersocket()->getHost(h->client);
-        caddr.s_addr &= mask;
-
-        inet_aton(ipaddr[0].c_str(), &taddr );
-        taddr.s_addr &= mask;
-
-        if ( caddr.s_addr == taddr.s_addr )
-            break;
+        if (  check_ip(((std::string) (*ri)[1]).c_str(), host ) ) break;
     }
 
     if ( ri == result->end() )
