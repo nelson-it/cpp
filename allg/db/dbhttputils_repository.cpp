@@ -653,7 +653,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             cmd.setString("git");
 
             cmd.add("log");
-            cmd.add("--follow");
+            //cmd.add("--follow");
             cmd.add("--pretty=%H@%an@%at@%s");
             cmd.add(ToString::substitute(h->vars["filenameInput.old"].c_str(), "/", DIRSEP));
 
@@ -692,13 +692,13 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
         if ( l[i] != "" )
         {
             CsList ele(l[i],'@');
-            CsList svals("hash,repnote");
+            CsList svals("hash,repnote,shortrev");
 
             vals["hash"] = ele[0];
             vals["repauthor"] = ele[1];
             vals["repdate"] = ele[2];
             vals["repnote"] = ele[3];
-
+            vals["shortrev"] = "";
             where["repdate"] = ele[2];
 
             r = tab->select(&svals, &where);
@@ -706,16 +706,19 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                 tab->insert(&vals);
             else
             {
-                if ( ele[0] !=  (char*)(((*r)[0])[0]) )
-                    tab->modify(&vals, &where);
+                std::string hash = (char*)(((*r)[0])[0]);
+                std::string repnote = (char*)(((*r)[0])[1]);
+                std::string shortrev = (char*)(((*r)[0])[2]);
 
-                if ( i == 0 && ele[0] == lasthash && ele[3] != (std::string)(((*r)[0])[1]) )
+                if ( i == 0 && ele[0] == lasthash && ele[3] != repnote )
                 {
+                    CsList ll;
+
                     cmd.setString("git");
                     cmd.add("commit");
                     cmd.add("--amend");
                     cmd.add("-m");
-                    cmd.add((std::string)(((*r)[0])[1]));
+                    cmd.add(repnote.c_str());
 
                     exec(&cmd, getRoot(h).c_str());
                     if ( result != 0 )
@@ -725,10 +728,34 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                         msg.line("%s", cmd.getString().c_str());
                         return;
                     }
-                }
-            }
 
-            vals["shortrev"] = "";
+                    cmd.setString("git");
+
+                    cmd.add("log");
+                    cmd.add("--pretty=%H");
+
+                    result = exec(&cmd, getRoot(h).c_str());
+
+                    if ( result != 0 )
+                    {
+                        msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
+                        msg.line("%s", execlog.c_str());
+                        return;
+                    }
+                    ll.setString(execlog, '\n');
+                    hash = lasthash = ll[0];
+
+                }
+
+                if ( ele[0] != hash )
+                {
+                    vals["hash"] = hash;
+                    vals["repnote"] = repnote;
+                    vals["shortrev"] = shortrev;
+                    tab->modify(&vals, &where);
+                }
+
+            }
         }
     }
 

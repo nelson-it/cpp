@@ -13,7 +13,7 @@
 #include <message/message.h>
 #include <utils/cslist.h>
 
-#if 0
+#if 1
 #define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);
 #define Pthread_mutex_unlock(x,y)  pthread_mutex_unlock(y);
 #define Pthread_join(x, y) pthread_join(x,y);
