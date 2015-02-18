@@ -58,6 +58,53 @@ Imap::~Imap()
 
 }
 
+std::string Imap::quoteString(const std::string& text)
+{
+    std::string quoted;
+    std::string::const_iterator it;
+
+    bool needQuoting = text.empty();
+
+    for ( it = text.begin() ; !needQuoting && it != text.end() ; ++it)
+    {
+        switch ((*it))
+        {
+        case '(':
+        case ')':
+        case '{':
+        case 0x20:   // SPACE
+        case '%':
+        case '*':
+        case '"':
+        case '\\':
+            needQuoting = true;
+            break;
+
+        default:
+
+            if ( (*it) <= 0x1f || (*it) >= 0x7f)
+                needQuoting = true;
+        }
+    }
+
+    if (needQuoting)
+    {
+        for ( quoted = "", it = text.begin() ; it != text.end() ; ++it)
+        {
+            if ( (*it) == '\\' || (*it) == '"')
+                quoted += '\\';
+            quoted += (*it);
+        }
+
+        quoted = '"' + quoted + '"';
+        return (quoted);
+    }
+    else
+    {
+        return (text);
+    }
+}
+
 int Imap::write_cmd(char *cmd, int len, int need_split )
 {
     int  i, count;
@@ -282,7 +329,7 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
     read_answer();
 
     this->tag = "Mne ";
-    snprintf(tmp, sizeof(tmp), ( this->tag + "login %s %s\r\n").c_str(), user.c_str(), passwd.c_str());
+    snprintf(tmp, sizeof(tmp), ( this->tag + "login %s %s\r\n").c_str(), quoteString(user).c_str(), quoteString(passwd).c_str());
     write_cmd(tmp, strlen(tmp));
 
 }

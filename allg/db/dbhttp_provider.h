@@ -33,6 +33,10 @@ public:
      virtual int request (HttpHeader *h)
          { exit(999); }
 
+     void read_datadir()
+     {
+         this->http->read_datadir();
+     }
 };
 
 #endif /* dbhttp_provider_mne */

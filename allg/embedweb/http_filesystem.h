@@ -40,6 +40,7 @@ protected:
     virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1 );
     virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1);
 
+    std::string dataroot;
     std::string root;
     std::string dir;
 

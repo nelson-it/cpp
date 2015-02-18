@@ -17,110 +17,14 @@
 
 #include <argument/argument.h>
 #include <utils/process.h>
-#include <utils/process.h>
 
 #include "dbconnect.h"
 #include "dbhttputils_trust.h"
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-int
-inet_aton(const char *cp_arg, struct in_addr *addr)
-{
-    register const u_char *cp = (u_char*)cp_arg;
-    register u_long val;
-    register int base;
-#ifdef WIN32
-    register ULONG_PTR n;
-#else
-    register unsigned long n;
-#endif
-    register u_char c;
-    u_int parts[4];
-    register u_int *pp = parts;
-
-    for (;;) {
-        /*
-         * Collect number up to ``.''.
-         * Values are specified as for C:
-         * 0x=hex, 0=octal, other=decimal.
-         */
-        val = 0; base = 10;
-        if (*cp == '0') {
-            if (*++cp == 'x' || *cp == 'X')
-                base = 16, cp++;
-            else
-                base = 8;
-        }
-        while ((c = *cp) != '\0') {
-            if (isascii(c) && isdigit(c)) {
-                val = (val * base) + (c - '0');
-                cp++;
-                continue;
-            }
-            if (base == 16 && isascii(c) && isxdigit(c)) {
-                val = (val << 4) +
-                        (c + 10 - (islower(c) ? 'a' : 'A'));
-                cp++;
-                continue;
-            }
-            break;
-        }
-        if (*cp == '.') {
-            /*
-             * Internet format:
-             * a.b.c.d
-             * a.b.c (with c treated as 16-bits)
-             * a.b (with b treated as 24 bits)
-             */
-            if (pp >= parts + 3 || val > 0xff)
-                return (0);
-            *pp++ = val, cp++;
-        } else
-            break;
-    }
-    /*
-     * Check for trailing characters.
-     */
-    if (*cp && (!isascii(*cp) || !isspace(*cp)))
-        return (0);
-    /*
-     * Concoct the address according to
-     * the number of parts specified.
-     */
-    n = pp - parts + 1;
-    switch (n) {
-
-    case 1: /* a -- 32 bits */
-        break;
-
-    case 2: /* a.b -- 8.24 bits */
-        if (val > 0xffffff)
-            return (0);
-        val |= parts[0] << 24;
-        break;
-
-    case 3: /* a.b.c -- 8.8.16 bits */
-        if (val > 0xffff)
-            return (0);
-        val |= (parts[0] << 24) | (parts[1] << 16);
-        break;
-
-    case 4: /* a.b.c.d -- 8.8.8.8 bits */
-        if (val > 0xff)
-            return (0);
-        val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
-        break;
-    }
-    if (addr)
-        addr->s_addr = htonl(val);
-    return (1);
-}
-#endif
 DbHttpUtilsTrust::DbHttpUtilsTrust(DbHttp *h)
 :DbHttpProvider(h),
  msg("DbHttpUtilsTrust")
 {
-    this->nologin = 0;
     subprovider["checkuser.html"] = &DbHttpUtilsTrust::check_user;
     h->add_provider(this);
 }
@@ -135,17 +39,6 @@ int DbHttpUtilsTrust::check_request(Database *db, HttpHeader *h)
 }
 
 int DbHttpUtilsTrust::request(Database *db, HttpHeader *h, int nologin )
-{
-    int result;
-
-    this->nologin = 1;
-    result = request(db, h);
-    this->nologin = 0;
-
-    return result;
-}
-
-int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
 {
     std::string name;
     std::string::size_type n;
@@ -169,40 +62,15 @@ int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
         name = h->filename.substr(0, n);
 
     h->status = 200;
-    this->execute(db, h, name);
+    this->execute(db, h, name, nologin );
     return 1;
+
 }
 
-int DbHttpUtilsTrust::check_ip(const char *ip, int host)
+int DbHttpUtilsTrust::request(Database *db, HttpHeader *h)
 {
-    struct in_addr taddr, caddr;
-    unsigned long mask = -1;
-    CsList ipaddr (ip, '/');
-
-    if ( this->nologin == 0 || ipaddr.size() == 0 ) return 1;
-
-    CsList addr(ipaddr[0],'.');
-    if ( addr.size() != 4 )
-    {
-        msg.perror(E_PERM, "IP Addresse <%> in falschem Format", ip);
-        return 0;
-    }
-
-    if ( ipaddr.size() == 2 )
-        mask = htonl(mask << ( 32 - atoi(ipaddr[1].c_str()) ));
-
-    caddr.s_addr = host;
-    caddr.s_addr &= mask;
-
-    inet_aton(ipaddr[0].c_str(), &taddr );
-    taddr.s_addr &= mask;
-
-    if ( caddr.s_addr == taddr.s_addr )
-        return 1;
-
-    return 0;
+    return request(db, h, 0);
 }
-
 
 void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
 {
@@ -212,7 +80,6 @@ void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
     int host;
 
     Argument::StringWerte ips;
-
     ips = (a["DbTrustCheckUserip"]).getStringWerte();
 
     host = this->http->getServersocket()->getHost(h->client);
@@ -229,7 +96,7 @@ void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
     delete d;
 
 }
-void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
+void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, int nologin )
 {
     std::string stm;
     char buffer[1024];
@@ -252,20 +119,23 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name)
     result = tab->select(&cols, &where);
     tab->end();
 
-    host = this->http->getServersocket()->getHost(h->client);
-    for ( ri = result->begin(); ri != result->end(); ++ri )
+    if ( nologin )
     {
-        if (  check_ip(((std::string) (*ri)[1]).c_str(), host ) ) break;
-    }
+        host = this->http->getServersocket()->getHost(h->client);
+        for ( ri = result->begin(); ri != result->end(); ++ri )
+        {
+            if (  check_ip(((std::string) (*ri)[1]).c_str(), host ) ) break;
+        }
 
-    if ( ri == result->end() )
-    {
-        h->content_type = "text/plain";
-        h->status = 404;
-        rewind(h->content);
-        fprintf(h->content, "error");
-        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
-        return;
+        if ( ri == result->end() )
+        {
+            h->content_type = "text/plain";
+            h->status = 404;
+            rewind(h->content);
+            fprintf(h->content, "error");
+            msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+            return;
+        }
     }
 
     if ( (std::string) (*ri)[2] == "sql" )

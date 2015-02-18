@@ -78,6 +78,7 @@ $(SHLIB_PRE)mnehttp.$(SHLIB).LIBMAJOR := 1
 $(SHLIB_PRE)mnehttp.$(SHLIB).LIBMINOR := 0
 $(SHLIB_PRE)mnehttp.$(SHLIB).LIBS := mnebase
 $(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/embedweb/http_provider.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_analyse.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_translate.cpp \

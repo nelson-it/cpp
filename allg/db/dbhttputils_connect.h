@@ -32,6 +32,8 @@ class DbHttpUtilsConnect : public DbHttpProvider
 
     void sql_execute_xml      (Database *db, HttpHeader *h);
 
+    void reload               (Database *db, HttpHeader *h);
+
 public:
     DbHttpUtilsConnect( DbHttp *h );
     virtual ~DbHttpUtilsConnect();
