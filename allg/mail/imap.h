@@ -42,6 +42,8 @@ private:
     std::string num;
 
     CsList split(std::string str);
+
+    std::string quoteString(const std::string& text);
     int write_cmd(char *cmd, int len, int need_split = 1);
     void read_answer(int need_split = 1);
 

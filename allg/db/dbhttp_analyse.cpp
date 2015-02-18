@@ -25,6 +25,8 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 
 
     this->db = db->getDatabase();
+
+    read_datadir();
     user_count = 0;
 
 #ifdef PTHREAD
@@ -34,6 +36,33 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 
 DbHttpAnalyse::~DbHttpAnalyse()
 {
+}
+
+void DbHttpAnalyse::read_datadir()
+{
+	Database *db;
+	CsList cols;
+	DbTable *tab;
+	DbTable::ValueMap where;
+	DbConnect::ResultMat *r;
+    DbConnect::ResultMat::iterator ri;
+
+    db = this->db->getDatabase();
+
+    db->p_getConnect("", "mneerprepository", "");
+    tab = db->p_getTable("mne_repository", "folder");
+
+    cols.setString("name,location");
+    r = tab->select(&cols, &where);
+    tab->end();
+
+    datapath.clear();
+    for ( ri = r->begin(); ri != r->end(); ri++ )
+    datapath[((char*)(*ri)[0])] = (char*)((*ri)[1]);
+
+    db->release(tab);
+
+    delete db;
 }
 
 void DbHttpAnalyse::check_user(HttpHeader *h)

@@ -430,7 +430,7 @@ int Process::start(CsList cmd_list, const char *logfile,
   	    {
   	        execve((std::string(workdir) + "/" + argv[0]).c_str(), argv, environ);
 
-  	         msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",argv[0]);
+  	         msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(std::string(workdir) + "/" + argv[0]).c_str());
   	        _exit(-3);
   	    }
 

@@ -66,6 +66,11 @@ public:
 	{
 		trans->clear_cache();
 	}
+
+    void read_datadir()
+    {
+        this->analyse->read_datadir();
+    }
 };
 
 #endif /* dbhttp_mne */

@@ -18,6 +18,7 @@ DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h)
 {
 	subprovider["//start.xml"]         = &DbHttpUtilsConnect::start;
 	subprovider["//end.xml"]           = &DbHttpUtilsConnect::end;
+	subprovider["//reload.xml"]        = &DbHttpUtilsConnect::reload;
 
 	subprovider["/func/execute.xml"]   = &DbHttpUtilsConnect::func_execute_xml;
 	subprovider["/func/mod.xml"]       = &DbHttpUtilsConnect::func_mod_xml;
@@ -214,53 +215,63 @@ void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)
     stm = h->vars["command"];
     unsigned int i;
 
-	if ( stm != "" && db->p_getConnect()->execute(stm.c_str()) == 0 )
+    if ( stm != "" && db->p_getConnect()->execute(stm.c_str()) == 0 )
     {
-		DbConnect::ResultMat::iterator rm;
-		DbConnect::ResultVec::iterator rv, re;
-    	DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
+        DbConnect::ResultMat::iterator rm;
+        DbConnect::ResultVec::iterator rv, re;
+        DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
 
-    	fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
+        fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
 
-    	if ( r->size() > 0 )
-    	{
-    		for (i=0; i < (*r)[0].size(); ++i)
-    		{
-    			fprintf(h->content, "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help></regexp></d>\n",
-    					i, ((*r)[0][i]).typ, i);
-    		}
-    	}
+        if ( r->size() > 0 )
+        {
+            for (i=0; i < (*r)[0].size(); ++i)
+            {
+                fprintf(h->content, "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help></regexp></d>\n",
+                        i, ((*r)[0][i]).typ, i);
+            }
+        }
 
-		fprintf(h->content, "</head>");
-    	fprintf(h->content, "<body>");
+        fprintf(h->content, "</head>");
+        fprintf(h->content, "<body>");
 
-    	for (rm = r->begin(); rm != r->end(); ++rm)
-		{
-			fprintf(h->content, "<r>");
-			rv = (*rm).begin();
-			re = (*rm).end();
-			for (; rv != re; ++rv)
-				fprintf(h->content, "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
-			fprintf(h->content, "</r>");
-		}
+        for (rm = r->begin(); rm != r->end(); ++rm)
+        {
+            fprintf(h->content, "<r>");
+            rv = (*rm).begin();
+            re = (*rm).end();
+            for (; rv != re; ++rv)
+                fprintf(h->content, "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
+            fprintf(h->content, "</r>");
+        }
 
-    	if ( r->empty() )
-    		fprintf(h->content, "<r>ok</r>");
+        if ( r->empty() )
+            fprintf(h->content, "<r>ok</r>");
 
-		fprintf(h->content, "</body>");
+        fprintf(h->content, "</body>");
     }
     else if ( stm != "" )
     {
-    	fprintf(h->content,"<body>error</body>");
+        fprintf(h->content,"<body>error</body>");
     }
     else
     {
-    	fprintf(h->content,"<body>ok</body>");
+        fprintf(h->content,"<body>ok</body>");
 
     }
 
-	if (h->vars["sqlend"] != "")
+    if (h->vars["sqlend"] != "")
         db->p_getConnect()->end();
 
+}
+void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
+{
+    DbTable *tab = db->p_getTable("mne_application", "update");
+    tab->del_allcolumns();
+    db->release(tab);
+
+    this->read_datadir();
+
+    fprintf(h->content,"<body>ok</body>");
 }
 

@@ -152,6 +152,10 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 HttpProvider(h), msg("HttpFilesystem")
 {
+    Argument a;
+
+    this->dataroot = (char *)a["EmbedwebHttpDataroot"];
+
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
     subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir;
@@ -192,9 +196,14 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
         if ( m->first == root ) break;
 
-    if ( m == h->datapath.end() ) return "";
+    if ( m == h->datapath.end() )
+    {
+        if ( h->user == "admindb" && root == "admin" )
+            return this->dataroot;
+        return "";
+    }
 
-    return m->second;
+    return this->dataroot + m->second;
 
 }
 
@@ -204,7 +213,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
     dir = h->vars["dirInput.old"];
     std::string root = getRoot(h);
 
-    if ( dir != "" )
+    if ( dir != "" && root != "/" )
         root =  root + DIRSEP;
 
 
