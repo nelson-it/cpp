@@ -297,12 +297,16 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
     }
     strncat(str, "HttpReportAutoXXXXXX", sizeof(str) - strlen(str) - 1);
-    mktemp(str);
+    mkdtemp(str);
+
+/*
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     mkdir(str);
 #else
     mkdir(str,0700);
 #endif
+
+*/
     dir = &str[strlen(str)];
 
     values["status"] = time(NULL);
@@ -539,9 +543,9 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     	char str[512];
     	*str = '\0';
     	str[sizeof(str) -1] = '\0';
+        char filename[512];
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-    	char filename[512];
     	*filename = '\0';
     	if ( getenv ("TEMP") != NULL)
     	{
@@ -553,17 +557,26 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 #else
     	if ( getenv ("TMPDIR") != NULL)
     	{
-    		strncpy(str, getenv("TMPDIR"), sizeof(str) -1 );
-    		strncat(str, "/", sizeof(str) - strlen(str) - 1);
+    		strncpy(filename, getenv("TMPDIR"), sizeof(str) -1 );
+    		strncat(filename, "/", sizeof(str) - strlen(str) - 1);
     	}
     	else if ( getenv ("TMP") != NULL)
     	{
-    		strncpy(str, getenv("TMP"), sizeof(str) -1 );
-    		strncat(str, "/", sizeof(str) - strlen(str) - 1);
+    		strncpy(filename, getenv("TMP"), sizeof(str) -1 );
+    		strncat(filename, "/", sizeof(str) - strlen(str) - 1);
     	}
-    	strncat(str, "HttpReportXXXXXX", sizeof(str) - strlen(str) - 1);
+    	else
+    	{
+    	    strcpy(filename, "/tmp/");
+    	}
+    	strncat(filename, "HttpReportXXXXXX", sizeof(str) - strlen(str) - 1);
 
-    	char *filename = mktemp(str);
+    	int fd = mkstemp(filename);
+    	if ( fd != -1 )
+    	{
+    	    close(fd);
+    	    unlink(filename);
+    	}
 #endif
     	HttpTranslate trans;
         trans.make_answer(h, NULL);

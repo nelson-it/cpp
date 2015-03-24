@@ -51,7 +51,7 @@ int Message::debug = -1000000;
 FILE *Message::out = stderr;
 std::string Message::logfile;
 
-Message::Message(const char *id, int pinit)
+Message::Message(const char *id, int logonly)
 {
 	last_debuglevel = 100000;
 
@@ -59,6 +59,7 @@ Message::Message(const char *id, int pinit)
 	errorclass = 0;
 	strncpy(this->id, id, sizeof(this->id));
 	this->id[sizeof(this->id) - 1] = '\0';
+	this->logonly = logonly;
 
 }
 
@@ -347,8 +348,7 @@ void Message::perror(int errorno, const char *str, ... )
 
 	this->msg_typ = M_ERROR;
 
-	fprintf(out, "%s E%04d: %6s ", timestamp().c_str(),
-			errorclass + errorno, id);
+	fprintf(out, "%s E%04d: %6s ", timestamp().c_str(), errorclass + errorno, id);
 	if ( prg_trans == NULL || ignore_lang)
 		vfprintf(out, str, ap);
 	else
@@ -366,13 +366,17 @@ void Message::perror(int errorno, const char *str, ... )
 		if ( msg_trans == NULL || ignore_lang)
 			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
 		else
-			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
-					msg_trans->get(str, id).c_str(), ap );
+			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), msg_trans->get(str, id).c_str(), ap );
 		s[sizeof(s) - 1] = '\0';
 
 		for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
 			if ( (*i)->tid == NULL || (*i)->tid == tid )
-				(*i)->perror(s);
+			{
+			    if ( logonly )
+			        (*i)->perror((char*)msg_trans->get("Fehler gefunden").c_str());
+			    else
+				    (*i)->perror(s);
+			}
 		va_end(ap);
 	}
 
@@ -402,8 +406,7 @@ void Message::pwarning(int errorno, const char *str, ... )
 
 	this->msg_typ = M_WARNING;
 
-	fprintf(out, "%s W%04d: %6s ", timestamp().c_str(),
-			errorclass + errorno, id);
+	fprintf(out, "%s W%04d: %6s ", timestamp().c_str(), errorclass + errorno, id);
 	if ( prg_trans == NULL || ignore_lang)
 		vfprintf(out, str, ap);
 	else
@@ -422,13 +425,17 @@ void Message::pwarning(int errorno, const char *str, ... )
 		if ( msg_trans == NULL || ignore_lang)
 			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
 		else
-			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
-					msg_trans->get(str, id).c_str(), ap );
+			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), msg_trans->get(str, id).c_str(), ap );
 		s[sizeof(s) - 1] = '\0';
 
 		for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
 			if ( (*i)->tid == NULL || (*i)->tid == tid )
-				(*i)->pwarning(s);
+			{
+                if ( logonly )
+                    (*i)->pwarning((char*)msg_trans->get("Warnung gefunden").c_str());
+                else
+				    (*i)->pwarning(s);
+			}
 		va_end(ap);
 	}
 
@@ -455,8 +462,7 @@ void Message::pmessage(int errorno, const char *str, ... )
 	this->msg_typ = M_MESSAGE;
 
 	if ( errorno > 0 )
-		fprintf(out, "%s M%04d: %6s ", timestamp().c_str(),
-				errorclass + errorno, id);
+		fprintf(out, "%s M%04d: %6s ", timestamp().c_str(), errorclass + errorno, id);
 	if ( prg_trans == NULL || ignore_lang)
 		vfprintf(out, str, ap);
 	else
@@ -464,7 +470,7 @@ void Message::pmessage(int errorno, const char *str, ... )
 
 	va_end(ap);
 
-	if ( ! msg_clients.empty() )
+	if ( logonly == 0 && ! msg_clients.empty() )
 	{
 		MessageClients::iterator i;
 		char s[10240];
@@ -475,13 +481,12 @@ void Message::pmessage(int errorno, const char *str, ... )
 		if ( msg_trans == NULL || ignore_lang)
 			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
 		else
-			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
-					msg_trans->get(str, id).c_str(), ap );
+			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), msg_trans->get(str, id).c_str(), ap );
 		s[sizeof(s) - 1] = '\0';
 
 		for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
 			if ( (*i)->tid == NULL || (*i)->tid == tid )
-				(*i)->pmessage(s);
+			    (*i)->pmessage(s);
 		va_end(ap);
 	}
 
@@ -622,9 +627,7 @@ void Message::line(const char *str, ... )
 
 	va_end(ap);
 
-	if ( this->msg_typ != M_DEBUG &&
-			this->msg_typ != M_UNDEF &&
-			! msg_clients.empty() )
+	if ( ! logonly && this->msg_typ != M_DEBUG && this->msg_typ != M_UNDEF && ! msg_clients.empty() )
 	{
 		MessageClients::iterator i;
 		char s[10240];

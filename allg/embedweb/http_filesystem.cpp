@@ -237,7 +237,6 @@ std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int need
 
 std::string HttpFilesystem::check_path(std::string dir, std::string name, int needname, int errormsg )
 {
-    struct stat buf;
 
     if ( needname && name == "" )
     {
@@ -246,7 +245,7 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
     }
 
     if ( name != "" )  dir = dir + DIRSEP + name;
-    if ( stat(dir.c_str(), &buf) == 0 )
+    if ( stat(dir.c_str(), &statbuf) == 0 )
         return dir;
 
     if ( errormsg )
@@ -401,6 +400,12 @@ void HttpFilesystem::mkdir(HttpHeader *h)
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
+
+    mode_t mask;
+    mask = umask(0);
+    umask(mask);
+    chmod((dir + DIRSEP + name).c_str(), (02777 & ~ mask));
+
 #endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 

@@ -11,6 +11,12 @@
 #define PTHREADID (void*)pthread_self()
 #endif
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#define DEF_LOCALE  "German"
+#else
+#define DEF_LOCALE "de.DE.utf8"
+#endif
+
 class MessageTranslator
 {
 public:
@@ -110,11 +116,12 @@ private:
 	int last_debuglevel;
 
 	char id[32];
+	int logonly;
 
 public:
 	int ignore_lang;
 
-	Message(const char *id, int pinit = 0);
+	Message(const char *id, int logonly = 0);
 
 	static std::string timestamp(time_t t = 0);
 

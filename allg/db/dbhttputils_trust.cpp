@@ -123,19 +123,21 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     {
         host = this->http->getServersocket()->getHost(h->client);
         for ( ri = result->begin(); ri != result->end(); ++ri )
-        {
             if (  check_ip(((std::string) (*ri)[1]).c_str(), host ) ) break;
-        }
+    }
+    else
+    {
+        ri = result->begin();
+    }
 
-        if ( ri == result->end() )
-        {
-            h->content_type = "text/plain";
-            h->status = 404;
-            rewind(h->content);
-            fprintf(h->content, "error");
-            msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
-            return;
-        }
+    if ( ri == result->end() )
+    {
+        h->content_type = "text/plain";
+        h->status = 404;
+        rewind(h->content);
+        fprintf(h->content, "error");
+        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+        return;
     }
 
     if ( (std::string) (*ri)[2] == "sql" )
@@ -181,7 +183,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         {
             cmd.add("-datapath");
             cmd.add(m->first);
-            cmd.add(ToString::substitute(ToString::substitute(m->second.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+            cmd.add(ToString::substitute(ToString::substitute(h->dataroot + m->second.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
         }
 
         cmd.add("-db");
@@ -223,7 +225,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         cmd.clear();
         cmd.add(str);
 #endif
-        p.start(cmd, "pipe", a["EmbedwebHttpMapsRoot"], NULL, NULL, 1);
+        p.start(cmd, "pipe", a["projectroot"], NULL, NULL, 1);
 
         while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
         {
@@ -238,7 +240,6 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
             snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
             buffer[sizeof(buffer) -1] = '\0';
             h->extra_header.push_back(buffer);
-            fprintf(h->content, "Fehler %d", p.getStatus());
         }
         else
         {
