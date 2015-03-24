@@ -36,6 +36,7 @@ public:
 
     std::vector<std::string> serverpath;
     std::map<std::string,std::string> datapath;
+    std::string dataroot;
 
     typedef std::vector<std::string> Header;
     Header rawheader;
@@ -94,6 +95,8 @@ public:
     std::vector<std::string> extra_header;
 
     std::vector<std::string> error_messages;
+    std::vector<std::string> error_types;
+
     int error_found;
     int warning_found;
     int message_found;
@@ -168,6 +171,7 @@ public:
 
         extra_header.clear();
         error_messages.clear();
+        error_types.clear();
 
         error_found = 0;
         warning_found = 0;

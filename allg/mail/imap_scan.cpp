@@ -28,7 +28,7 @@
 
 void *ImapScanThreadMain(void *param)
 {
-    Message msg("ImapScanThread", 1);
+    Message msg("ImapScanThread");
     Argument a;
 
     ImapScanThread *p;

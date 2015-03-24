@@ -142,9 +142,9 @@ HttpVars::setMultipart(std::string boundary, char *data)
             if (content_type != "")
             {
                 FILE *f;
-                char str[32];
-#if defined(__MINGW32__) || defined(__CYGWIN__)
+                //char str[32];
 				char filename[512];
+#if defined(__MINGW32__) || defined(__CYGWIN__)
 				*filename = '\0';
 				if ( getenv ("TEMP") != NULL)
 				{
@@ -153,20 +153,26 @@ HttpVars::setMultipart(std::string boundary, char *data)
 				}
 				_mktemp_s(filename, strlen(filename) + 1);
 				filename[sizeof(filename) - 1] = '\0';
-                char *tmp = filename;
+                f = fopen(tmp, "wb"));
 #else
-                strcpy(str, "/tmp/HttpVarsXXXXXX");
-                char *tmp = mktemp(str);
-#endif
-                if ((f = fopen(tmp, "wb")) == NULL)
+                int fd;
+                strcpy(filename, "/tmp/HttpVarsXXXXXX");
+                fd = mkstemp(filename);
+                if ( fd >= 0 )
                 {
-                	msg.perror(FILEOPEN, "konnte temporäre Datei %s nicht öffnen", tmp);
+                    if ( ( f = fdopen(fd, "wb+") ) == NULL )
+                        close(fd);
+                }
+#endif
+                if ( f == NULL )
+                {
+                	msg.perror(FILEOPEN, "konnte temporäre Datei %s nicht öffnen", filename);
                 }
                 else
                 {
                     fwrite(c_old, 1, c - c_old - 2, f);
                     fclose(f);
-                    files[name] = tmp;
+                    files[name] = filename;
                     vars[name] = "##########" + content_type;
                 }
             }

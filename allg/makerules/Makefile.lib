@@ -88,6 +88,7 @@ $(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/embedweb/http_utils.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_filesystem.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_search.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_sysexec.cpp \
 
 $(SHLIB_PRE)mnehttpxml.$(SHLIB).ISDLL := TRUE
 $(SHLIB_PRE)mnehttpxml.$(SHLIB).LIBS := mnebase mnexml mnehttp

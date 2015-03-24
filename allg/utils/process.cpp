@@ -8,6 +8,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 #include <sys/wait.h>
 #include <sys/socket.h>
@@ -33,29 +34,44 @@ extern char **environ;
 #include "process.h"
 
 #if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
-static std::set<Process*> processes;
 
+static std::set<Process*> processes;
 static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
+static int sig_check = 0;
+
 static void sig_child(int signum)
 {
     Message msg("Sigschild");
-    Pthread_mutex_lock("signal", &signal_mutex);
     std::set<Process*>::iterator i;
-    i = processes.begin();
-    while ( i != processes.end() )
+
+    if ( pthread_mutex_trylock( &signal_mutex ) != 0 )
     {
-        for ( i = processes.begin(); i != processes.end(); ++i )
+        sig_check = 1;
+        return;
+    }
+
+    sig_check = 1;
+    while ( sig_check )
+    {
+        sig_check = 0;
+        i = processes.begin();
+        while ( i != processes.end() )
         {
-            (*i)->timeout(0,0,0,0);
-            if ( (*i)->getPid() == -1 )
+            for ( i = processes.begin(); i != processes.end(); ++i )
             {
-                processes.erase(i);
-                break;
+                if ( signum != -1 )
+                    (*i)->timeout(0,0,0,0);
+                if ( (*i)->getPid() == -1 )
+                {
+                    processes.erase(i);
+                    break;
+                }
             }
         }
     }
     Pthread_mutex_unlock("signal", &signal_mutex);
 }
+
 #else
 
 void *ProcessWaitStop(void *param)
@@ -67,6 +83,27 @@ void *ProcessWaitStop(void *param)
 }
 
 #endif
+
+Process::~Process()
+{
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( waitidvalid )
+    {
+        Pthread_join(waitid,NULL);
+        waitidvalid = 0;
+    }
+#else
+    if ( file >=0 )
+    {
+        //pthread_mutex_lock(&mutex);
+        close(file);
+        file = -1;
+        //pthread_mutex_unlock(&mutex);
+    }
+    sig_child(-1);
+#endif
+    stop();
+}
 
 int Process::start(const char *cmd, const char *logfile,
 		const char *workdir, const char *logdir,
@@ -369,20 +406,6 @@ int Process::start(CsList cmd_list, const char *logfile,
 		argv[i] = NULL;
 
 
-		if ( workdir != NULL && chdir(workdir) < 0 )
-		{
-			 msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
-			_exit(-1);
-		}
-
-		if ( workdir == NULL )
-		{
-		    if ( ( workdir = getcwd(cwd, sizeof(cwd))) == NULL )
-		    {
-		        msg.perror(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
-		        _exit(-1);
-		    }
-		}
 
         ifile = open("/dev/null", O_RDONLY );
         dup2(ifile,0);
@@ -420,6 +443,21 @@ int Process::start(CsList cmd_list, const char *logfile,
 			//close(0);
 		}
 
+        if ( workdir != NULL && chdir(workdir) < 0 )
+        {
+             msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
+            _exit(-1);
+        }
+
+        if ( workdir == NULL )
+        {
+            if ( ( workdir = getcwd(cwd, sizeof(cwd))) == NULL )
+            {
+                msg.perror(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
+                _exit(-1);
+            }
+        }
+
         if ( extrapath == NULL )
             extrapath = "";
 
@@ -447,7 +485,9 @@ int Process::start(CsList cmd_list, const char *logfile,
     		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(pathlist[i] + "/" + argv[0]).c_str());
 		}
 		else
-    	    msg.perror(E_START,"Kommando <%s> konnte nicht gestartet werden",argv[0]);
+		{
+		    msg.perror(E_START,"Kommando <%s> konnte nicht gestartet werden",argv[0]);
+		}
 
 		_exit(-3);
 	}
@@ -458,7 +498,6 @@ int Process::start(CsList cmd_list, const char *logfile,
 	    {
 	        this->file = sockets[0];
 	    }
-	    setInterval(10);
 	    return 1;
 	}
 #endif
@@ -471,7 +510,7 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     return;
 #else
-    Pthread_mutex_lock("timeout", &mutex);
+    //Pthread_mutex_lock("timeout", &mutex);
     int result = 0;
     if ( pid != -1 )
     {
@@ -483,16 +522,17 @@ void Process::timeout(long sec, long usec, long w_sec, long w_usec)
     {
         setInterval(0);
         pid = -1;
-        if ( file != 0 )
+        if ( file != -1 )
         {
            close(file);
            file = -1;
         }
     }
-    Pthread_mutex_unlock("timeout", &mutex);
+    //Pthread_mutex_unlock("timeout", &mutex);
 
 #endif
 }
+
 
 int Process::stop()
 {
@@ -585,6 +625,7 @@ int Process::write(const char *buffer, int size)
         }
     }
 #else
+    timeout(0,0,0,0);
     if ( file >= 0 ) return ::write(file, buffer, size);
 #endif
     return 0;
@@ -592,6 +633,7 @@ int Process::write(const char *buffer, int size)
 
 int Process::read( char *buffer, int size)
 {
+	int result = 0;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( have_pipe )
     {
@@ -605,9 +647,15 @@ int Process::read( char *buffer, int size)
         }
     }
 #else
-    if ( file >= 0 ) return ::read(file, buffer, size);
+// Pthread_mutex_lock("read", &signal_mutex);
+    timeout(0,0,0,0);
+
+    if ( file >= 0 )
+        result = ::read(file, buffer, size );
+
+	// Pthread_mutex_unlock("read", &signal_mutex);
 #endif
-    return 0;
+    return result;
 }
 
 

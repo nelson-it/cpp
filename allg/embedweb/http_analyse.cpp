@@ -28,7 +28,7 @@ void *HttpAnalyseThread(void *param)
 	    _setmbcp(_MB_CP_ANSI);
 #endif
 
-	Message msg("HttpAnalyseThread", 1);
+	//Message msg("HttpAnalyseThread", 1);
 
 	HttpAnalyse::HttpAnalyseThreadParam *p;
 
@@ -161,6 +161,7 @@ HttpAnalyse::~HttpAnalyse()
 
 void HttpAnalyse::analyse_requestline( std::string in, HttpHeader *h )
 {
+    Argument a;
 	std::string arg;
 	std::string::size_type n;
 
@@ -179,6 +180,7 @@ void HttpAnalyse::analyse_requestline( std::string in, HttpHeader *h )
 
 	h->serverpath = serverpath;
 	h->datapath = datapath;
+	h->dataroot = (char*)(a["EmbedwebHttpDataroot"]);
 
 	n = arg.find_first_of(' ');
 	if ( n != std::string::npos )

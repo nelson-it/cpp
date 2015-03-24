@@ -45,6 +45,7 @@ protected:
     std::string dir;
 
     std::string path;
+    struct stat statbuf;
 
     std::set<std::string> dirs;
     std::set<std::string> files;

@@ -335,6 +335,7 @@ void Http::make_answer()
 
 		    fwrite(str.c_str(), str.size(), 1, act_h->content);
 		    act_h->error_messages.clear();
+		    act_h->error_types.clear();
 	    }
 	}
 	else
@@ -547,24 +548,53 @@ void Http::send()
 	make_answer();
 	if ( !act_h->error_messages.empty() && act_h->content != NULL && act_h->proxy == 0 )
 	{
-		unsigned int i;
+		unsigned int i,j;
 
-		if ( act_h->content_type == "text/html")
+		if (act_h->content_type == "text/xml")
 		{
-			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
+		    fprintf(act_h->content, "<error>\n");
+		    for (i = 0; i< act_h->error_messages.size(); ++i)
+		        fprintf(act_h->content, "<v class=\"%s\">%s</v>\n", act_h->error_types[i].c_str(), ToString::mkxml(act_h->error_messages[i]).c_str());
+		    fprintf(act_h->content, "\n</error>");
 		}
-		else if ( act_h->content_type == "text/plain")
+		else
 		{
-			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
-		}
-		else if (act_h->content_type == "text/xml")
-		{
-			fprintf(act_h->content, "<error>\n");
-			for (i = 0; i< act_h->error_messages.size(); ++i)
-				fprintf(act_h->content, "%s\n", act_h->error_messages[i].c_str());
-			fprintf(act_h->content, "\n</error>");
+		    for (i = 0; i< act_h->error_messages.size(); ++i)
+		    {
+		        std::string str = act_h->error_messages[i];
+		        std::string e;
+
+		        for (j=0; str[j] != '\0'; j++)
+		        {
+		            if (str[j] == '\\')
+		                e.push_back('\\');
+		            if (str[j] == '\'')
+		                e.push_back('\\');
+		            if (str[j] != '\n' && str[j] != '\r')
+		                e.push_back(str[j]);
+		            else
+		            {
+		                if ( act_h->content_type == "text/html" )
+		                    fprintf(act_h->content, "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
+		                else
+		                    fprintf(act_h->content, "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
+
+		                while (str[j] == '\n' || str[j] == '\r')
+		                    j++;
+		                j--;
+		                e = "";
+		            }
+		        }
+
+		        if (e != "")
+		        {
+		            if ( act_h->content_type == "text/html" )
+		                fprintf(act_h->content, "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
+		            else
+		                fprintf(act_h->content, "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
+		        }
+		    }
+
 		}
 	}
 
@@ -588,7 +618,7 @@ void Http::send()
 
 void Http::get(HttpHeader *h)
 {
-
+	char filename[512];
 	struct timeval t1, t2;
 	long diff;
 
@@ -596,7 +626,6 @@ void Http::get(HttpHeader *h)
 
 	act_h = h;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-	char filename[512];
 	*filename = '\0';
 	if ( getenv ("TEMP") != NULL)
 	{
@@ -605,17 +634,24 @@ void Http::get(HttpHeader *h)
 	}
 	_mktemp_s(filename, strlen(filename) + 1);
 	filename[sizeof(filename) - 1] = '\0';
+
+	act_h->content = fopen(filename, "wb+");
 #else
-	char str[32];
-	strcpy(str, "/tmp/HttpXXXXXX");
-	char *filename = mktemp(str);
+	int fd;
+	strcpy(filename, "/tmp/HttpXXXXXX");
+	fd = mkstemp(filename);
+	if ( fd >= 0 )
+	{
+	    if ( ( act_h->content = fdopen(fd, "wb+") ) == NULL )
+	        close(fd);
+	}
 #endif
 
 	msg.add_msgclient(this);
 	setThreadonly();
 	msg.pdebug(D_HEADER, "tempfile: %s", filename);
 
-	if ( (act_h->content = fopen(filename, "wb+")) == NULL)
+	if ( act_h->content == NULL)
 	{
 		msg.perror(E_TEMPFILE, "Kann temporäre Datei <%s> nicht öffnen", filename);
 
@@ -686,53 +722,14 @@ void Http::del_provider(HttpProvider *p)
 
 void Http::mk_error(const char *typ, char *str)
 {
-	int i;
-    std::string e;
-
 	if (act_h->client < 0)
 		return;
 
 	if ( act_h->status > 0 )
 	    act_h->status = - act_h->status;
 
-	if (act_h->content_type == "text/xml")
-	{
-		std::string e("<v class=\"");
-		e = e + typ + "\">"+ ToString::mkxml(str) + "</v>";
-		act_h->error_messages.push_back(e);
-	}
-	else
-	{
-		for (i=0; str[i] != '\0'; i++)
-		{
-			if (str[i] == '\\')
-				e.push_back('\\');
-			if (str[i] == '\'')
-				e.push_back('\\');
-			if (str[i] != '\n' && str[i] != '\r')
-				e.push_back(str[i]);
-			else
-			{
-				if ( act_h->content_type == "text/html" )
-					act_h->error_messages.push_back(std::string("<div class='print_") + typ + "'>" + e + "</div>");
-				else
-					act_h->error_messages.push_back(e);
-
-				while (str[i] == '\n' || str[i] == '\r')
-					i++;
-				i--;
-				e = "";
-			}
-		}
-
-		if (e != "")
-		{
-			if ( act_h->content_type == "text/html" )
-				act_h->error_messages.push_back(std::string("<div class='print_") + typ + "'>" + e + "</div>");
-			else
-				act_h->error_messages.push_back(e);
-		}
-	}
+	act_h->error_messages.push_back(str);
+	act_h->error_types.push_back(typ);
 
 }
 

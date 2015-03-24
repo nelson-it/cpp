@@ -194,6 +194,10 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             return;
         }
 
+        mode_t mask = umask(0);
+        umask(mask);
+        chmod( (root + DIRSEP + h->vars["nameInput"]).c_str(), (02777 & ~ mask) );
+
         templ = msg.get("RepositoryVorlage");
         if ( check_path(root.c_str(), templ.c_str(), 1, 0) != "" && h->vars["nameInput"] != templ && templ != "" )
         {
@@ -382,12 +386,14 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
 void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
 {
     std::set<std::string>::iterator is;
-     DbTable *tab;
-     DbTable::ValueMap where,vals;
-     DbConnect::ResultMat *r;
+    DbTable *tab;
+    DbTable::ValueMap where,vals;
+    DbConnect::ResultMat *r;
+    std::string root;
 
-     std::string schema;
-     std::string table;
+
+    std::string schema;
+    std::string table;
 
     if ( h->vars["wcol"] != "" )
     {
@@ -411,6 +417,8 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
     table = h->vars["table"];
     tab = db->p_getTable(schema, table);
 
+    root = HttpFilesystem::getRoot(h);
+
     need_root = 1;
     HttpFilesystem::readdir(h);
     for ( is = dirs.begin(); is != dirs.end(); ++is )
@@ -422,9 +430,53 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
         r = tab->select(&vals, &where);
          if (r->empty() )
              tab->insert(&vals);
+
+         if ( check_path(root.c_str(), ((*is) + "/.git").c_str(), 1, 0) == "" )
+         {
+             CsList cmd;
+             int result;
+
+             HttpVars vars = h->vars;
+
+             cmd.add("git");
+             cmd.add("init");
+             cmd.add("--quiet");
+             cmd.add("--shared=group");
+             cmd.add(*is);
+
+             Process p(DbHttpProvider::http->getServersocket());
+             p.start(cmd, NULL, root.c_str());
+             result = p.wait();
+
+             if ( result != 0 )
+                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
+
+             cmd.clear();
+             cmd.add("git");
+             cmd.add("add");
+             cmd.add(".");
+
+             p.start(cmd, NULL, ( root + DIRSEP + (*is)).c_str());
+             result = p.wait();
+
+             if ( result != 0 )
+             {
+                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
+                 return;
+             }
+
+             (*h->vars.p_getVars())["autocommitInput"] = "1";
+             (*h->vars.p_getVars())["commitmessageInput"] = "Initialversion";
+             (*h->vars.p_getVars())["nameInput.old"] = (*is);
+
+             commit(db, h);
+             h->vars = vars;
+         }
     }
 
     db->release(tab);
+
+
 }
 
 void DbHttpUtilsRepository::data_xml(Database *db, HttpHeader *h)
@@ -441,7 +493,6 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     int result;
     std::string dir;
     int first;
-
     std::set<std::string>::iterator is;
 
     std::string rootname = h->vars["rootname"];
@@ -648,7 +699,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
         l.setString(execlog, '\n');
         lasthash = l[0];
 
-        if ( check_path(h, h->vars["filenameInput.old"], 0, 0 ) != "" )
+        if ( check_path(h, h->vars["filenameInput.old"], 0, 0 ) != "" && S_ISREG(statbuf.st_mode))
         {
             cmd.setString("git");
 
@@ -665,6 +716,10 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                 msg.line("%s", execlog.c_str());
                 return;
             }
+        }
+        else
+        {
+            return;
         }
     }
 
@@ -863,7 +918,7 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
     {
         cmd.add("-root");
         cmd.add(m->first);
-        cmd.add(m->second);
+        cmd.add(h->dataroot + m->second);
     }
 
     p.start(cmd, "pipe");
@@ -1046,10 +1101,20 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
         return;
     }
 
-    cmd.add("git");
-    cmd.add("rm");
-    cmd.add("--quiet");
-    cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
+    if ( h->vars["statusInput.old"] == "Y" )
+    {
+        cmd.add("rm");
+        cmd.add("-f");
+        cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
+    }
+    else
+    {
+        cmd.add("git");
+        cmd.add("rm");
+        cmd.add("--force");
+        cmd.add("--quiet");
+        cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
+    }
 
     result = exec(&cmd, getRoot(h).c_str());
 

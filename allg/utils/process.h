@@ -14,9 +14,9 @@
 #include <utils/cslist.h>
 
 #if 1
-#define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);
-#define Pthread_mutex_unlock(x,y)  pthread_mutex_unlock(y);
-#define Pthread_join(x, y) pthread_join(x,y);
+#define Pthread_mutex_lock(x,y)     pthread_mutex_lock(y);
+#define Pthread_mutex_unlock(x,y)   pthread_mutex_unlock(y);
+#define Pthread_join(x, y)          pthread_join(x,y);
 #else
 #define Pthread_mutex_lock(x,y)  msg.pdebug(0,"lock %s %x", x, (unsigned long)y);\
         pthread_mutex_lock(y);
@@ -67,7 +67,7 @@ protected:
 public:
     Process(ServerSocket *s)
 : TimeoutClient(s),
-  msg("PROCESS")
+  msg("PROCESS", 1)
 {
         pid = -1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -80,25 +80,7 @@ public:
 #endif
 };
 
-    ~Process()
-    {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        if ( waitidvalid )
-        {
-            Pthread_join(waitid,NULL);
-            waitidvalid = 0;
-        }
-#else
-        if ( file >=0 )
-        {
-            pthread_mutex_lock(&mutex);
-            close(file);
-            file = -1;
-            pthread_mutex_unlock(&mutex);
-        }
-#endif
-        stop();
-    }
+    ~Process();
 
     int  start(const char* cmd, const char *logfile = NULL,
             const char *workdir = NULL, const char *logdir = NULL,
