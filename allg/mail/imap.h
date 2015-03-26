@@ -34,7 +34,6 @@ private:
     int sock;
 
     std::string tag;
-    int cmd_count;
     Answer answer;
     char *response;
 

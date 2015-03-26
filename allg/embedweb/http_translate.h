@@ -9,7 +9,6 @@ class HttpHeader;
 class HttpTranslate
 {
     Message msg;
-    int in_make_answer;
 public:
     HttpTranslate();
     ~HttpTranslate();

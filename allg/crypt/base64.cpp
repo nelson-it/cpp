@@ -28,7 +28,7 @@ CryptBase64::CryptBase64()
 	for ( i=0; i<64; i++)
 		rbase64tab[((int)base64tab[i])] = i;
 
-	rbase64tab['='] = 0;
+	rbase64tab[(int)'='] = 0;
 }
 
 CryptBase64::~CryptBase64()

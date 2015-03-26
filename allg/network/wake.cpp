@@ -29,7 +29,7 @@ Wake::Wake(const char *name, const char *e)
 
 	int i,j,err;
 
-	unsigned int    sock;
+	int    sock;
 	struct sockaddr_in addr;
 	struct hostent *host;
 #if defined(__MINGW32__) || defined(__CYGWIN__)

@@ -30,7 +30,6 @@ class Process : public TimeoutClient
     std::string cmd;
     pid_t pid;
     int status;
-    ServerSocket *s;
 
 #ifdef PTHREAD
     pthread_mutex_t mutex;

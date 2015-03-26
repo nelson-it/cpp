@@ -235,7 +235,7 @@ std::string DbTable::getValue( const Column *col )
 int DbTable::mk_usertime_columns()
 {
 
-    int result;
+    int result = 0;
     char now[64];
 
     #define ND  DbTable::Column::NOTNULL_NOTDEF
