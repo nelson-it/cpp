@@ -163,6 +163,11 @@ HttpVars::setMultipart(std::string boundary, char *data)
                     if ( ( f = fdopen(fd, "wb+") ) == NULL )
                         close(fd);
                 }
+                else
+                {
+                    f = NULL;
+                }
+
 #endif
                 if ( f == NULL )
                 {

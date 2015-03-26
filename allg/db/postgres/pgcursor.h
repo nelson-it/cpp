@@ -24,6 +24,7 @@ public:
      void close();
      int eof() { return ( (!opened) || PgConnect::eof()); }
 
+     int start(int check_status = 1) { return PgConnect::start(check_status); }
      void start() { PgConnect::start(); }
      void   end() { PgConnect::end(); }
      DbConnect::ResultVec next();

@@ -19,7 +19,6 @@ private:
     };
 
     Message msg;
-    int start_error;
 
     Vars vars;
     Files files;

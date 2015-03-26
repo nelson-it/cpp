@@ -406,6 +406,7 @@ int DbQueryCreator::save(std::string schema, std::string name, int unionnum, std
 			std::string::size_type i, j, tabnum;
 			std::string field = sl->field;
 
+                        i = 0;
 			while (i < field.size() && (i = field.find("#mne_langid#", i))
 					!= std::string::npos)
 				field.erase(i, 12);

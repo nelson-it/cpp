@@ -22,7 +22,6 @@ class DbHttpProvider;
 class DbHttp : public Http
 {
     Message msg;
-    Database *dbtrans;
     DbTranslate *trans;
     std::string cookieid;
 
