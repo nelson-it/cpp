@@ -142,18 +142,17 @@ HttpVars::setMultipart(std::string boundary, char *data)
             if (content_type != "")
             {
                 FILE *f;
-                //char str[32];
 				char filename[512];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 				*filename = '\0';
 				if ( getenv ("TEMP") != NULL)
 				{
 					strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
-					strncat(filename, "\\HttpVarsXXXXXX", sizeof(filename) - strlen(str) - 1);
+					strncat(filename, "\\HttpVarsXXXXXX", sizeof(filename) - strlen(filename) - 1);
 				}
 				_mktemp_s(filename, strlen(filename) + 1);
 				filename[sizeof(filename) - 1] = '\0';
-                f = fopen(tmp, "wb"));
+                f = fopen(filename, "wb");
 #else
                 int fd;
                 strcpy(filename, "/tmp/HttpVarsXXXXXX");
