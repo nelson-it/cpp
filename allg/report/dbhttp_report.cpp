@@ -297,16 +297,14 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
     }
     strncat(str, "HttpReportAutoXXXXXX", sizeof(str) - strlen(str) - 1);
-    mkdtemp(str);
 
-/*
 #if defined(__MINGW32__) || defined(__CYGWIN__)
+    mktemp(str);
     mkdir(str);
 #else
-    mkdir(str,0700);
+    mkdtemp(str);
 #endif
 
-*/
     dir = &str[strlen(str)];
 
     values["status"] = time(NULL);

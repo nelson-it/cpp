@@ -40,6 +40,7 @@ DbHttpAnalyse::~DbHttpAnalyse()
 
 void DbHttpAnalyse::read_datadir()
 {
+    Argument a;
 	Database *db;
 	CsList cols;
 	DbTable *tab;
@@ -49,7 +50,7 @@ void DbHttpAnalyse::read_datadir()
 
     db = this->db->getDatabase();
 
-    db->p_getConnect("", "mneerprepository", "");
+    db->p_getConnect("", (char*)a["DbRepositoryUser"], (char*)a["DbRepositoryPasswd"]);
     tab = db->p_getTable("mne_repository", "folder");
 
     cols.setString("name,location");
