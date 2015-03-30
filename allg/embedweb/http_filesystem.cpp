@@ -217,6 +217,11 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
         root =  root + DIRSEP;
 
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    std::replace( root.begin(), root.end(), '/', '\\');
+    std::replace( dir.begin(), dir.end(), '/', '\\');
+#endif
+
     if ( root == ""
          || realpath((root + dir).c_str(), rpath) == NULL
          || strstr(rpath, root.c_str()) == NULL )
