@@ -348,7 +348,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
                                 val["refid"] = (char *)emails[k][refid];
                                 val["description"] = i->second["SUBJECT"];
                                 val["data"] = crypt.encode(imap.getText(i->second["UID"]));
-                                val["datatype"] = "application/octet-stream";
+                                val["datatype"] = "message/rfc822";
                                 val["name"] = ToString::clear(i->second["SUBJECT"],(char*)"!@#$%^&*()_+=-{}[]|\\:;\"',./<>?~`") + ".eml";
                                 val["typ"] = "email";
                                 val["author"] = imap.getName(imap.getHeaderElement(&(i->second),"FROM"));
