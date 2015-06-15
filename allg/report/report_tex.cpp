@@ -22,8 +22,18 @@ ReportTex::ReportTex() :
     {
 
     Argument a;
+    std::vector<std::string>::iterator i;
+    std::string projectroot;
+
     path.setString((char *) a["RepRoot"],':');
-    dbapplschema = (char *) a["DbApplSchema"];
+    projectroot = (char*)a["projectroot"];
+
+    for ( i=path.begin(); i != path.end(); ++i )
+    {
+       if ( (*i)[0] != '/' )
+           (*i) = projectroot + "/" + (*i);
+    }
+
 
     df = msg.getDateformat();
     tf = msg.getTimeformat();
@@ -102,7 +112,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     fprintf(out, "\\gdef\\mnelangid{%s}%%\n", langid.c_str());
 
-    reptab = db->p_getTable(dbapplschema, "reports");
+    reptab = db->p_getTable(db->getApplschema(), "reports");
     w["name"] = reportname;
     cols.setString("title_" + langid
             + ",schema,query,sort,only_with_rows,template,landscape,cols,parentcols,ops,repcols");

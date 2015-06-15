@@ -51,7 +51,8 @@ protected:
     std::string appl_schema;
 
 public:
-    Database( std::string appl_schema = "mne_application");
+    Database();
+    Database( std::string appl_schema);
     virtual ~Database();
 
     std::string getApplschema() { return appl_schema; }

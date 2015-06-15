@@ -155,7 +155,7 @@ HttpProvider(h), msg("HttpFilesystem")
     Argument a;
 
     this->dataroot = (char *)a["EmbedwebHttpDataroot"];
-
+    if ( this->dataroot[0] != '/' ) this->dataroot = (std::string)((char *)a["projectroot"]) + "/" + this->dataroot;
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
     subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir;

@@ -24,7 +24,8 @@ public:
 	TAB_NOTEXITS3
     };
 
-    PgDatabase( std::string appl_schema = "mne_application");
+    PgDatabase( std::string appl_schema);
+    PgDatabase();
     virtual ~PgDatabase();
 
     Database *getDatabase()

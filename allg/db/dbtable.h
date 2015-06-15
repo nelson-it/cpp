@@ -85,6 +85,7 @@ public:
 
 	std::string regexp;
     std::map<std::string,std::string> regexphelp;
+    std::string regexpmod;
 
     long dpytyp;
     int num;

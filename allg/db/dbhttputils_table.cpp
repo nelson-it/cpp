@@ -201,8 +201,8 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
         lang = "de";
     for (i=0; i < anzahl_cols; ++i)
     {
-        fprintf(h->content, "<d><id>%s</id><typ>%ld</typ><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
-                vals[i].name.c_str(), ( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp, vals[i].text[lang].c_str(), vals[i].regexp.c_str(), vals[i].regexphelp[lang].c_str());
+        fprintf(h->content, "<d><id>%s</id><typ>%ld</typ><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
+                vals[i].name.c_str(), ( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp, vals[i].text[lang].c_str(), vals[i].regexp.c_str(), vals[i].regexphelp[lang].c_str(), vals[i].regexpmod.c_str());
     }
 
     for ( si=sorts.begin(); si != sorts.end(); ++si)
@@ -215,7 +215,7 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
 
     fprintf(h->content, "</head>");
 
-    if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
+   if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
     {
         DbConnect::ResultMat::iterator rm;
         DbConnect::ResultVec::iterator rv, re;

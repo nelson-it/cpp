@@ -377,8 +377,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
             + ".lang, " + tabs[0] + ".format, " + tabs[1] + ".unionnum, "
             + tabs[4] + ".dpytype, " + tabs[0] + ".groupby, " + tabs[0]
             + ".cannull, " + "tcn.text_" + lang + ", tcn.dpytype,"
-            + " COALESCE(" + tabs[6] + ".regexp," + tabs[4] + ".regexp,"
-            + tabs[5] + ".regexp, rtcn.regexp, tcn.regexp),"
+            + " COALESCE( NULLIF(" + tabs[6] + ".regexp,''), NULLIF(" + tabs[4] + ".regexp,''),"
+                        + "NULLIF( "+ tabs[5] + ".regexp,''), NULLIF(rtcn.regexp,''), NULLIF(tcn.regexp,'')),"
             + " COALESCE(NULLIF(" + tabs[7] + ".text_" + lang + ",''),"
             + "          NULLIF(" + tabs[8] + ".text_" + lang + ",''),"
             + "          NULLIF(" + "trtcn.text_" + lang + ",''),"
@@ -387,7 +387,10 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
             + "          NULLIF(" + tabs[4] + ".regexphelp,''),"
             + "          NULLIF(" + tabs[5] + ".regexphelp,''),"
             + "          NULLIF(" + "rtcn.regexphelp,''),"
-            + "          NULLIF(" + "tcn.regexphelp,'')), " + tabs[0] + ".musthaving FROM ( "
+            + "          NULLIF(" + "tcn.regexphelp,'')), "
+            + " COALESCE( NULLIF(" + tabs[6] + ".regexpmod,''), NULLIF(" + tabs[4] + ".regexpmod,''),"
+                        + "NULLIF( "+ tabs[5] + ".regexpmod,''), NULLIF(rtcn.regexpmod,''), NULLIF(tcn.regexpmod,'')),"
+            + tabs[0] + ".musthaving FROM ( "
             + cjoin->getFrom() + " LEFT JOIN " + dbadmin->getApplschema()
             + ".tablecolnames tcn " + " ON tcn.schema = '' AND tcn.tab = '' "
             + " AND tcn.colname = " + tabs[0] + ".field  LEFT JOIN "
@@ -626,6 +629,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
                 sel_null.push_back((long) r[12]);
                 sel_regexp.push_back((std::string) r[15]);
                 sel_regexphelp.push_back((std::string) r[16]);
+                sel_regexpmod.push_back((std::string) r[17]);
 
                 if (!r[10].isnull && (long) r[10] != -1) sel_typ.push_back(
                         (long) r[10]);
@@ -645,7 +649,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
                 else sel_name.push_back((char *) r[1]);
             }
 
-            act_musthaving.push_back((long) (r[17]));
+            act_musthaving.push_back((long) (r[18]));
 
             if ((long) (r[11]))
             {
@@ -970,17 +974,19 @@ DbQuery::start_cols()
     act_sel_format = sel_format.begin();
     act_sel_regexp = sel_regexp.begin();
     act_sel_regexphelp = sel_regexphelp.begin();
+    act_sel_regexpmod = sel_regexpmod.begin();
 }
 
-int
-DbQuery::getCols(std::string *id, std::string *name, long *typ,
-        std::string *format, std::string *regexp, std::string *regexphelp)
+int DbQuery::getCols(std::string *id, std::string *name, long *typ, std::string *format, std::string *regexp, std::string *regexphelp, std::string *regexpmod)
 {
 
-    if (act_sel_name == sel_name.end() || act_sel_id == sel_id.end()
-            || act_sel_format == sel_format.end() || act_sel_typ
-            == sel_typ.end() || act_sel_regexp == sel_regexp.end()
-            || act_sel_regexphelp == sel_regexphelp.end()) return 0;
+    if (    act_sel_name == sel_name.end()
+         || act_sel_id == sel_id.end()
+         || act_sel_format == sel_format.end()
+         || act_sel_typ == sel_typ.end()
+         || act_sel_regexp == sel_regexp.end()
+         || act_sel_regexphelp == sel_regexphelp.end()
+         || act_sel_regexpmod == sel_regexpmod.end() ) return 0;
 
     if (id != NULL) *id = *act_sel_id++;
     else act_sel_id++;
@@ -999,6 +1005,9 @@ DbQuery::getCols(std::string *id, std::string *name, long *typ,
 
     if (regexphelp != NULL) *regexphelp = *act_sel_regexphelp++;
     else act_sel_regexphelp++;
+
+    if (regexpmod != NULL) *regexpmod = *act_sel_regexpmod++;
+    else act_sel_regexpmod++;
 
     return 1;
 

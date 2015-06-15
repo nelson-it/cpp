@@ -12,6 +12,7 @@ class HttpSysexec : public HttpProvider
     enum ErrorType
     {
         E_NOFUNC = 1,
+        E_ERRORFOUND,
 
         E_MAX = 1000
     };

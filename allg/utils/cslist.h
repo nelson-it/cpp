@@ -70,7 +70,7 @@ public:
 
     std::string operator[] ( unsigned int i );
 
-    std::vector<std::string>::iterator begin() { return list.begin(); }
+    std::vector<std::string>::iterator begin() { return list.begin(); cs_string_valid = 0; }
     std::vector<std::string>::iterator end()   { return list.end(); }
 
     unsigned int empty() { return list.empty(); }

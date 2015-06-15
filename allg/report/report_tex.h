@@ -19,7 +19,6 @@ private:
 	Message msg;
 
 	CsList path;
-	std::string dbapplschema;
 
 	std::string dtf;
 	std::string df;

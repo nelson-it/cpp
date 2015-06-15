@@ -221,7 +221,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     db->p_getConnect()->execute(("select mne_catalog.start_session('" + db->getApplschema()+"')").c_str());
 
     DbQuery *query;
-    DbTable *tab = db->p_getTable("mne_application", "reportsauto");
+    DbTable *tab = db->p_getTable(db->getApplschema(), "reportsauto");
     CsList cols("report,repwcol,repwval,repwop,selschema,selquery,selwcol,selwval,selwop,selsort,startschema,startfunction,readyschema,readyfunction,status");
     DbTable::ValueMap where;
     DbTable::ValueMap values;
@@ -443,7 +443,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
     h->status = 200;
 
-    tab = db->p_getTable("mne_application","reportscache");
+    tab = db->p_getTable(db->getApplschema(),"reportscache");
     where["reportscacheid"] = str;
     cols.setString("repschema,reptable,repwcol,repwop,repwval");
     r = tab->select(&cols, &where);

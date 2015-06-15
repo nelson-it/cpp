@@ -54,7 +54,7 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
         DbConnect::ResultMat *r;
         DbConnect::ResultMat::iterator rm;
         CsList cols("language,region,typ,style");
-        DbTable *tab = this->db->p_getTable("mne_application", "timestyle");
+        DbTable *tab = this->db->p_getTable(db->getApplschema(), "timestyle");
         r = tab->select(&cols, NULL);
         for ( rm = r->begin(); rm != r->end(); ++rm )
         {

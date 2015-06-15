@@ -218,3 +218,18 @@ void DbHttp::del_provider(DbHttpProvider *p)
     }
 }
 
+int  DbHttp::check_group(HttpHeader *h, const char *group)
+{
+    if ( act_client == NULL )
+        return false;
+
+    DbConnect *con = this->act_client->db->p_getConnect();
+    std::string stm = "SELECT t2.rolname AS loginname "
+            "FROM pg_roles t0 "
+              "JOIN pg_auth_members t1 ON t0.rolname = 'adminsystem'::name AND t0.oid = t1.roleid "
+              "JOIN pg_roles t2 ON t1.member = t2.oid AND t2.rolname = '" + h->user + "'";
+
+    con->execute(stm, 1);
+    return con->have_result();
+}
+

@@ -107,11 +107,17 @@ msg("HttpAnalyse")
 	Argument a;
 	CsList spath;
 	CsList dele;
+	std::string projectroot;
     unsigned int i;
+
+    projectroot = (char *)a["projectroot"];
 
 	spath.setString((char *)a["EmbedwebHttpServerpath"], ':');
 	for (i=0; i<spath.size(); i++)
 	{
+	    if ( spath[0][0] != '/')
+	        serverpath.push_back(projectroot + "/" + spath[i]);
+	    else
 		serverpath.push_back(spath[i]);
 	}
 
@@ -119,8 +125,15 @@ msg("HttpAnalyse")
 	for (i=0; i<spath.size(); i++)
 	{
 	    dele.setString(spath[i],'@');
+	    if ( dele[1][0] != '/')
+		datapath[dele[0]] = projectroot + "/" + dele[1];
+	    else
 		datapath[dele[0]] = dele[1];
 	}
+
+    this->dataroot = (char*)(a["EmbedwebHttpDataroot"]);
+    if ( this->dataroot[0] != '/' )
+        this->dataroot = projectroot + "/" + this->dataroot;
 
 	content_types["gif"]  = "image/gif";
 	content_types["png"]  = "image/png";
@@ -180,7 +193,8 @@ void HttpAnalyse::analyse_requestline( std::string in, HttpHeader *h )
 
 	h->serverpath = serverpath;
 	h->datapath = datapath;
-	h->dataroot = (char*)(a["EmbedwebHttpDataroot"]);
+	h->dataroot = dataroot;
+
 
 	n = arg.find_first_of(' ');
 	if ( n != std::string::npos )

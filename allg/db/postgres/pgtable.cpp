@@ -64,20 +64,21 @@ typedef signed int int32;
     "COALESCE( NULLIF(a4.text_en,''), NULLIF(a6.text_en,''), a1.attname),"\
     "COALESCE( NULLIF(a5.regexp,''),  NULLIF(a4.regexp,''), NULLIF(a7.regexp,''), NULLIF(a6.regexp,'') ),"\
 	"COALESCE( NULLIF(ta5.text_de,''), NULLIF(ta4.text_de,''), NULLIF(ta7.text_de,''), NULLIF(ta6.text_de,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_de," \
-	"COALESCE( NULLIF(ta5.text_en,''), NULLIF(ta4.text_en,''), NULLIF(ta7.text_en,''), NULLIF(ta6.text_en,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_de," \
+	"COALESCE( NULLIF(ta5.text_en,''), NULLIF(ta4.text_en,''), NULLIF(ta7.text_en,''), NULLIF(ta6.text_en,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_en," \
+    "COALESCE( NULLIF(a5.regexpmod,''),  NULLIF(a4.regexpmod,''), NULLIF(a7.regexpmod,''), NULLIF(a6.regexpmod,'') ),"\
     "COALESCE( a4.dpytype, a6.dpytype, -1 ) "\
   "from "\
   "((((((( "\
    "( pg_catalog.pg_attribute a1 LEFT JOIN pg_catalog.pg_attrdef a2  ON a1.attrelid = a2.adrelid and a1.attnum = a2.adnum )  "\
    " LEFT JOIN mne_catalog.blobcols a3 ON a1.attrelid = a3.blobrelid and a1.attnum = a3.blobnum )   "\
-   " LEFT JOIN  mne_application.tablecolnames a4  ON  a4.schema = '" + this->schema + "' AND  a4.tab = '" + this->name + "' AND a4.colname = a1.attname "\
-   "       LEFT JOIN mne_application.translate ta4 ON a4.regexphelp = ta4.id ) "\
-   "       LEFT JOIN mne_application.tableregexp a5 ON a4.regexp = a5.tableregexpid  "\
-   "       LEFT JOIN mne_application.translate ta5 ON a5.tableregexpid = ta5.id )) "\
-   "   LEFT JOIN mne_application.tablecolnames a6 ON  a6.schema = '' AND a6.tab = '' AND a6.colname = a1.attname "\
-   "       LEFT JOIN mne_application.translate ta6 on a6.regexphelp = ta6.id )   "\
-   "       LEFT JOIN mne_application.tableregexp a7  ON a6.regexp = a7.tableregexpid  "\
-   "       LEFT JOIN mne_application.translate ta7  ON a7.regexphelp = ta7.id ) ) ,   "\
+   " LEFT JOIN  " + this->getApplschema() + ".tablecolnames a4  ON  a4.schema = '" + this->schema + "' AND  a4.tab = '" + this->name + "' AND a4.colname = a1.attname "\
+   "       LEFT JOIN " + this->getApplschema() + ".translate ta4 ON a4.regexphelp = ta4.id ) "\
+   "       LEFT JOIN " + this->getApplschema() + ".tableregexp a5 ON a4.regexp = a5.tableregexpid  "\
+   "       LEFT JOIN " + this->getApplschema() + ".translate ta5 ON a5.tableregexpid = ta5.id )) "\
+   "   LEFT JOIN " + this->getApplschema() + ".tablecolnames a6 ON  a6.schema = '' AND a6.tab = '' AND a6.colname = a1.attname "\
+   "       LEFT JOIN " + this->getApplschema() + ".translate ta6 on a6.regexphelp = ta6.id )   "\
+   "       LEFT JOIN " + this->getApplschema() + ".tableregexp a7  ON a6.regexp = a7.tableregexpid  "\
+   "       LEFT JOIN " + this->getApplschema() + ".translate ta7  ON a7.regexphelp = ta7.id ) ) ,   "\
 "pg_catalog.pg_class c, "\
 "pg_catalog.pg_namespace n "\
 "where "\
@@ -322,7 +323,8 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 			c.regexp  = (char *) (*r)[12].value;
 			c.regexphelp["de"]  = (char *) (*r)[13].value;
 			c.regexphelp["en"]  = (char *) (*r)[14].value;
-			c.dpytyp  = *(long *)(*r)[15].value;
+			c.regexpmod  = (char*)(*r)[15].value;
+			c.dpytyp  = *(long *)(*r)[16].value;
 			cols[c.name] = c;
 		}
 	}
@@ -1098,6 +1100,7 @@ DbConnect::ResultMat *PgTable::select(ValueMap *cols, ValueMap *w, CsList *wop, 
             	laststm += "\"" + str + "\" " + asc;
             }
 		}
+        laststm += " LIMIT 10000";
 		execute(laststm.c_str(), ready);
 	}
 	else
@@ -1150,6 +1153,7 @@ DbConnect::ResultMat *PgTable::select(CsList *cols, ValueMap *w, CsList *wop, Cs
             }
 
 		}
+        laststm += " LIMIT 10000";
 		execute(laststm.c_str(), ready);
 	}
 	else

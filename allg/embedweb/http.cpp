@@ -349,6 +349,7 @@ void Http::make_answer()
 
         if (act_h->filename.find(".php") == (act_h->filename.size() - 4 ))
         {
+            act_h->age = 0;
             fclose(file);
             file = 0;
             PhpExec(str, act_h);
