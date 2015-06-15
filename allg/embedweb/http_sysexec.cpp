@@ -56,7 +56,7 @@ void HttpSysexec::execute ( HttpHeader *h)
     char buffer[1024];
     int anzahl;
 
-    if ( h->user != "admindb" )
+    if ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 )
     {
         msg.perror(E_NOFUNC, "keine Berechtigung");
         if ( h->content_type == "text/xml" )
@@ -64,8 +64,8 @@ void HttpSysexec::execute ( HttpHeader *h)
         else
             fprintf(h->content, "error");
         return;
-
     }
+
     cmd.add("exec/system/programs/rexec");
     command = h->dirname;
     if ( command.find_first_not_of("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_/") != std::string::npos )
@@ -108,8 +108,9 @@ void HttpSysexec::execute ( HttpHeader *h)
         else if ( anzahl < 0 && errno != EAGAIN ) break;
     }
 
-    if ( p.getStatus() != 0 )
+    if ( p.getStatus() != 0 || havelog )
     {
+        msg.perror(E_ERRORFOUND, "Fehler gefunden");
         if ( h->content_type == "text/xml" )
             fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else

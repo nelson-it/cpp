@@ -15,7 +15,7 @@ DbConstraintError::DbConstraintError()
 
 void DbConstraintError::read(Database *db, int sqlend )
 {
-    DbTable *tab = db->p_getTable("mne_application", "tableconstraintmessages");
+    DbTable *tab = db->p_getTable(db->getApplschema(), "tableconstraintmessages");
     CsList cols("tableconstraintmessagesid,text_de,text_en");
     DbTable::ValueMap w;
 

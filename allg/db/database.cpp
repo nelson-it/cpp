@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <argument/argument.h>
+
 #include "database.h"
 
 #include "dbconnect.h"
@@ -15,8 +17,16 @@
 #include "dbquery_creator.h"
 #include "dbconstraint.h"
 
+Database::Database() :
+    msg("Database")
+{
+    Argument a;
+    con = NULL;
+    this->appl_schema = (char*)a["DbApplSchema"];
+}
+
 Database::Database(std::string appl_schema) :
-	msg("Database")
+          msg("Database")
 {
 	con = NULL;
 	this->appl_schema = appl_schema;

@@ -61,6 +61,8 @@ public:
         return u;
     }
 
+    int check_group(HttpHeader *h, const char *group);
+
     void clear_cache()
 	{
 		trans->clear_cache();

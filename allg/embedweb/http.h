@@ -105,6 +105,8 @@ public:
     void pmessage( char *str);
     void pline(char *str);
 
+    virtual int  check_group(HttpHeader *h, const char *group) { return false; }
+
 };
 
 #endif /* http_mne */

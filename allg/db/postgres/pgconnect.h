@@ -19,6 +19,7 @@ class PgConnect : public DbConnect
         int ignore_message;
         int error_found;
         int warning_found;
+        std::string appl_schema;
         std::string in_transaction;
         pthread_mutex_t mutex;
 
@@ -41,6 +42,7 @@ class PgConnect : public DbConnect
     static PGconn* last_con;
 
     PGconn *con;
+
     int extension;
 
     char *errstr;
@@ -55,6 +57,7 @@ class PgConnect : public DbConnect
     char *mk_error(PGresult *res = NULL);
 
 protected:
+
 
     enum ERROR_TYPE
     {
@@ -101,6 +104,9 @@ public:
     PgConnect(const PgConnect *con);
     PgConnect();
     ~PgConnect();
+
+    void setApplschema ( std::string appl_schema ) { if ( con != NULL ) this->connections[con].appl_schema = appl_schema; };
+    std::string getApplschema () { return (con != NULL ) ? this->connections[con].appl_schema : ""; };
 
     std::string getValue(int typ, std::string str);
 

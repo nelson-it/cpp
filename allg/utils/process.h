@@ -9,7 +9,7 @@
 #include <unistd.h>
 #endif
 
-#include <ipc/timeout.h>
+#include <ipc/s_socket.h>
 #include <message/message.h>
 #include <utils/cslist.h>
 
@@ -25,7 +25,7 @@
 #define Pthread_join(x,y) msg.pdebug(0, "join to thread %x", (unsigned int)x); pthread_join(x,y);
 #endif
 
-class Process : public TimeoutClient
+class Process
 {
     std::string cmd;
     pid_t pid;
@@ -64,10 +64,8 @@ protected:
     int file;
 
 public:
-    Process(ServerSocket *s)
-: TimeoutClient(s),
-  msg("PROCESS", 1)
-{
+    Process(ServerSocket *s) : msg("PROCESS", 1)
+    {
         pid = -1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         have_pipe = 0;
@@ -77,7 +75,7 @@ public:
 #ifdef PTHREAD
         pthread_mutex_init(&mutex,NULL);
 #endif
-};
+    };
 
     ~Process();
 

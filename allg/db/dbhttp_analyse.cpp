@@ -50,8 +50,8 @@ void DbHttpAnalyse::read_datadir()
 
     db = this->db->getDatabase();
 
-    db->p_getConnect("", (char*)a["DbRepositoryUser"], (char*)a["DbRepositoryPasswd"]);
-    tab = db->p_getTable("mne_repository", "folder");
+    db->p_getConnect("", (char*)a["DbSystemUser"], (char*)a["DbSystemPasswd"]);
+    tab = db->p_getTable(db->getApplschema(), "folder");
 
     cols.setString("name,location");
     r = tab->select(&cols, &where);

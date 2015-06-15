@@ -105,7 +105,7 @@ void DbHttpAdminTable::column_add_xml( Database *db, HttpHeader *h)
 		col = column_par_xml(db,h);
 		if ( tab->add_column(column, col) == 0 )
 		{
-			DbTable *tabname = db->p_getTable("mne_application", "tablecolnames");
+			DbTable *tabname = db->p_getTable(db->getApplschema(), "tablecolnames");
 			DbTable::ValueMap values;
 
 			values["schema"] = schema;
@@ -177,7 +177,7 @@ void DbHttpAdminTable::column_mod_xml( Database *db, HttpHeader *h)
 			if ( columnold != column )
 				tab->mv_column(columnold, column);
 
-			DbTable *tabname = db->p_getTable("mne_application", "tablecolnames");
+			DbTable *tabname = db->p_getTable(db->getApplschema(), "tablecolnames");
 			DbTable::ValueMap values;
 			DbTable::ValueMap where;
 
@@ -253,7 +253,7 @@ void DbHttpAdminTable::column_del_xml( Database *db, HttpHeader *h)
 	{
 		if ( tab->del_column(columnold) == 0 )
 		{
-			DbTable *tabname = db->p_getTable("mne_application", "tablecolnames");
+			DbTable *tabname = db->p_getTable(db->getApplschema(), "tablecolnames");
 			DbTable::ValueMap where;
 
 			where["schema"] = schemaold;
@@ -308,7 +308,7 @@ void DbHttpAdminTable::table_add_xml( Database *db, HttpHeader *h)
 		if ( h->vars["showhistoryInput"] != "" )
             	tab->add_history(table + "id");
 
-		DbTable *tabname = db->p_getTable("mne_application", "tablecolnames");
+		DbTable *tabname = db->p_getTable(db->getApplschema(), "tablecolnames");
 		DbTable::ValueMap values;
 
 		values["schema"] = schema;
@@ -380,7 +380,7 @@ void DbHttpAdminTable::table_mod_xml( Database *db, HttpHeader *h)
 
 	if ( result == 0 )
 	{
-		DbTable *tabname = db->p_getTable("mne_application", "tablecolnames");
+		DbTable *tabname = db->p_getTable(db->getApplschema(), "tablecolnames");
 		DbTable::ValueMap values;
 		DbTable::ValueMap where;
 
@@ -447,7 +447,7 @@ void DbHttpAdminTable::table_del_xml( Database *db, HttpHeader *h)
 	where["schema"] = schema;
 	where["tab"]    = table;
 
-	tab = db->p_getTable("mne_application","tablecolnames");
+	tab = db->p_getTable(db->getApplschema(),"tablecolnames");
 	tab->del(&where);
 	db->release(tab);
 

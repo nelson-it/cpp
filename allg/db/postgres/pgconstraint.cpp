@@ -36,7 +36,7 @@ int PgConstraint::create_check( std::string schema, std::string table,
     cmd += " CHECK (" + check_clause + ");";
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
-        cmd += " INSERT INTO mne_application.tableconstraintmessages "
+        cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
                    "( tableconstraintmessagesid, text_de, text_en, custom )"
                  "VALUES "
                    " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
@@ -66,7 +66,7 @@ int PgConstraint::create_primary( std::string schema, std::string table,
     cmd += " PRIMARY KEY (" + cols + ");";
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
-        cmd += " INSERT INTO mne_application.tableconstraintmessages "
+        cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
                    "( tableconstraintmessagesid, text_de, text_en, custom )"
                  "VALUES "
                    " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
@@ -98,7 +98,7 @@ int PgConstraint::create_foreign( std::string schema, std::string table,
     cmd += rschema + "." + rtable + " ( " + rcols + ");";
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
-        cmd += " INSERT INTO mne_application.tableconstraintmessages "
+        cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
                    "( tableconstraintmessagesid, text_de, text_en, custom )"
                  "VALUES "
                    " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
@@ -119,6 +119,6 @@ int PgConstraint::remove( std::string schema, std::string table,
     cmd = "ALTER TABLE "
         + schema + "." + table
         + " DROP CONSTRAINT " + name
-        + "; delete from mne_application.tableconstraintmessages WHERE tableconstraintmessagesid = '" + name + "'";
+        + "; delete from " + this->getApplschema() + ".tableconstraintmessages WHERE tableconstraintmessagesid = '" + name + "'";
     return execute(cmd.c_str(), ready);
 }

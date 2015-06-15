@@ -178,7 +178,7 @@ void DbHttpUtilsQuery::data_csv(Database *db, HttpHeader *h)
 void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 {
     std::string queryid;
-    std::string colname, colid, regexp, regexphelp;
+    std::string colname, colid;
     long coltyp;
     std::string colformat;
     std::string::size_type i,j,k;
@@ -310,7 +310,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         if ( exports )
             fprintf(h->content,"\"%s\"", ToString::mkcsv(keyname).c_str());
         else
-            fprintf(h->content, "<head>\n<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(),"", "");
+            fprintf(h->content, "<head>\n<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(), "", "", "");
 
         for ( k=3; k<cols.size(); ++k)
         {
@@ -337,9 +337,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                 }
                 else
                     fprintf(h->content,
-                            "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
+                            "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                             query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
-                            query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str());
+                            query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str(), query->getRegexpmod(pos).c_str());
 
                 if ( h->vars["distinct"] == "" ) vals.push_back(pos); else vals.push_back(0);
                 colfs.push_back(colformat);
@@ -358,7 +358,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
             if ( exports )
                 fprintf(h->content,";\"%s\"",ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str());
             else
-                fprintf(h->content, "<d><id>%s%d</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n", colids[0].c_str(), (int)i, dpytyp[2], colfs[2].c_str(), ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str(),"", "");
+                fprintf(h->content, "<d><id>%s%d</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[0].c_str(), (int)i, dpytyp[2], colfs[2].c_str(), ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str(),"", "", "");
         }
 
         if ( h->vars["distinct"] != "" && h->error_found == 0 )
@@ -472,7 +472,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
 {
     std::string queryid;
-    std::string colname, colid, regexp, regexphelp;
+    std::string colname, colid, regexp, regexphelp, regexpmod;
     long coltyp;
     std::string colformat;
     std::string::size_type i,j;
@@ -521,7 +521,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
 
     if ( cols.empty() )
     {
-        for (query->start_cols(); query->getCols(&colid, &colname, &coltyp, &colformat, &regexp, &regexphelp);)
+        for (query->start_cols(); query->getCols(&colid, &colname, &coltyp, &colformat, &regexp, &regexphelp, &regexpmod);)
         {
             if ( coltyp == DbConnect::FLOAT || coltyp == DbConnect::DOUBLE )
             {
@@ -534,8 +534,8 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                     fprintf(h->content,"%s\"%s\"",komma.c_str(),ToString::mkcsv(colname).c_str());
                  else
                     fprintf(h->content,
-                        "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
-                        colid.c_str(), coltyp, colformat.c_str(), colname.c_str(),regexp.c_str(), regexphelp.c_str());
+                        "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
+                        colid.c_str(), coltyp, colformat.c_str(), colname.c_str(),regexp.c_str(), regexphelp.c_str(), regexpmod.c_str());
                 colfs.push_back(colformat);
                 dpytyp.push_back(coltyp);
                 komma = ";";
@@ -569,9 +569,9 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                 }
                  else
                     fprintf(h->content,
-                        "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help></regexp></d>\n",
+                        "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                         query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
-                        query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str());
+                        query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str(), query->getRegexpmod(pos).c_str());
                 if ( h->vars["distinct"] == "" ) vals.push_back(pos); else vals.push_back(0);
                 colfs.push_back(colformat);
                 dpytyp.push_back(coltyp);

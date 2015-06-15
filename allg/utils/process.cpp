@@ -10,6 +10,8 @@
 #include <sys/stat.h>
 #include <errno.h>
 #if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
+#include <sys/time.h>
+#include <sys/unistd.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 
@@ -33,46 +35,7 @@ extern char **environ;
 
 #include "process.h"
 
-#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
-
-static std::set<Process*> processes;
-static pthread_mutex_t signal_mutex = PTHREAD_MUTEX_INITIALIZER;
-static int sig_check = 0;
-
-static void sig_child(int signum)
-{
-    Message msg("Sigschild");
-    std::set<Process*>::iterator i;
-
-    if ( pthread_mutex_trylock( &signal_mutex ) != 0 )
-    {
-        sig_check = 1;
-        return;
-    }
-
-    sig_check = 1;
-    while ( sig_check )
-    {
-        sig_check = 0;
-        i = processes.begin();
-        while ( i != processes.end() )
-        {
-            for ( i = processes.begin(); i != processes.end(); ++i )
-            {
-                if ( signum != -1 )
-                    (*i)->timeout(0,0,0,0);
-                if ( (*i)->getPid() == -1 )
-                {
-                    processes.erase(i);
-                    break;
-                }
-            }
-        }
-    }
-    Pthread_mutex_unlock("signal", &signal_mutex);
-}
-
-#else
+#if defined(__MINGW32__) || defined(__CYGWIN__)
 
 void *ProcessWaitStop(void *param)
 {
@@ -95,12 +58,9 @@ Process::~Process()
 #else
     if ( file >=0 )
     {
-        //pthread_mutex_lock(&mutex);
         close(file);
         file = -1;
-        //pthread_mutex_unlock(&mutex);
     }
-    sig_child(-1);
 #endif
     stop();
 }
@@ -387,7 +347,6 @@ int Process::start(CsList cmd_list, const char *logfile,
         }
     }
 
-    signal(SIGCHLD, sig_child);
     pid = vfork();
 	if ( pid < 0 )
 	{
@@ -493,46 +452,14 @@ int Process::start(CsList cmd_list, const char *logfile,
 	}
 	else
 	{
-        processes.insert(this);
 	    if ( pipe )
-	    {
 	        this->file = sockets[0];
-	    }
+
 	    return 1;
 	}
 #endif
 	return 0;
 }
-
-void Process::timeout(long sec, long usec, long w_sec, long w_usec)
-{
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    return;
-#else
-    //Pthread_mutex_lock("timeout", &mutex);
-    int result = 0;
-    if ( pid != -1 )
-    {
-        result = waitpid(pid, &status, WNOHANG);
-        status = WEXITSTATUS(status);
-    }
-
-    if ( result != 0 )
-    {
-        setInterval(0);
-        pid = -1;
-        if ( file != -1 )
-        {
-           close(file);
-           file = -1;
-        }
-    }
-    //Pthread_mutex_unlock("timeout", &mutex);
-
-#endif
-}
-
 
 int Process::stop()
 {
@@ -599,7 +526,6 @@ int Process::wait()
 	return exitcode;
 
 #else
-    setInterval(0);
     msg.pdebug(1, "wait");
     if ( pid == -1 ) return status;
     waitpid(pid, &status, 0);
@@ -625,8 +551,18 @@ int Process::write(const char *buffer, int size)
         }
     }
 #else
-    timeout(0,0,0,0);
-    if ( file >= 0 ) return ::write(file, buffer, size);
+        fd_set wr;
+        FD_ZERO(&wr);
+        FD_SET(file, &wr);
+        int sel = select( file + 1, (fd_set*)0, &wr, (fd_set*)0, NULL);
+        if ( sel > 0 )
+             return ::write(file, buffer, size);
+        else
+        {
+            close(file);
+            file = -1;
+            wait();
+        }
 #endif
     return 0;
     }
@@ -647,13 +583,39 @@ int Process::read( char *buffer, int size)
         }
     }
 #else
-// Pthread_mutex_lock("read", &signal_mutex);
-    timeout(0,0,0,0);
-
     if ( file >= 0 )
-        result = ::read(file, buffer, size );
+    {
+        fd_set rd;
+        struct timeval t;
 
-	// Pthread_mutex_unlock("read", &signal_mutex);
+        t.tv_sec = 0;
+        t.tv_usec = 100000;
+
+        int sel = 0;
+        while ( sel == 0 )
+        {
+            FD_ZERO(&rd);
+            FD_SET(file, &rd);
+
+            sel = select( file + 1, &rd, (fd_set*)0, (fd_set*)0, &t );
+
+            if ( sel > 0 )
+                result = ::read(file, buffer, size );
+            else
+            {
+                if ( waitpid(pid, &status, WNOHANG) > 0 )
+                {
+                    status = WEXITSTATUS(status);
+                    close(file);
+                    pid = -1;
+                    sel = -1;
+                    file = -1;
+                }
+                result = 0;
+            }
+        }
+    }
+
 #endif
     return result;
 }

@@ -266,7 +266,7 @@ void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)
 }
 void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
 {
-    DbTable *tab = db->p_getTable("mne_application", "update");
+    DbTable *tab = db->p_getTable(db->getApplschema(), "update");
     tab->del_allcolumns();
     db->release(tab);
 

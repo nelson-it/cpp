@@ -107,7 +107,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     DbConnect::ResultMat::iterator ri;
     int host;
 
-    DbTable *tab = db->p_getTable("mne_application", "trustrequest");
+    DbTable *tab = db->p_getTable(db->getApplschema(), "trustrequest");
 
     cols.add("action");
     cols.add("ipaddr");

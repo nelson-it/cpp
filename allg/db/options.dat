@@ -1,7 +1,7 @@
 // Datenbank optionen hier definiert
 // ================================================
 liste["DbDatabase"]         = Argument::Liste("-db", 'c', 1, "mnedb");
-liste["DbApplSchema"]       = Argument::Liste("-dbas", 'c', 1,"mne_appliction");
+liste["DbApplSchema"]       = Argument::Liste("-dbas", 'c', 1,"mne_application");
 
 liste["DbHttpTimeout"]      = Argument::Liste("-dbtime", 'l', 1, "300");
 liste["DbHttpRealm"]        = Argument::Liste("-dbrealm", 'c', 1, "Nelson technische Informatik");
@@ -11,5 +11,8 @@ liste["DbTranslatePasswd"]  = Argument::Liste("-dbtrpasswd", 'c', 1, "");
 
 liste["DbRepositoryUser"]    = Argument::Liste("-dbrepuser", 'c', 1, "mneerprepository");
 liste["DbRepositoryPasswd"]  = Argument::Liste("-dbreppasswd", 'c', 1, "");
+
+liste["DbSystemUser"]    = Argument::Liste("-dbsysuser", 'c', 1, "mneerpsystem");
+liste["DbSystemPasswd"]  = Argument::Liste("-dbsyspasswd", 'c', 1, "");
 
 liste["DbTrustCheckUserip"]  = Argument::Liste("-dbcuip", 'c', -100, "127.0.0.1/32");

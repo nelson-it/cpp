@@ -18,6 +18,11 @@ PgDatabase::PgDatabase(std::string appl_schema) :
 {
     con = NULL;
 }
+PgDatabase::PgDatabase() :
+    Database()
+{
+    con = NULL;
+}
 
 PgDatabase::~PgDatabase()
 {
@@ -26,7 +31,11 @@ PgDatabase::~PgDatabase()
 DbConnect *PgDatabase::p_getConnect(std::string dbname, std::string user,
         std::string passwd)
 {
-    if (con == NULL) con = new PgConnect(dbname, user, passwd);
+    if (con == NULL)
+    {
+        con = new PgConnect(dbname, user, passwd);
+        ((PgConnect*)con)->setApplschema ( this->appl_schema);
+    }
     else msg.pwarning(CON_EXISTS, "Verbindung besteht schon - es wird keine neue Verbindung geöfffnet");
 
     if (!con->have_connection())
@@ -34,7 +43,6 @@ DbConnect *PgDatabase::p_getConnect(std::string dbname, std::string user,
         delete con;
         con = NULL;
     }
-
     return con;
 }
 

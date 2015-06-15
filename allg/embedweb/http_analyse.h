@@ -77,6 +77,7 @@ protected:
 
     std::vector<std::string>  serverpath;
     std::map<std::string,std::string>  datapath;
+    std::string dataroot;
 
     ContentTypes content_types;
 
@@ -115,6 +116,7 @@ protected:
     virtual void analyse_header();
     virtual void read_postvalues();
     virtual void check_user(HttpHeader *h) {};
+    virtual int  check_group(HttpHeader *h, const char *group) { return false; }
 
 public:
     HttpAnalyse( ServerSocket *s);

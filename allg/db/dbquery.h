@@ -44,6 +44,7 @@ class DbQuery
     std::vector<std::string> sel_format;
     std::vector<std::string> sel_regexp;
     std::vector<std::string> sel_regexphelp;
+    std::vector<std::string> sel_regexpmod;
     std::vector<long> sel_null;
     std::vector<long> sel_typ;
 
@@ -52,6 +53,7 @@ class DbQuery
     std::vector<std::string>::iterator act_sel_format;
     std::vector<std::string>::iterator act_sel_regexp;
     std::vector<std::string>::iterator act_sel_regexphelp;
+    std::vector<std::string>::iterator act_sel_regexpmod;
     std::vector<long>::iterator act_sel_typ;
 
     std::string mk_statement(DbTable::ValueMap *w, CsList *wop, CsList *sort,
@@ -107,7 +109,7 @@ public:
     void start_cols();
     int getCols(std::string *id, std::string *name, long *typ,
             std::string *format = NULL, std::string *regexp = NULL,
-            std::string *regexphelp = NULL);
+            std::string *regexphelp = NULL, std::string *regexpmod = NULL);
 
     std::string::size_type find(std::string id)
     {
@@ -162,6 +164,12 @@ public:
     std::string getRegexphelp(unsigned int num)
     {
         if ( num < sel_regexphelp.size()) return sel_regexphelp[num];
+        else return "";
+    }
+
+    std::string getRegexpmod(unsigned int num)
+    {
+        if ( num < sel_regexpmod.size()) return sel_regexpmod[num];
         else return "";
     }
 
