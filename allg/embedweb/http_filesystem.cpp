@@ -194,7 +194,10 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     std::string  root = h->vars["rootInput.old"];
 
     for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
+    {
+        msg.pdebug(D_ROOTDIRS, "check %s %s", root.c_str(), m->first.c_str());
         if ( m->first == root ) break;
+    }
 
     if ( m == h->datapath.end() )
     {
@@ -203,6 +206,7 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
         return "";
     }
 
+    msg.pdebug(D_ROOTDIRS, "found %s", (this->dataroot + m->second).c_str());
     return this->dataroot + m->second;
 
 }
@@ -350,11 +354,11 @@ void HttpFilesystem::ls(HttpHeader *h)
 
     fprintf(h->content,"<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "menuid",   "menuid");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "item",   "item");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "action", "action");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "typ",    "typ");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "pos",    "pos");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
     fprintf(h->content,"</head><body>");
 
     dir = this->dir;

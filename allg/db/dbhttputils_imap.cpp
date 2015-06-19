@@ -94,8 +94,8 @@ void DbHttpUtilsImap::folder_xml(Database *dbin, HttpHeader *h)
                 "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
                 h->charset.c_str());
     fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
-    fprintf(h->content, "<d><id>folder</id><typ>2</typ><name>Folder</name><regexp><reg></reg><help></help></regexp></d>\n");
-    fprintf(h->content, "<d><id>name</id><typ>2</typ><name>Name</name><regexp><reg></reg><help></help></regexp></d>\n");
+    fprintf(h->content, "<d><id>folder</id><typ>2</typ><name>Folder</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
+    fprintf(h->content, "<d><id>name</id><typ>2</typ><name>Name</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
 
     fprintf(h->content, "</head>");
     fprintf(h->content, "<body>");
@@ -120,8 +120,8 @@ void DbHttpUtilsImap::rescan_xml(Database *db, HttpHeader *h)
             "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
             h->charset.c_str());
     fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
-    fprintf(h->content, "<d><id>from</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", msg.get("Absender").c_str());
-    fprintf(h->content, "<d><id>subject</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", msg.get("Betreff").c_str());
+    fprintf(h->content, "<d><id>from</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Absender").c_str());
+    fprintf(h->content, "<d><id>subject</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Betreff").c_str());
 
     fprintf(h->content, "</head>");
     fprintf(h->content, "<body>");

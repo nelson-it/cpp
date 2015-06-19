@@ -564,12 +564,12 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
 
     fprintf(h->content,"<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "menuid",   "menuid");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "item",   "item");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "action", "action");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "typ",    "typ");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "pos",    "pos");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "status",  "status");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "status",  "status");
     fprintf(h->content,"</head><body>");
 
     dir = this->dir;
@@ -638,10 +638,10 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
 
     fprintf(h->content,"<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "author", msg.get("geändert von").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>1000</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "comitdate", msg.get("geändert am").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "notiz",    msg.get("Änderungsnotiz").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help></regexp></d>\n", "hash",   "hash");
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "author", msg.get("geändert von").c_str());
+    fprintf(h->content,"<d><id>%s</id><typ>1000</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "comitdate", msg.get("geändert am").c_str());
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "notiz",    msg.get("Änderungsnotiz").c_str());
+    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "hash",   "hash");
 
     fprintf(h->content,"</head><body>");
 
