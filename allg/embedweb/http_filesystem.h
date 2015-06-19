@@ -34,6 +34,11 @@ protected:
         W_MAX = 1000
     };
 
+    enum DebugType
+    {
+        D_ROOTDIRS = 1
+    };
+
     virtual std::string getRoot(HttpHeader *h);
     virtual std::string getDir(HttpHeader *h);
 

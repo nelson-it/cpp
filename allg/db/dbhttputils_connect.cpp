@@ -227,7 +227,7 @@ void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)
         {
             for (i=0; i < (*r)[0].size(); ++i)
             {
-                fprintf(h->content, "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help></regexp></d>\n",
+                fprintf(h->content, "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n",
                         i, ((*r)[0][i]).typ, i);
             }
         }
