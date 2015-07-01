@@ -10,4 +10,6 @@ liste["EmbedwebHttpNocache"]    = Argument::Liste("-httpnocache", 'l', 0, "0" );
 liste["EmbedwebHttpMapsRoot"] = Argument::Liste("-httpmapsroot", 'c', 1, "");
 liste["EmbedwebHttpMaps"]     = Argument::Liste("-httpmaps", 'c', 1, "");
 
-
+// Sysexec Zugriff IPs
+// +++++++++++++++++++++++++++++++++++++++++++++++++++++
+liste["HttpSysexecUserip"]  = Argument::Liste("-sysip", 'c', -100, "127.0.0.1/32, 10.0.0.0/8 172.16.0.0/16 192.168.0.0/16");

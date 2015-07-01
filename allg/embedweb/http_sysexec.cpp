@@ -55,8 +55,17 @@ void HttpSysexec::execute ( HttpHeader *h)
     std::string command;
     char buffer[1024];
     int anzahl;
+    unsigned int i;
+    int host;
 
-    if ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 )
+    Argument::StringWerte ips;
+    ips = (a["HttpSysexecUserip"]).getStringWerte();
+
+    host = this->http->getServersocket()->getHost(h->client);
+    for ( i = 0; i < ips.size(); ++i )
+        if (  check_ip(ips[i].c_str(), host ) ) break;
+
+    if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 ) )
     {
         msg.perror(E_NOFUNC, "keine Berechtigung");
         if ( h->content_type == "text/xml" )
