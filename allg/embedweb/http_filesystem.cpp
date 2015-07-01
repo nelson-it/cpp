@@ -226,10 +226,12 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
     std::replace( dir.begin(), dir.end(), '/', '\\');
 #endif
 
+    rpath[0] = '\0';
     if ( root == ""
          || realpath((root + dir).c_str(), rpath) == NULL
          || strstr(rpath, root.c_str()) == NULL )
     {
+    	msg.pdebug(0, "rpath: %s, root: %s", rpath, root.c_str());
         msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
         return "";
     }
