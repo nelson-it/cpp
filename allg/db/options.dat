@@ -1,5 +1,7 @@
 // Datenbank optionen hier definiert
 // ================================================
+liste["gitcmd"]  = Argument::Liste("-gitcmd", 'c', 1, "git")
+
 liste["DbDatabase"]         = Argument::Liste("-db", 'c', 1, "mnedb");
 liste["DbApplSchema"]       = Argument::Liste("-dbas", 'c', 1,"mne_application");
 
@@ -15,4 +17,6 @@ liste["DbRepositoryPasswd"]  = Argument::Liste("-dbreppasswd", 'c', 1, "");
 liste["DbSystemUser"]    = Argument::Liste("-dbsysuser", 'c', 1, "mneerpsystem");
 liste["DbSystemPasswd"]  = Argument::Liste("-dbsyspasswd", 'c', 1, "");
 
-liste["DbTrustCheckUserip"]  = Argument::Liste("-dbcuip", 'c', -100, "127.0.0.1/32");
+liste["DbTrustCheckUserip"]  = Argument::Liste("-dbcuip", 'c', -100, "127.0.0.1/32")
+
+
