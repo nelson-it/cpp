@@ -47,6 +47,7 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
 
     int need_root;
     std::string execlog;
+    std::string gitcmd;
 
     int exec(const CsList *cmd, const char *workdir);
 

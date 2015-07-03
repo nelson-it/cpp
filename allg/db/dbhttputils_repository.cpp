@@ -36,6 +36,8 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
                        query(h, 1),
                        table(h, 1)
 {
+    Argument a;
+
     subprovider["insert.xml"]   = &DbHttpUtilsRepository::insert_xml;
     subprovider["modify.xml"]   = &DbHttpUtilsRepository::modify_xml;
     subprovider["delete.xml"]   = &DbHttpUtilsRepository::delete_xml;
@@ -57,6 +59,7 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
     subprovider["dblog.xml"]        = &DbHttpUtilsRepository::dblog;
 
     need_root = 0;
+    gitcmd = (char*)a["gitcmd"];
 
     h->add_provider(this);
 }
@@ -177,7 +180,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
     }
     else
     {
-        cmd.add("git");
+        cmd.add(gitcmd.c_str());
         cmd.add("init");
         cmd.add("--quiet");
         cmd.add("--shared=group");
@@ -217,7 +220,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             }
 
             cmd.setString("");
-            cmd.add("git");
+            cmd.add(gitcmd.c_str());
             cmd.add("add");
             cmd.add(".");
 
@@ -233,7 +236,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
 
             DbHttpAnalyse::Client::Userprefs userprefs = DbHttpProvider::http->getUserprefs();
             cmd.setString("");
-            cmd.add("git");
+            cmd.add(gitcmd.c_str());
             cmd.add("commit");
             cmd.add("-m");
             cmd.add(msg.get("Initialversion aus Vorlage"));
@@ -438,7 +441,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
 
              HttpVars vars = h->vars;
 
-             cmd.add("git");
+             cmd.add(gitcmd.c_str());
              cmd.add("init");
              cmd.add("--quiet");
              cmd.add("--shared=group");
@@ -452,7 +455,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
                  msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
 
              cmd.clear();
-             cmd.add("git");
+             cmd.add(gitcmd.c_str());
              cmd.add("add");
              cmd.add(".");
 
@@ -513,7 +516,7 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         return;
     }
 
-    cmd.add("git");
+    cmd.add(gitcmd.c_str());
     cmd.add("status");
     cmd.add("-s");
 
@@ -618,7 +621,7 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
             return;
         }
 
-        cmd.add("git");
+        cmd.add(gitcmd.c_str());
         cmd.add("log");
         cmd.add("--pretty=%H@%an@%at@%s");
         cmd.add(path + DIRSEP + h->vars["filenameInput.old"]);
@@ -683,7 +686,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             return;
         }
 
-        cmd.add("git");
+        cmd.add(gitcmd.c_str());
 
         cmd.add("log");
         cmd.add("--pretty=%H");
@@ -701,7 +704,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
         if ( check_path(h, h->vars["filenameInput.old"], 0, 0 ) != "" && S_ISREG(statbuf.st_mode))
         {
-            cmd.setString("git");
+            cmd.setString(gitcmd.c_str());
 
             cmd.add("log");
             //cmd.add("--follow");
@@ -769,7 +772,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                 {
                     CsList ll;
 
-                    cmd.setString("git");
+                    cmd.setString(gitcmd.c_str());
                     cmd.add("commit");
                     cmd.add("--amend");
                     cmd.add("-m");
@@ -784,7 +787,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                         return;
                     }
 
-                    cmd.setString("git");
+                    cmd.setString(gitcmd.c_str());
 
                     cmd.add("log");
                     cmd.add("--pretty=%H");
@@ -874,7 +877,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     else
     {
         CsList cmd;
-        cmd.add("git");
+        cmd.add(gitcmd.c_str());
         cmd.add("show");
         cmd.add(h->vars["hash"] + ":" + h->vars["filenameInput.old"]);
 
@@ -1037,7 +1040,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
 
     std::string filename = path + DIRSEP + h->vars["filenameInput"];
 
-    cmd.add("git");
+    cmd.add(gitcmd.c_str());
     cmd.add("add");
     cmd.add(filename.c_str());
 
@@ -1109,7 +1112,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     }
     else
     {
-        cmd.add("git");
+        cmd.add(gitcmd.c_str());
         cmd.add("rm");
         cmd.add("--force");
         cmd.add("--quiet");
@@ -1172,7 +1175,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
         return;
     }
 
-    cmd.add("git");
+    cmd.add(gitcmd.c_str());
     cmd.add("mv");
     cmd.add((path + DIRSEP + oldname));
     cmd.add((path + DIRSEP + newname).c_str());
@@ -1227,7 +1230,7 @@ void DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
 
     DbHttpAnalyse::Client::Userprefs userprefs = DbHttpProvider::http->getUserprefs();
 
-    cmd.add("git");
+    cmd.add(gitcmd.c_str());
     cmd.add("commit");
     cmd.add("-a");
     cmd.add("-m");
