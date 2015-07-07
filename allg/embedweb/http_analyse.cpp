@@ -115,24 +115,36 @@ msg("HttpAnalyse")
 	spath.setString((char *)a["EmbedwebHttpServerpath"], ':');
 	for (i=0; i<spath.size(); i++)
 	{
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	    if ( spath[0][1] != ':')
+#else
 	    if ( spath[0][0] != '/')
+#endif
 	        serverpath.push_back(projectroot + "/" + spath[i]);
 	    else
-		serverpath.push_back(spath[i]);
+		    serverpath.push_back(spath[i]);
 	}
 
 	spath.setString((char *)a["EmbedwebHttpDatapath"], ':');
 	for (i=0; i<spath.size(); i++)
 	{
 	    dele.setString(spath[i],'@');
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	    if ( dele[1][1] != ':')
+#else
 	    if ( dele[1][0] != '/')
-		datapath[dele[0]] = projectroot + "/" + dele[1];
+#endif
+		    datapath[dele[0]] = projectroot + "/" + dele[1];
 	    else
-		datapath[dele[0]] = dele[1];
+		    datapath[dele[0]] = dele[1];
 	}
 
     this->dataroot = (char*)(a["EmbedwebHttpDataroot"]);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( this->dataroot[1] != ':' )
+#else
     if ( this->dataroot[0] != '/' )
+#endif
         this->dataroot = projectroot + "/" + this->dataroot;
 
 	content_types["gif"]  = "image/gif";

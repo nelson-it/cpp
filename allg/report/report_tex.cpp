@@ -30,8 +30,12 @@ ReportTex::ReportTex() :
 
     for ( i=path.begin(); i != path.end(); ++i )
     {
-       if ( (*i)[0] != '/' )
-           (*i) = projectroot + "/" + (*i);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( (*i)[1] != ':' )
+#else
+        if ( (*i)[0] != '/' )
+#endif
+            (*i) = projectroot + "/" + (*i);
     }
 
 
