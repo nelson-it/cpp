@@ -65,19 +65,31 @@ Process::~Process()
     stop();
 }
 
-int Process::start(const char *cmd, const char *logfile,
-		const char *workdir, const char *logdir,
-		const char *extrapath, int nomask )
+int Process::start(const char *cmd, const char *logfile, const char *workdir, const char *logdir, const char *extrapath, int nomask )
 {
     CsList cmd_list(cmd, ' ');
     return start(cmd_list, logfile, workdir, logdir, extrapath, nomask);
 }
 
-int Process::start(CsList cmd_list, const char *logfile,
-        const char *workdir, const char *logdir,
-        const char *extrapath, int nomask )
+int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, const char *logdir, const char *extrapath, int nomask )
 {
     this->status = -1;
+    std::string logfile;
+    int pipe;
+
+    if ( p_logfile != NULL )
+    {
+        logfile = p_logfile;
+        if ( logfile.substr(0,4) == std::string("pipe") )
+        {
+            pipe = 1;
+            logfile = logfile.substr(5);
+        }
+    }
+    else
+    {
+        logfile = "";
+    }
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)
 
@@ -134,7 +146,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 	si.hStdOutput = INVALID_HANDLE_VALUE;
 	si.hStdError = INVALID_HANDLE_VALUE;
 
-    if ( logfile != NULL && logfile == std::string("pipe") )
+    if ( pipe )
     {
         std::string lf;
 
@@ -178,10 +190,13 @@ int Process::start(CsList cmd_list, const char *logfile,
             return 0;
         }
 
-        si.hStdError  = si.hStdOutput;
+        if ( logfile != "" )
+          si.hStdError  = si.hStdOutput;
+
         have_pipe = 1;
     }
-    else if ( logfile != NULL && *logfile != '\0' )
+
+    if ( logfile != "" )
     {
         std::string lf;
 
@@ -190,12 +205,12 @@ int Process::start(CsList cmd_list, const char *logfile,
         sa.lpSecurityDescriptor = NULL;
         sa.bInheritHandle = TRUE;
 
-        if ( logdir != NULL && *logfile != '\\' )
-            lf = (std::string)logdir + "\\" + (std::string)logfile;
+        if ( logdir != NULL && logfile[0] != '\\' )
+            lf = (std::string)logdir + "\\" + logfile;
         else
             lf = logfile;
 
-        si.hStdOutput = CreateFile(lf.c_str(),
+        si.hStdError = CreateFile(lf.c_str(),
                 GENERIC_WRITE,
                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                 &sa,
@@ -203,8 +218,10 @@ int Process::start(CsList cmd_list, const char *logfile,
                 FILE_ATTRIBUTE_NORMAL,
                 NULL);
 
-        si.hStdError  = si.hStdOutput;
-        if ( si.hStdOutput == INVALID_HANDLE_VALUE )
+        if ( ! pipe )
+            si.hStdOutput  = si.hStdError;
+
+        if ( si.hStdError == INVALID_HANDLE_VALUE )
         {
             msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
             SetEnvironmentVariable("PATH", path);
@@ -290,7 +307,7 @@ int Process::start(CsList cmd_list, const char *logfile,
 	    if ( have_logfile )
 	    {
 	        have_logfile = 0;
-	        CloseHandle(si.hStdOutput);
+	        CloseHandle(si.hStdError);
 	    }
 
 	    if ( have_pipe )
@@ -331,15 +348,13 @@ int Process::start(CsList cmd_list, const char *logfile,
 
 #else
     int sockets[2];
-    int pipe = 0;
     char cwd[PATH_MAX + 1];
 
     this->file = -1;
     this->cmd = cmd_list.getString(' ');
 
-    if ( logfile != NULL && logfile == std::string("pipe") )
+    if ( pipe )
     {
-        pipe = 1;
         if ( socketpair(AF_UNIX, SOCK_STREAM, 0, sockets) )
         {
             msg.perror(E_PIPE, "kann socketpair nicht öffnen");
@@ -373,33 +388,34 @@ int Process::start(CsList cmd_list, const char *logfile,
         if ( pipe )
         {
             dup2(sockets[1],1);
-            dup2(sockets[1],2);
+            if ( logfile == "" )
+                dup2(sockets[1],2);
 
             close(sockets[1]);
-            //close(0);
         }
-        else if ( logfile != NULL && *logfile != '\0' )
+
+        if ( logfile != ""  )
 		{
 			std::string lf;
 			int lfile;
 
 			if ( logdir != NULL && *logdir != '\0' )
-				lf = (std::string)logdir + "/" + (std::string)logfile;
+				lf = (std::string)logdir + "/" + logfile;
 			else
 				lf = logfile;
 
 			lfile = open(lf.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
 			if ( lfile < 0 )
 			{
-			    msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
+			    msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", lf.c_str());
 			    _exit(-2);
 			}
 
-			dup2(lfile,1);
+			if ( ! pipe )
+			    dup2(lfile,1);
 			dup2(lfile,2);
 
 			close(lfile);
-			//close(0);
 		}
 
         if ( workdir != NULL && chdir(workdir) < 0 )
@@ -415,6 +431,7 @@ int Process::start(CsList cmd_list, const char *logfile,
                 msg.perror(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
                 _exit(-1);
             }
+
         }
 
         if ( extrapath == NULL )
@@ -453,8 +470,10 @@ int Process::start(CsList cmd_list, const char *logfile,
 	else
 	{
 	    if ( pipe )
+	    {
 	        this->file = sockets[0];
-
+	        close(sockets[1]);
+	    }
 	    return 1;
 	}
 #endif

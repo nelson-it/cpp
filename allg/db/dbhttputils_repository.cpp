@@ -388,7 +388,7 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
 
 void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
 {
-    std::set<std::string>::iterator is;
+    std::vector<FileData>::iterator is;
     DbTable *tab;
     DbTable::ValueMap where,vals;
     DbConnect::ResultMat *r;
@@ -428,13 +428,13 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
     {
         vals["repositoryid"] = "################";
         where["root"] = vals["root"] = h->vars["rootInput.old"];
-        where["name"] = vals["name"] = *is;
+        where["name"] = vals["name"] = (*is).name;
 
         r = tab->select(&vals, &where);
          if (r->empty() )
              tab->insert(&vals);
 
-         if ( check_path(root.c_str(), ((*is) + "/.git").c_str(), 1, 0) == "" )
+         if ( check_path(root.c_str(), ((*is).name + "/.git").c_str(), 1, 0) == "" )
          {
              CsList cmd;
              int result;
@@ -445,7 +445,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
              cmd.add("init");
              cmd.add("--quiet");
              cmd.add("--shared=group");
-             cmd.add(*is);
+             cmd.add((*is).name);
 
              Process p(DbHttpProvider::http->getServersocket());
              p.start(cmd, NULL, root.c_str());
@@ -459,7 +459,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
              cmd.add("add");
              cmd.add(".");
 
-             p.start(cmd, NULL, ( root + DIRSEP + (*is)).c_str());
+             p.start(cmd, NULL, ( root + DIRSEP + (*is).name).c_str());
              result = p.wait();
 
              if ( result != 0 )
@@ -470,7 +470,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
 
              (*h->vars.p_getVars())["autocommitInput"] = "1";
              (*h->vars.p_getVars())["commitmessageInput"] = "Initialversion";
-             (*h->vars.p_getVars())["nameInput.old"] = (*is);
+             (*h->vars.p_getVars())["nameInput.old"] = (*is).name;
 
              commit(db, h);
              h->vars = vars;
@@ -496,7 +496,7 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     int result;
     std::string dir;
     int first;
-    std::set<std::string>::iterator is;
+    std::vector<FileData>::iterator is;
 
     std::string rootname = h->vars["rootname"];
     std::string idname = h->vars["idname"];
@@ -557,12 +557,22 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
                 status.insert(std::make_pair(dir, "M"));
 
 
-            if ( first && dir == this->dir && files.find(name) == files.end() && st == "D" )
-                files.insert(name);
+            for ( is = files.begin(); is != files.end(); ++is) if ( (*is).name == name ) break;
+            if ( first && dir == this->dir && is == files.end() && st == "D" )
+            {
+                FileData d;
+                d.name = name;
+                files.push_back(d);
+            }
             first = 0;
         }
-        if ( first == 1 && this->dir == "" && files.find(name) == files.end() && st == "D" )
-            files.insert(name);
+        for ( is = files.begin(); is != files.end(); ++is) if ( (*is).name == name ) break;
+        if ( first == 1 && this->dir == "" && is == files.end() && st == "D" )
+        {
+            FileData d;
+            d.name = name;
+            files.push_back(d);
+        }
     }
 
     fprintf(h->content,"<head>");
@@ -582,22 +592,22 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     i = 0;
     for ( is= dirs.begin(); is != dirs.end(); ++is )
     {
-        std::string fullname = dir + (*is);
+        std::string fullname = dir + (*is).name;
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
         fullname = ToString::substitute(fullname, DIRSEP, "/");
 
         if ( singledir )
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
         else
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), "submenu", "", i++, st.c_str() );
+            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), "submenu", "", i++, st.c_str() );
     }
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
     {
-        std::string fullname = dir + (*is);
+        std::string fullname = dir + (*is).name;
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
         fullname = ToString::substitute(fullname, DIRSEP, "/");
-        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
     }
 
     fprintf(h->content,"</body>");

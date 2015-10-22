@@ -129,6 +129,7 @@ public:
 	void pwarning(int errorno, const char *str, ...);
 	void pmessage(int errorno, const char *str, ...);
 	void pdebug(int debuglevel, const char *str, ...);
+	void ptext(const char *buffer, int nolog = 0);
 	void wdebug(int debuglevel, const char *str, int length);
 
 	void line(const char *str, ...);

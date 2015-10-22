@@ -599,63 +599,71 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 void Message::line(const char *str, ... )
 {
 #ifdef PTHREAD
-	Param *p = p_getParam();
-	void *tid = PTHREADID;
+    Param *p = p_getParam();
+    void *tid = PTHREADID;
 
-	int debug = p->debug;
-	MessageTranslator *prg_trans = p->prg_trans;
-	MessageTranslator *msg_trans = p->msg_trans;
-	Pthread_mutex_unlock(&mutex);
+    int debug = p->debug;
+    MessageTranslator *prg_trans = p->prg_trans;
+    MessageTranslator *msg_trans = p->msg_trans;
+    Pthread_mutex_unlock(&mutex);
 #endif
-	va_list ap;
+    va_list ap;
 
-	if ( this->msg_typ == M_DEBUG && debug < last_debuglevel )
-	{
+    if ( this->msg_typ == M_DEBUG && debug < last_debuglevel )
+    {
 #ifdef PTHREAD
-		Pthread_mutex_unlock(&mutex);
+        Pthread_mutex_unlock(&mutex);
 #endif
-		return;
-	}
+        return;
+    }
 
-	va_start(ap,str);
-	fprintf(out, "                ");
+    va_start(ap,str);
+    fprintf(out, "                ");
 
-	if ( this->msg_typ == M_DEBUG || prg_trans == NULL || ignore_lang)
-		vfprintf(out, str, ap);
-	else
-		vfprintf(out, prg_trans->get(str, id).c_str(), ap);
+    if ( this->msg_typ == M_DEBUG || prg_trans == NULL || ignore_lang)
+        vfprintf(out, str, ap);
+    else
+        vfprintf(out, prg_trans->get(str, id).c_str(), ap);
 
-	va_end(ap);
+    va_end(ap);
 
-	if ( ! logonly && this->msg_typ != M_DEBUG && this->msg_typ != M_UNDEF && ! msg_clients.empty() )
-	{
-		MessageClients::iterator i;
-		char s[10240];
-		unsigned int j;
-		va_start(ap,str);
-		for ( j=0; j<strlen(id); j++) s[j] = ' ';
-		s[j++] = ' ';
-		s[j] = '\0';
+    if ( ! logonly && this->msg_typ != M_DEBUG && this->msg_typ != M_UNDEF && ! msg_clients.empty() )
+    {
+        MessageClients::iterator i;
+        char s[10240];
+        unsigned int j;
+        va_start(ap,str);
+        for ( j=0; j<strlen(id); j++) s[j] = ' ';
+        s[j++] = ' ';
+        s[j] = '\0';
 
-		if ( msg_trans == NULL || ignore_lang)
-			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
-		else
-			vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
-					msg_trans->get(str, id).c_str(), ap );
-		s[sizeof(s) - 1] = '\0';
+        if ( msg_trans == NULL || ignore_lang)
+            vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
+        else
+            vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
+                    msg_trans->get(str, id).c_str(), ap );
+        s[sizeof(s) - 1] = '\0';
 
-		for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
-		{
-			if ( (*i)->tid == NULL || (*i)->tid == tid )
-				(*i)->pline(s);
-		}
-		va_end(ap);
-	}
+        for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
+        {
+            if ( (*i)->tid == NULL || (*i)->tid == tid )
+                (*i)->pline(s);
+        }
+        va_end(ap);
+    }
 
-	fprintf(out,"\n");
-	fflush(out);
-	ignore_lang = 0;
+    fprintf(out,"\n");
+    fflush(out);
+    ignore_lang = 0;
 
+}
+
+void Message::ptext(const char *buffer, int length)
+{
+	fprintf(out, "%s Text:\n", timestamp().c_str());
+    fwrite(buffer, length, 1, out );
+    fprintf(out, "\n");
+    fflush(out);
 }
 
 std::string Message::get( std::string str, int prog )
