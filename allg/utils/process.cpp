@@ -74,8 +74,8 @@ int Process::start(const char *cmd, const char *logfile, const char *workdir, co
 int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, const char *logdir, const char *extrapath, int nomask )
 {
     this->status = -1;
-    std::string logfile;
-    int pipe;
+    std::string logfile = "";
+    int pipe = 0;
 
     if ( p_logfile != NULL )
     {

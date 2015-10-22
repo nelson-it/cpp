@@ -463,7 +463,7 @@ void HttpFilesystem::ls(HttpHeader *h)
     {
         char str[1024];
         str[sizeof(str) - 1] =  '\0';
-        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : false, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctim.tv_sec, (*is).statbuf.st_mtim.tv_sec, (*is).statbuf.st_atim.tv_sec );
+        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : false, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
         if ( singledir )
             fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
         else
@@ -474,7 +474,7 @@ void HttpFilesystem::ls(HttpHeader *h)
     {
         char str[1024];
         str[sizeof(str) - 1] =  '\0';
-        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctim.tv_sec, (*is).statbuf.st_mtim.tv_sec, (*is).statbuf.st_atim.tv_sec );
+        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
         fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
     }
 

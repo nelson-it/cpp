@@ -125,7 +125,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
     if ( flog != NULL )
     {
         char *b;
-        unsigned int size;
+        long size;
         fseek( flog, 0, SEEK_END);
         size = ftell(flog);
         fseek( flog, 0, SEEK_SET);
