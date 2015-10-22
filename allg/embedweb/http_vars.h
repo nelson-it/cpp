@@ -23,6 +23,7 @@ private:
     Vars vars;
     Files files;
 
+    Vars extravars;
 public:
     HttpVars() : msg("HttpVars")
     {}
@@ -33,6 +34,7 @@ public:
     void setMultipart( std::string boundary, char *data);
 
     Vars *p_getVars() { return &vars; }
+    Vars *p_getExtraVars() { return &extravars; }
 
     void clear();
     void clear( const char *name);

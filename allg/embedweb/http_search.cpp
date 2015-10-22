@@ -9,10 +9,11 @@
 #include <fcntl.h>
 
 #include <argument/argument.h>
+#include <utils/php_exec.h>
 
 #include "http_search.h"
 
-HttpSearchPath::HttpSearchPath(Http *h, std::string path) :
+HttpSearchPath::HttpSearchPath(Http *h, std::string path, int noadd ) :
 	HttpProvider(h), msg("HttpSearchPath")
 {
 	Argument a;
@@ -36,7 +37,8 @@ HttpSearchPath::HttpSearchPath(Http *h, std::string path) :
 	search.push_back(str.substr(ii));
 	msg.pdebug(3, "%s-searchpath: %s", path.c_str(), str.substr(ii).c_str());
 
-	h->add_provider(this);
+	if ( ! noadd )
+	    h->add_provider(this);
 }
 
 HttpSearchPath::~HttpSearchPath()
@@ -61,23 +63,33 @@ int HttpSearchPath::request(HttpHeader *h)
 		msg.pdebug(3, "check %s", file.c_str());
 		if (stat(file.c_str(), &s) == 0)
 		{
-			FILE *c = fopen(file.c_str(), "rb");
-			if ( c != NULL )
-			{
-				h->status = 200;
-				fclose(h->content);
-				h->content = c;
-				h->translate = 1;
-				fseek(c, 0, SEEK_END);
-				return 1;
-			}
-			else
-			{
-			    if ( h->vars["ignore_notfound"] == "" )
-			        msg.perror(E_FILE_OPEN, "kann datei <%s> nicht öffnen", name.c_str());
-				return 0;
-			}
-		}
+		    h->status = 200;
+		    if (file.find(".php") == (file.size() - 4 ))
+		    {
+		        h->age = 0;
+		        PhpExec(file, h);
+		        return 1;
+		    }
+		    else
+		    {
+		        FILE *c = fopen(file.c_str(), "rb");
+		        if ( c != NULL )
+		        {
+		            h->status = 200;
+		            fclose(h->content);
+		            h->content = c;
+		            h->translate = 1;
+		            fseek(c, 0, SEEK_END);
+		            return 1;
+		        }
+		        else
+		        {
+		            if ( h->vars["ignore_notfound"] == "" )
+		                msg.perror(E_FILE_OPEN, "kann datei <%s> nicht öffnen", name.c_str());
+		            return 0;
+		        }
+		    }
+        }
 	}
 	if ( h->vars["ignore_notfound"] == "" )
 	    msg.perror(E_FILE_FOUND, "kann datei <%s> nicht finden", name.c_str());

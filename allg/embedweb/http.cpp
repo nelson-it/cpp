@@ -249,7 +249,6 @@ void Http::make_answer()
 	{
 		act_h->status = 404;
 		act_h->age = 0;
-		//act_h->content_type = "text/html";
 		str = this->get_meldungtext(act_h->status);
 		std::string::size_type pos = str.find("#request#");
 		if (pos != std::string::npos)
@@ -297,7 +296,7 @@ void Http::make_answer()
 			}
 		}
 
-		if (act_h->content_type.find("text") == 0 && act_h->translate != 0)
+		if ( act_h->status == 200 && act_h->content_type.find("text") == 0 && act_h->translate != 0 )
 		{
 			http_translate.make_answer(act_h, NULL);
 			act_h->translate = 0;
@@ -344,6 +343,7 @@ void Http::make_answer()
 			act_h->age = 3600;
 		act_h->status = 200;
 
+		act_h->translate = 1;
 		if ( act_h->setstatus  )
 		    act_h->status = act_h->setstatus;
 
@@ -355,7 +355,7 @@ void Http::make_answer()
             PhpExec(str, act_h);
         }
 
-		if (act_h->content_type.find("text") == 0)
+		if (act_h->content_type.find("text") == 0 && act_h->translate )
 		{
 			http_translate.make_answer(act_h, file);
 			act_h->translate = 0;

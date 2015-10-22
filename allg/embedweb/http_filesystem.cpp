@@ -9,9 +9,9 @@
 #include <errno.h>
 
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <dirent.h>
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -149,19 +149,29 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 
 #include "http_filesystem.h"
 
+
 HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
-HttpProvider(h), msg("HttpFilesystem")
+
+    HttpProvider(h),
+    search(h, "file", 1),
+    msg("HttpFilesystem")
 {
     Argument a;
 
     this->dataroot = (char *)a["EmbedwebHttpDataroot"];
     if ( this->dataroot[0] != '/' ) this->dataroot = (std::string)((char *)a["projectroot"]) + "/" + this->dataroot;
+
+    this->cacheroot = (char *)a["EmbedwebHttpFileCacheroot"];
+    if ( this->cacheroot[0] != '/' ) this->cacheroot = (std::string)((char *)a["projectroot"]) + "/" + this->cacheroot;
+
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
     subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir;
     subprovider["mkfile.html"] = &HttpFilesystem::mkfile;
     subprovider["rmfile.xml"] = &HttpFilesystem::rmfile;
+    subprovider["mklink.xml"] = &HttpFilesystem::mklink;
     subprovider["mv.xml"] = &HttpFilesystem::mv;
+    subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
 
     if ( noadd == 0 )
         h->add_provider(this);
@@ -184,7 +194,11 @@ int HttpFilesystem::request(HttpHeader *h)
         (this->*(i->second))(h);
         return 1;
     }
-    return 0;
+
+    (*(h->vars.p_getExtraVars()))["root"] = this->getRoot(h);
+    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
+
+    return search.request(h);
 
 }
 
@@ -214,6 +228,7 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 std::string HttpFilesystem::getDir(HttpHeader *h)
 {
     char rpath[PATH_MAX + 1];
+    char *resolvpath;
     dir = h->vars["dirInput.old"];
     std::string root = getRoot(h);
 
@@ -228,7 +243,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
 
     rpath[0] = '\0';
     if ( root == ""
-         || realpath((root + dir).c_str(), rpath) == NULL
+         || ( resolvpath = realpath((root + dir).c_str(), rpath)) == NULL
          || strstr(rpath, root.c_str()) == NULL )
     {
     	msg.pdebug(0, "rpath: %s, root: %s", rpath, root.c_str());
@@ -240,13 +255,13 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
     return rpath;
 }
 
-std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg )
+std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg, std::string *result )
 {
     getDir(h);
-    return check_path(path, name, needname, errormsg );
+    return check_path(path, name, needname, errormsg, result );
 }
 
-std::string HttpFilesystem::check_path(std::string dir, std::string name, int needname, int errormsg )
+std::string HttpFilesystem::check_path(std::string dir, std::string name, int needname, int errormsg, std::string *result )
 {
 
     if ( needname && name == "" )
@@ -256,6 +271,10 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
     }
 
     if ( name != "" )  dir = dir + DIRSEP + name;
+
+    if ( result != NULL )
+        (*result) = dir;
+
     if ( stat(dir.c_str(), &statbuf) == 0 )
         return dir;
 
@@ -267,6 +286,56 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
     }
 
     return "";
+}
+
+int HttpFilesystem::quicksort_check(FileData *data1, FileData *data2 )
+{
+   switch(this->qs_type)
+   {
+   case FD_CREATE:
+       return ( data1->statbuf.st_ctime < data2->statbuf.st_ctime );
+
+   case FD_MOD:
+       return ( data1->statbuf.st_mtime < data2->statbuf.st_mtime );
+
+   case FD_ACCESS:
+       return ( data1->statbuf.st_atime < data2->statbuf.st_atime );
+
+   default:
+       return ( strcmp(data1->name.c_str(), data2->name.c_str()) < 0 );
+   }
+}
+
+void HttpFilesystem::quicksort(std::vector<FileData> &sort, int left, int right)
+{
+    int i,j;
+    FileData *x;
+    FileData temp;
+
+    if ( left >= right ) return;
+    // x = &(sort[(left + right )/2]);
+    x = &(sort[right]);
+
+    i = left-1;
+    j = right;
+
+    while ( 1 )
+    {
+        while ( quicksort_check(&(sort[++i]), x) );
+        while ( quicksort_check(x, &(sort[--j])) && j > i );
+        if ( i >= j )
+            break;
+        temp = sort[i];
+        sort[i] = sort[j];
+        sort[j] = temp;
+    }
+
+    temp = sort[i];
+    sort[i] = sort[right];
+    sort[right] = temp;
+
+    quicksort(sort, left, i-1);
+    quicksort(sort, i+1, right);
 }
 
 void HttpFilesystem::readdir(HttpHeader *h)
@@ -306,6 +375,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
     DIR *dp;
     struct dirent dirp;
     struct dirent *result;
+    std::string dir;
 
     if((dp  = opendir(path.c_str())) == NULL)
     {
@@ -313,16 +383,32 @@ void HttpFilesystem::readdir(HttpHeader *h)
         return;
     }
 
-    while ((readdir_r(dp,&dirp,&result) == 0 ) && result != NULL )
+    dir = path;
+    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
+        dir = dir + DIRSEP;
+
+    while ((readdir_r(dp, &dirp, &result) == 0 ) && result != NULL )
     {
         if ( ( !pointdir && (std::string(dirp.d_name))[0] == '.' )|| (std::string(dirp.d_name)) == "." || (std::string(dirp.d_name)) == ".." ) continue;
+        {
+        FileData data;
+        data.name = dirp.d_name;
+        check_path(root, dir + data.name);
+        data.statbuf = statbuf;
 
         if ( dirp.d_type == DT_DIR )
-            dirs.insert(dirp.d_name);
+            dirs.push_back(data);
         else if ( dirp.d_type == DT_REG || dirp.d_type == DT_UNKNOWN )
-            files.insert(dirp.d_name);
+            files.push_back(data);
+        }
     }
+
     closedir(dp);
+
+    this->qs_type = (FileDataSort)atoi(h->vars["sorttyp"].c_str());
+    quicksort( dirs,  0,  dirs.size() - 1);
+    quicksort( files, 0, files.size() - 1);
+
     return;
 #endif
 }
@@ -332,8 +418,9 @@ void HttpFilesystem::ls(HttpHeader *h)
     unsigned int i;
     std::string str;
 
-    std::set<std::string>::iterator is;
+    std::vector<FileData>::iterator is;
 
+    std::string hroot = h->vars["rootInput.old"];
     std::string rootname = h->vars["rootname"];
     std::string idname = h->vars["idname"];
 
@@ -341,8 +428,12 @@ void HttpFilesystem::ls(HttpHeader *h)
     int singledir = ( h->vars["singledir"] != "" );
 
     std::string dir;
+    std::string root = getRoot(h);
 
-    idname = ( idname == "" ) ? "name" : idname;
+    if ( dir != "" && root != "/" )
+        root =  root + DIRSEP;
+
+    idname = ( idname == "" ) ? "fullname" : idname;
     rootname = ( rootname == "" ) ? "root" : rootname;
 
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
@@ -370,14 +461,22 @@ void HttpFilesystem::ls(HttpHeader *h)
     i = 0;
     for ( is= dirs.begin(); is != dirs.end(); ++is )
     {
+        char str[1024];
+        str[sizeof(str) - 1] =  '\0';
+        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : false, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctim.tv_sec, (*is).statbuf.st_mtim.tv_sec, (*is).statbuf.st_atim.tv_sec );
         if ( singledir )
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is)).c_str(), (*is).c_str(), ("setValue( \"" + rootname + " : '" + root + "', " + idname + ": '" + dir + (*is) + "'\")").c_str(), "leaf", i++ );
+            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
         else
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is)).c_str(), (*is).c_str(), "submenu", "", i++ );
+            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), "submenu", "", i++ );
     }
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
-        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is)).c_str(), (*is).c_str(), ("setValue( \"" + rootname + " : '" + root + "'," +  idname + ": '" + dir + (*is) + "'\")").c_str(), "leaf", i++ );
+    {
+        char str[1024];
+        str[sizeof(str) - 1] =  '\0';
+        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctim.tv_sec, (*is).statbuf.st_mtim.tv_sec, (*is).statbuf.st_atim.tv_sec );
+        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
+    }
 
     fprintf(h->content,"</body>");
     return;
@@ -386,7 +485,7 @@ void HttpFilesystem::ls(HttpHeader *h)
 
 void HttpFilesystem::mkdir(HttpHeader *h)
 {
-    std::string dir = check_path(h, h->vars["filenameInput.old"], 0);
+    std::string dir = check_path(h, "", 0);
     std::string name = h->vars["filenameInput"];
 
     if ( dir == "" || name == "" )
@@ -424,7 +523,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
 }
 void HttpFilesystem::rmdir(HttpHeader *h)
 {
-    std::string name = check_path(h, h->vars["filenameInput.old"]);
+    std::string name = check_path(h, "", 0);
 
     if (  name == "" )
     {
@@ -473,7 +572,7 @@ void HttpFilesystem::mv(HttpHeader *h)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( ! MoveFile((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) )
      {
-         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Dateis");
+         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
          fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
          return;
      }
@@ -481,7 +580,7 @@ void HttpFilesystem::mv(HttpHeader *h)
    if ( ::rename((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
-        msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Dateis");
+        msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
         msg.line("%s", str.c_str());
         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
@@ -607,4 +706,105 @@ void HttpFilesystem::rmfile(HttpHeader *h)
 #endif
     fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 }
+
+void HttpFilesystem::mklink(HttpHeader *h)
+{
+    std::string root,dir1,dir2,file1,file2;
+    int result;
+
+    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+
+    result = ( root = this->getRoot(h) ) == "";
+
+    if ( ! result ) result = ( dir1 = this->check_path(root, h->vars["dirInput.old"], 0) ) == "";
+    if ( ! result ) result = ( dir2 = this->check_path(root, h->vars["dirInput"]    , 0) ) == "";
+
+    if ( ! result ) result = ( file1 = this->check_path(dir1, h->vars["filenameInput.old"], 1) ) == "";
+    if ( ! result )
+    {
+        if ( ( result = ( this->check_path(dir2, h->vars["filenameInput"], 1, 0, &file2 ) != "" )) )
+        {
+            if ( h->vars["overwriteInput"] == "" )
+                msg.perror(E_FILEEXISTS, "Datei existiert schon");
+            else
+                result = 0;
+        }
+    }
+
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+
+    if ( ! result )
+    {
+        if ( h->vars["symlink"] != "" )
+            result = ! CreateHardLink(file2.c_str(), file1.c_str(), NULL);
+        else
+            result = ! CreateSymbolicLink(file2.c_str(), file1.c_str(), NULL);
+    }
+
+#else
+
+    if ( ! result )
+    {
+        if ( h->vars["symlink"] != "" )
+            result = symlink(file1.c_str(), file2.c_str());
+        else
+            result = link(file1.c_str(), file2.c_str());
+    }
+
+#endif
+
+    if ( result )
+    {
+        msg.perror(E_CREATELINK,"Kann hardlink <%s -> %s> nicht erstellen", (h->vars["dirInput.old"] + "/" + h->vars["filenameInput.old"]).c_str(), (h->vars["dirInput"] + "/" + h->vars["filenameInput"]).c_str());
+        fprintf(h->content, "<body>error</body>");
+        return;
+    }
+    fprintf(h->content, "<body>ok</body>");
+}
+
+void HttpFilesystem::mkicon(HttpHeader *h)
+{
+    std::string root  = h->vars["rootInput.old"];
+    std::string dir   = h->vars["dirInput.old"];
+    std::string  x    = h->vars["x"];
+    std::string  y    = h->vars["y"];
+    std::string  name = h->vars["name"];
+
+    std::string cname,file;
+
+    struct timespec mod;
+    mod.tv_sec = mod.tv_nsec = -1;
+
+    cname = this->cacheroot + DIRSEP + root + DIRSEP + dir + DIRSEP + x + "_" + y;
+
+    if ( check_path(this->getDir(h), name, 1, 0) != "" )
+    {
+       mod.tv_sec = this->statbuf.st_mtim.tv_sec;
+       mod.tv_nsec = this->statbuf.st_mtim.tv_nsec;
+    }
+
+    if ( ( file = check_path(cname, name, 1, 0)) != "" )
+    {
+        if ( mod.tv_sec == this->statbuf.st_mtim.tv_sec )
+        {
+            FILE *c = fopen(file.c_str(), "rb");
+            if ( c != NULL )
+            {
+                h->status = 200;
+                fclose(h->content);
+                h->content = c;
+                h->translate = 1;
+                fseek(c, 0, SEEK_END);
+                return;
+            }
+        }
+    }
+
+    (*(h->vars.p_getExtraVars()))["cpath"] = cname;
+    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
+    search.request(h);
+
+}
+
 

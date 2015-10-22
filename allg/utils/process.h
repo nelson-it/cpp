@@ -61,10 +61,21 @@ protected:
 
         E_MAX = 100
     };
+
+    enum WARNING_TYPES
+    {
+        W_MAX = 100
+    };
+
+    enum MESSAGE_TYPES
+    {
+        M_MAX = 100
+    };
+
     int file;
 
 public:
-    Process(ServerSocket *s) : msg("PROCESS", 1)
+    Process(ServerSocket *s = NULL, int noerror = 1) : msg("PROCESS", noerror)
     {
         pid = -1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)

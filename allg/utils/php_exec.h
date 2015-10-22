@@ -10,6 +10,16 @@ class PhpExec : private Process
     {
         E_PHP = Process::E_MAX
     };
+
+    enum WARNING_TYPES
+    {
+        W_PHP = Process::W_MAX
+    };
+
+    enum MESSAGE_TYPES
+    {
+        M_PHP = Process::M_MAX
+    };
 public:
     PhpExec(  std::string cmd, HttpHeader *h );
     ~PhpExec();

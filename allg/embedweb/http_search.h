@@ -21,7 +21,7 @@ class HttpSearchPath : public HttpProvider
     std::vector<std::string> search;
     
 public:
-    HttpSearchPath( Http *h, std::string path );
+    HttpSearchPath( Http *h, std::string path, int noadd = 0 );
     virtual ~HttpSearchPath();
 
     virtual std::string getPath() { return path; }
