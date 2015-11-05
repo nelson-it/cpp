@@ -472,8 +472,8 @@ void Http::write_header()
 		sprintf(buffer, "Connection: Keep-Alive\r\n");
 		s->write(act_h->client, buffer, strlen(buffer));
 
-		sprintf(buffer, "Keep-Alive: timeout=300, max=100000\r\n");
-		s->write(act_h->client, buffer, strlen(buffer));
+		//sprintf(buffer, "Keep-Alive: timeout=300, max=100000\r\n");
+		//s->write(act_h->client, buffer, strlen(buffer));
 	}
 	else
 	{
@@ -492,8 +492,8 @@ void Http::write_header()
 	sprintf(buffer, "Accpet-Ranges: bytes\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	sprintf(buffer, "Accpet-Charset=\"utf-8\"\r\n");
-	s->write(act_h->client, buffer, strlen(buffer));
+	//sprintf(buffer, "Accpet-Charset=\"utf-8\"\r\n");
+	//s->write(act_h->client, buffer, strlen(buffer));
 
 	sprintf(buffer, "Content-Length: %ld\r\n", act_h->content_length);
 	s->write(act_h->client, buffer, strlen(buffer));

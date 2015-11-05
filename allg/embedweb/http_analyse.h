@@ -78,6 +78,8 @@ protected:
     std::vector<std::string>  serverpath;
     std::map<std::string,std::string>  datapath;
     std::string dataroot;
+    std::string port;
+    std::string sport;
 
     ContentTypes content_types;
 

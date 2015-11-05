@@ -86,6 +86,12 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 
 				old_c = c;
 			}
+			else if ( str == "mne_base" )
+			{
+			    str = act_h->base + "/";
+			    c++;
+			    old_c = c;
+			}
 			else if ( act_h->vars.exists(str) )
 			{
 				str = act_h->vars[str];

@@ -1,4 +1,4 @@
 // IPC Optionen werden hier definiert
 // ==================================
 liste["port"]    = Argument::Liste("-p",  'l', 1, "1024");
-liste["sport"]   = Argument::Liste("-sp", 'l', 1,  "443");
+liste["sport"]   = Argument::Liste("-sp", 'l', 1, "443");
