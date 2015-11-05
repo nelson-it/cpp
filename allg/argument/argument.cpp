@@ -5,6 +5,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <windows.h>
 #endif
@@ -217,20 +220,15 @@ void Argument::reset(ListeMap *liste)
         while ((c = fgets(buffer, sizeof(buffer), fp)) != NULL)
         {
             buffer[sizeof(buffer) - 1] = '\0';
-            if (buffer[strlen(buffer) - 1] == '\n') buffer[strlen(buffer) - 1]
-                    = '\0';
-            if (buffer[strlen(buffer) - 1] == '\r') buffer[strlen(buffer) - 1]
-                    = '\0';
+            if (buffer[strlen(buffer) - 1] == '\n') buffer[strlen(buffer) - 1] = '\0';
+            if (buffer[strlen(buffer) - 1] == '\r') buffer[strlen(buffer) - 1] = '\0';
 
             while (buffer[strlen(buffer) - 1] == '\\')
             {
-                fgets(&buffer[strlen(buffer) - 1], sizeof(buffer) - strlen(
-                        buffer) + 1, fp);
+                fgets(&buffer[strlen(buffer) - 1], sizeof(buffer) - strlen( buffer) + 1, fp);
                 buffer[sizeof(buffer) - 1] = '\0';
-                if (buffer[strlen(buffer) - 1] == '\n') buffer[strlen(buffer)
-                        - 1] = '\0';
-                if (buffer[strlen(buffer) - 1] == '\r') buffer[strlen(buffer)
-                        - 1] = '\0';
+                if (buffer[strlen(buffer) - 1] == '\n') buffer[strlen(buffer) - 1] = '\0';
+                if (buffer[strlen(buffer) - 1] == '\r') buffer[strlen(buffer) - 1] = '\0';
             }
 
             while (isspace(*c))
@@ -242,9 +240,7 @@ void Argument::reset(ListeMap *liste)
             str = c;
             if ((i = str.find_first_of(':')) == std::string::npos)
             {
-                msg.perror(WRONG_FORMAT, "Kann kein ':' in der Zeile der "
-                    "Konfigurationsdatei %s finden",
-                        (fullname + ".arg").c_str());
+                msg.perror(WRONG_FORMAT, "Kann kein ':' in der Zeile der Konfigurationsdatei %s finden", (fullname + ".arg").c_str());
                 msg.line("%s", buffer);
                 continue;
             }
@@ -266,8 +262,8 @@ void Argument::reset(ListeMap *liste)
 
                 if (h == "" || h == host)
                 {
-                    if (par.find_first_not_of(" \t") != std::string::npos) par
-                            = par.substr(par.find_first_not_of(" \t"));
+                    if (par.find_first_not_of(" \t") != std::string::npos)
+                        par = par.substr(par.find_first_not_of(" \t"));
 
                     if ((l = liste->find(arg)) == liste->end())
                         msg.perror( UNKOWN_ARGUMENT, "%s ist kein Parameter", arg.c_str());
@@ -288,8 +284,7 @@ void Argument::reset(ListeMap *liste)
 
         if (alias.find(l->second.alias) != alias.end())
         {
-            msg.perror(DUP_ALIAS, "alias <%s> ist doppelt vorhanden - "
-                "wird ignoriert", l->second.alias.c_str());
+            msg.perror(DUP_ALIAS, "alias <%s> ist doppelt vorhanden - wird ignoriert", l->second.alias.c_str());
             continue;
         }
 
@@ -298,6 +293,9 @@ void Argument::reset(ListeMap *liste)
 
         mkvalue(name, typ, l->second.defaults, anzahl);
     }
+
+    umask( (long)this->operator[]("umask"));
+
 }
 
 void Argument::mkvalue(std::string name, char typ, std::string str, int oanzahl)

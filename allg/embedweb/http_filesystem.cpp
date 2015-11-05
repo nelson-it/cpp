@@ -171,6 +171,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
     subprovider["rmfile.xml"] = &HttpFilesystem::rmfile;
     subprovider["mklink.xml"] = &HttpFilesystem::mklink;
     subprovider["mv.xml"] = &HttpFilesystem::mv;
+    subprovider["download.html"] = &HttpFilesystem::download;
     subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
 
     if ( noadd == 0 )
@@ -270,7 +271,8 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
         return "";
     }
 
-    if ( name != "" )  dir = dir + DIRSEP + name;
+    if ( dir  != "" && name != "" )  dir = dir + DIRSEP;
+    if ( name != "" )  dir = dir + name;
 
     if ( result != NULL )
         (*result) = dir;
@@ -763,6 +765,31 @@ void HttpFilesystem::mklink(HttpHeader *h)
     fprintf(h->content, "<body>ok</body>");
 }
 
+void HttpFilesystem::download(HttpHeader *h)
+{
+    std::string name;
+    FILE *f;
+
+    name = check_path(h, h->vars["filenameInput.old"], 1);
+    if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
+    {
+        char buffer[10240];
+        h->content_type = "application/octet-stream";
+        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->vars["filenameInput.old"].c_str()).c_str());
+        buffer[sizeof(buffer) -1] = '\0';
+        h->extra_header.push_back(buffer);
+
+        h->status = 200;
+        fclose(h->content);
+        h->content = f;
+        fseek(h->content, 0, SEEK_END);
+    }
+    else
+    {
+        h->status = 404;
+    }
+}
+
 void HttpFilesystem::mkicon(HttpHeader *h)
 {
     std::string root  = h->vars["rootInput.old"];
@@ -780,13 +807,13 @@ void HttpFilesystem::mkicon(HttpHeader *h)
 
     if ( check_path(this->getDir(h), name, 1, 0) != "" )
     {
-       mod.tv_sec = this->statbuf.st_mtim.tv_sec;
-       mod.tv_nsec = this->statbuf.st_mtim.tv_nsec;
+       mod.tv_sec = this->statbuf.st_mtime;
+       mod.tv_nsec = this->statbuf.st_mtime;
     }
 
-    if ( ( file = check_path(cname, name, 1, 0)) != "" )
+    if ( ( file = check_path(cname, name + "." + std::to_string(this->statbuf.st_size), 1, 0)) != "" )
     {
-        if ( mod.tv_sec == this->statbuf.st_mtim.tv_sec )
+        if ( mod.tv_sec == this->statbuf.st_mtime )
         {
             FILE *c = fopen(file.c_str(), "rb");
             if ( c != NULL )
@@ -803,6 +830,7 @@ void HttpFilesystem::mkicon(HttpHeader *h)
 
     (*(h->vars.p_getExtraVars()))["cpath"] = cname;
     (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
+    (*(h->vars.p_getExtraVars()))["filesize"] = std::to_string(this->statbuf.st_size);
     search.request(h);
 
 }

@@ -19,6 +19,10 @@
 #include <unistd.h>
 #endif
 
+#ifdef MACOS
+#include <locale.h>
+#endif
+
 #include <argument/argument.h>
 #include <utils/tostring.h>
 

@@ -20,7 +20,7 @@ char* itoa(int value, char* result, int base)
 	int quotient = value;
 	do
 	{
-		*out = "0123456789abcdef"[std::abs(quotient % base)];
+		*out = "0123456789abcdef"[abs(quotient % base)];
 		++out;
 		quotient /= base;
 	} while (quotient);

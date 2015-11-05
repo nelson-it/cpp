@@ -111,6 +111,8 @@ msg("HttpAnalyse")
     unsigned int i;
 
     projectroot = (char *)a["projectroot"];
+    port = std::to_string((long)a["port"]);
+    sport = std::to_string((long)a["sport"]);
 
 	spath.setString((char *)a["EmbedwebHttpServerpath"], ':');
 	for (i=0; i<spath.size(); i++)
@@ -220,6 +222,12 @@ void HttpAnalyse::analyse_requestline( std::string in, HttpHeader *h )
 			request = request.substr(0, n );
 		}
 
+		while ( ( n = request.find("//")) != std::string::npos )
+		    request.replace(n, 2, "/");
+
+		if ( request[request.length()-1] == '/' )
+		    request = request.substr(0, request.length() - 1);
+
 		if ( ( n = request.find_last_of('/') ) != std::string::npos )
 		{
 			if ( n == 0 )
@@ -265,6 +273,7 @@ void HttpAnalyse::analyse_header()
 	std::string name;
 	std::string arg;
 	std::string::size_type n,k;
+	std::string forward_host("-"), forward_port("-"), forward_proto("-");
 
 	msg.pdebug(D_HTTP, "Analysiere header für client %d", act_h->client );
 
@@ -323,9 +332,7 @@ void HttpAnalyse::analyse_header()
 				act_h->hostname = arg.substr(0,k);
 				act_h->port = arg.substr(k+1);
 			}
-			msg.pdebug(D_HEADER, "host: \"%s\", port \"%s\"",
-					act_h->hostname.c_str(),
-					act_h->port.c_str());
+			msg.pdebug(D_HEADER, "host: \"%s\", port \"%s\"", act_h->hostname.c_str(), act_h->port.c_str());
 
 		}
 		else if ( name == "user-agent" )
@@ -438,10 +445,7 @@ void HttpAnalyse::analyse_header()
 				}
 				else
 				{
-					msg.perror(E_AUTH_NOT_SUPPORTED,
-							"Authorisationsmethode \"%s\" "
-							"wird nicht unterstützt",
-							methode.c_str());
+					msg.perror(E_AUTH_NOT_SUPPORTED, "Authorisationsmethode \"%s\" " "wird nicht unterstützt", methode.c_str());
 
 					act_h->user = "falsch";
 					act_h->passwd = "falsch";
@@ -449,11 +453,29 @@ void HttpAnalyse::analyse_header()
 				msg.pdebug(D_HEADER, "user: \"%s\"", act_h->user.c_str());
 			}
 		}
-
+		else if ( name == "x-forwarded-server")
+		{
+		    CsList args(arg);
+		    if ( args.size() > 0 )
+		        forward_host = args[0];
+		}
+		else if ( name == "x-forwarded-proto")
+		{
+		        forward_proto = arg;
+		}
+		else if ( name == "x-forwarded-port")
+		{
+		        forward_port = arg;
+		}
 	}
 
 	h->second.clear();
 	h->second.push_back("");
+
+	act_h->base = (( forward_proto == "-" ) ? (( act_h->port == sport ) ? "https" : "http") : forward_proto ) + "://";
+	act_h->base = act_h->base + (( forward_host == "-" ) ? act_h->hostname : forward_host);
+	act_h->base = act_h->base + (( forward_port == "-" ) ? ((act_h->port != "80" ) ? ( ":" + act_h->port ) : "" )  : ( forward_port != "" ) ? ( ":" + forward_port ) : "" );
+	msg.pdebug(D_HEADER, "base: \"%s\"", act_h->base.c_str());
 }
 
 

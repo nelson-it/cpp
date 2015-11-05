@@ -57,6 +57,7 @@ public:
     std::string hostname;
     std::string port;
     std::string referer;
+    std::string base;
 
     Browser     browser;
     Os          os;
@@ -134,6 +135,7 @@ public:
         hostname = "";
         port     = "";
         referer  = "";
+        base     = "";
 
         browser = B_UNKNWON;
         user_agent = "";

@@ -83,12 +83,9 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
         if ( logfile.substr(0,4) == std::string("pipe") )
         {
             pipe = 1;
-            logfile = logfile.substr(5);
+            if ( logfile.size() > 4 ) logfile = logfile.substr(5);
+            else logfile = "";
         }
-    }
-    else
-    {
-        logfile = "";
     }
 
     #if defined(__MINGW32__) || defined(__CYGWIN__)

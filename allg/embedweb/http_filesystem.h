@@ -93,6 +93,8 @@ protected:
 
     void mv     ( HttpHeader *h);
 
+    void download ( HttpHeader *h);
+
     void mkicon ( HttpHeader *h);
 
 public:

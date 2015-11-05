@@ -87,8 +87,13 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     cmd.add("-locale");
     cmd.add(a["locale"]);
+
     cmd.add("-r");
     cmd.add(a["projectroot"]);
+
+    cmd.add("-project");
+    cmd.add(a["project"]);
+
     cmd.add(command);
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
