@@ -296,6 +296,12 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         strncpy(str, getenv("TMP"), sizeof(str) -1 );
         strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
     }
+    else
+    {
+        strncpy(str, "/tmp", sizeof(str) -1 );
+        strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
+    }
+
     strncat(str, "HttpReportAutoXXXXXX", sizeof(str) - strlen(str) - 1);
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -329,7 +335,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     if (  r.size() == 0 && h->vars["rowwarning"] != "false" )
         msg.pwarning(W_NOROWS, "Der Autoreport <%s> hat keine Zeilen", ( h->vars["schema"] + "." + h->vars["autoreport"]).c_str());
     else if ( r.size() == 0 && h->vars["rowwarningtext"] != "" )
-        h->error_messages.push_back(h->vars["rowwarningtext"].c_str());
+        http->pwarning((char *)h->vars["rowwarningtext"].c_str());
 
 
     (*h->vars.p_getVars())["sqlend"] = "0";
