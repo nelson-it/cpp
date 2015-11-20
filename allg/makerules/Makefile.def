@@ -1,7 +1,7 @@
                  CPP := g++
                  CC  := gcc
               
-             OPT_STD := -g -Wall -pedantic
+             OPT_STD := -g -Wall -pedantic -std=c++11
 	          LD_STD := -g
 	      
 	      OPT_SHARED :=
