@@ -21,12 +21,17 @@ endif
 ifeq "$(UNAME)" "Linux"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
+    ifeq "$(CODENAME)" "precise"
+            OPT_STD := -g -Wall -pedantic -std=c++0x
+    endif
+            
             OPT_STD := $(OPT_STD) -DLINUX
 	     OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc
           LD_SHARED := -shared -Wl,-soname,lib$(TARGET).so.$($(TARGET).LIBMAJOR)        
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
+             
 endif
 
 ifeq "$(UNAME)" "Darwin"
