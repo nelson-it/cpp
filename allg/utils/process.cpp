@@ -188,7 +188,9 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
         }
 
         if ( logfile != "" )
-          si.hStdError  = si.hStdOutput;
+        {
+            si.hStdError = si.hStdOutput;
+        }
 
         have_pipe = 1;
     }
@@ -220,7 +222,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
 
         if ( si.hStdError == INVALID_HANDLE_VALUE )
         {
-            msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile);
+            msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", logfile.c_str());
             SetEnvironmentVariable("PATH", path);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
@@ -230,7 +232,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
         }
         have_logfile = 1;
     }
-    else
+    else if ( ! pipe )
     {
         si.hStdOutput  = GetStdHandle(STD_ERROR_HANDLE);
         si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
@@ -518,7 +520,7 @@ int Process::wait()
 	GetExitCodeProcess ( pi.hProcess, &exitcode);
 	status = exitcode;
 
-	if ( have_logfile )
+    if ( have_logfile )
 	{
         have_logfile = 0;
 	    CloseHandle(si.hStdOutput);
@@ -534,11 +536,13 @@ int Process::wait()
         CloseHandle(piper);
     }
 
-	CloseHandle( pi.hProcess );
-	CloseHandle( pi.hThread );
-	pi.hProcess = INVALID_HANDLE_VALUE;
+
+    CloseHandle( pi.hProcess );
+    CloseHandle( pi.hThread );
+    pi.hProcess = INVALID_HANDLE_VALUE;
 
 	unlock("wait valid");
+
 	return exitcode;
 
 #else
@@ -562,7 +566,11 @@ int Process::write(const char *buffer, int size)
         return anzahl;
     else
         {
-        	Sleep(10); // Wartethread zeit geben zu terminieren.
+            if ( GetLastError() == ERROR_BROKEN_PIPE )
+            {
+                lock("wait"); // Wartethread zeit geben zu terminieren.
+                unlock("wait");
+            }
             return -1;
         }
     }
@@ -585,16 +593,21 @@ int Process::write(const char *buffer, int size)
 
 int Process::read( char *buffer, int size)
 {
-	int result = 0;
+    int result = -1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( have_pipe )
     {
-        DWORD anzahl;
+        DWORD anzahl = 0;
+
         if ( ReadFile(piper, buffer, size, &anzahl, NULL) )
             return anzahl;
         else
         {
-        	Sleep(10); // Wartethread zeit geben zu terminieren.
+            if ( GetLastError() == ERROR_BROKEN_PIPE )
+            {
+                lock("wait"); // Wartethread zeit geben zu terminieren.
+                unlock("wait");
+            }
             return -1;
         }
     }

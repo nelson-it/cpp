@@ -88,9 +88,10 @@ int DbHttpUtilsRepository::exec(const CsList *cmd, const char *workdir)
     char buffer[1025];
     int anzahl;
     int retval;
+    CsList cc = *cmd;
 
     execlog = "";
-    Process p(DbHttpProvider::http->getServersocket());
+    Process p(DbHttpProvider::http->getServersocket(), 0);
     p.start(*cmd, "pipe", workdir);
     while( ( anzahl = p.read(buffer, sizeof(buffer) - 1)) != 0 )
     {
@@ -743,7 +744,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
     vals["repauthor"] = "";
     vals["repdate"] = time(NULL);
-    vals["repnote"] = h->vars["status"];
+    vals["repnote"] = "";
     vals["shortrev"] = h->vars["shortrevInput"];
 
     tab->del(&where);
