@@ -37,7 +37,7 @@ endif
 ifeq "$(UNAME)" "Darwin"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
-            OPT_STD := $(OPT_STD) -DMACOS -DDarwin 
+            OPT_STD := $(OPT_STD) -DMACOS -DDarwin
 	 OPT_SHARED := -fPIC
                 CPP := g++
                  CC := gcc

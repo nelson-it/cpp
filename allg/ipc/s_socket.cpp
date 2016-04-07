@@ -18,6 +18,7 @@
 #include <sys/time.h>
 
 #if defined (Darwin) || defined(LINUX)
+#include <unistd.h>
 #include <sys/stat.h>
 #endif
 
