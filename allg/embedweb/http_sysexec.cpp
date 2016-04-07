@@ -57,6 +57,8 @@ void HttpSysexec::execute ( HttpHeader *h)
     int anzahl;
     unsigned int i;
     int host;
+    std::string logtext;
+    HttpVars::Vars::iterator vi;
 
     Argument::StringWerte ips;
     ips = (a["HttpSysexecUserip"]).getStringWerte();
@@ -96,6 +98,15 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     cmd.add(command);
 
+    for ( vi = h->vars.p_getVars()->begin(); vi != h->vars.p_getVars()->end(); ++vi )
+    {
+        if ( vi->second != "" )
+        {
+            cmd.add(vi->first);
+            cmd.add(vi->second);
+        }
+    }
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::string str = "bash -c '";
     unsigned int j;
@@ -110,21 +121,30 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     Message log("HttpSysexec Kommando", 1);
     int havelog = 0;
+    logtext = command + "\n";
     while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
     {
         if ( anzahl > 0 )
         {
-            if ( havelog == 0 ) log.pmessage(1, "%s", command.c_str());
             havelog = 1;
             buffer[anzahl] = '\0';
-            log.line("%s", buffer);
+            logtext = logtext + buffer;
         }
         else if ( anzahl < 0 && errno != EAGAIN ) break;
     }
 
     if ( p.getStatus() != 0 || havelog )
     {
-        msg.perror(E_ERRORFOUND, "Fehler gefunden");
+        if ( p.getStatus() == 0 )
+        {
+            msg.pwarning(E_ERRORFOUND, logtext.c_str());
+        }
+        else
+        {
+            msg.perror(E_ERRORFOUND, "Fehler gefunden");
+            msg.perror(E_ERRORFOUND, "%s", logtext.c_str());
+        }
+
         if ( h->content_type == "text/xml" )
             fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else

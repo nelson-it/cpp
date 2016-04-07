@@ -160,14 +160,15 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 
     this->dataroot = (char *)a["EmbedwebHttpDataroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        if (this->dataroot[1] != ':')
+    if (this->dataroot[1] != ':')
 #else
     if ( this->dataroot[0] != '/' )
 #endif
         this->dataroot = (std::string)((char *)a["projectroot"]) + "/" + this->dataroot;
+
     this->cacheroot = (char *)a["EmbedwebHttpFileCacheroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        if (this->cacheroot[1] != ':')
+    if (this->cacheroot[1] != ':')
 #else
     if ( this->cacheroot[0] != '/' )
 #endif
@@ -286,10 +287,9 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
     if ( result != NULL )
         (*result) = dir;
 
-    if ( stat(dir.c_str(), &statbuf) == 0 )
+    if ( lstat(dir.c_str(), &statbuf) == 0 )
         return dir;
 
-    fprintf(stderr, "%s\n", dir.c_str());
     if ( errormsg )
     {
         std::string str(msg.getSystemerror(errno));
@@ -414,7 +414,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
 
         if ( dirp.d_type == DT_DIR )
             dirs.push_back(data);
-        else if ( dirp.d_type == DT_REG || dirp.d_type == DT_UNKNOWN )
+        else
             files.push_back(data);
         }
     }
@@ -489,8 +489,19 @@ void HttpFilesystem::ls(HttpHeader *h)
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
     {
         char str[1024];
+        const char *ft;
         str[sizeof(str) - 1] =  '\0';
-        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
+
+        switch ((*is).statbuf.st_mode & S_IFMT) {
+         case S_IFBLK:  ft = "bdev";   break;
+         case S_IFCHR:  ft = "cdev";   break;
+         case S_IFIFO:  ft = "fifo";   break;
+         case S_IFLNK:  ft = "slink";  break;
+         case S_IFREG:  ft = "file";   break;
+         case S_IFSOCK: ft = "socket"; break;
+         default:       ft = "file";   break;
+         }
+        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld, filetype : \"%s\" })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
         fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
     }
 
@@ -645,6 +656,10 @@ void HttpFilesystem::mkfile(HttpHeader *h)
             if ( getDir(h) == "" || name == "" )
             {
                 str = msg.get("Benötige einen Dateinamen");
+            }
+            else if ( ::unlink((path + DIRSEP + name).c_str()) != 0 )
+            {
+                str = msg.getSystemerror(errno);
             }
             else
             {
