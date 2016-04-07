@@ -61,7 +61,7 @@ void DbHttpUtilsImap::folder_xml(Database *dbin, HttpHeader *h)
 
     Database *db;
     db = dbin->getDatabase();
-    db->p_getConnect("", (char*)a["MailscanUser"], (char*)a["MailscanPasswd"]);
+    db->p_getConnect("", a["MailscanUser"], a["MailscanPasswd"]);
 
     DbTable *tab = db->p_getTable("mne_mail", "imapmailbox_secret");
     where["imapmailboxid"] = h->vars["imapmailboxid"];

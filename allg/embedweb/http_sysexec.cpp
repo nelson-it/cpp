@@ -117,7 +117,7 @@ void HttpSysexec::execute ( HttpHeader *h)
     cmd.add(str);
 #endif
     Process p(http->getServersocket());
-    p.start(cmd, "pipe", a["projectroot"], NULL, ".", 1);
+    p.start(cmd, "pipe", std::string(a["projectroot"]).c_str(), NULL, ".", 1);
 
     Message log("HttpSysexec Kommando", 1);
     int havelog = 0;

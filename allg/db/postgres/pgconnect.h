@@ -50,7 +50,7 @@ class PgConnect : public DbConnect
     char *errresult;
     std::string errlangstr;
 
-    void open_connection(char *dbname, char *user, char *passwd);
+    void open_connection(const char *dbname, const char *user, const char *passwd);
     void close_connection();
 
     void mk_result(PGresult *res, const char *stm);

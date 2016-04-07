@@ -35,7 +35,7 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
 
 	no_cache = a["EmbedwebHttpNocache"];
 
-	mlist.setString((char *)a["EmbedwebHttpMaps"], ':');
+	mlist.setString(a["EmbedwebHttpMaps"], ':');
 	for (i=0; i<mlist.size(); i++)
 	{
 		mele.setString(mlist[i], '!');
