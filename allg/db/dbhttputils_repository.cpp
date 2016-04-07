@@ -59,7 +59,7 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
     subprovider["dblog.xml"]        = &DbHttpUtilsRepository::dblog;
 
     need_root = 0;
-    gitcmd = (char*)a["gitcmd"];
+    gitcmd = std::string(a["gitcmd"]);
 
     h->add_provider(this);
 }

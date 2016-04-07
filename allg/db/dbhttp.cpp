@@ -26,7 +26,7 @@ Http(s, analyse, 0), msg("DbHttp")
     this->trans = new DbTranslate(db);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #else
-    this->loc[a["locale"]] = this->stdloc = newlocale(LC_ALL_MASK, ((char *)a["locale"]), NULL);
+    this->loc[a["locale"]] = this->stdloc = newlocale(LC_ALL_MASK, std::string(a["locale"]).c_str(), NULL);
 #endif
     snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
     str[sizeof(str) - 1] = '\0';

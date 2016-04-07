@@ -23,7 +23,7 @@ HttpTranslate::~HttpTranslate()
 void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 {
 	char *buffer;
-	long size;
+	int size;
 	char *c, *old_c;
 	std::string str;
 	FILE *f;
@@ -34,6 +34,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 
 	fseek( f, 0, SEEK_END);
 	size = ftell(f);
+	if ( size < 0 ) msg.perror(1, "Fehler bei ftell");
 	fseek( f, 0, SEEK_SET);
 
 	if ( size < 0 ) size = 0;
@@ -103,7 +104,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 				switch(a.exists(str.c_str()))
 				{
 				case 'c' :
-					str = (std::string)(char *)a[str.c_str()];
+					str = std::string(a[str.c_str()]);
 					c++;
 					old_c = c;
 					break;

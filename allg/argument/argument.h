@@ -69,7 +69,6 @@ protected:
         Element(const char *name, Argument *a);
 
 	operator std::string();
-	operator char *();
 	operator double();
 	operator float();
 	operator long();

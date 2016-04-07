@@ -34,12 +34,13 @@ std::map<long, long> PgConnect::pgbasetypes;
 PgConnect::PgConnect(std::string dbname, std::string user, std::string passwd)
 {
 
-    char *db;
+    Argument a;
+    const char *db;
+    std::string argdb(a["DbDatabase"]);
 
     if (dbname == "")
     {
-        Argument a;
-        db = a["DbDatabase"];
+        db = argdb.c_str();
     }
     else
     {
@@ -50,7 +51,7 @@ PgConnect::PgConnect(std::string dbname, std::string user, std::string passwd)
     ignore_error = is_eof = ignore_oid = 0;
     p_errstr = errstr = errresult = NULL;
 
-    open_connection(db, (char *) user.c_str(), (char *) passwd.c_str());
+    open_connection(db, user.c_str(), passwd.c_str());
     msg.pdebug(D_CON, "öffne Verbindung %x %d", this->con, connections[this->con].anzahl_connect);
 }
 
@@ -93,13 +94,14 @@ PgConnect::~PgConnect()
     }
 }
 
-void PgConnect::open_connection(char *dbname, char *user, char *passwd)
+void PgConnect::open_connection(const char *dbname, const char *user, const char *passwd)
 {
     char *db;
     char *host;
     char *port;
     char coninfo[10240];
-    char *c1, *c2;
+    char *c1;
+    const char *c2;
     int last;
 
     //start(0);
