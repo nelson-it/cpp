@@ -158,21 +158,21 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 {
     Argument a;
 
-    this->dataroot = (char *)a["EmbedwebHttpDataroot"];
+    this->dataroot = (std::string)a["EmbedwebHttpDataroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if (this->dataroot[1] != ':')
 #else
     if ( this->dataroot[0] != '/' )
 #endif
-        this->dataroot = (std::string)((char *)a["projectroot"]) + "/" + this->dataroot;
+        this->dataroot = (std::string)a["projectroot"] + "/" + this->dataroot;
 
-    this->cacheroot = (char *)a["EmbedwebHttpFileCacheroot"];
+    this->cacheroot = (std::string)a["EmbedwebHttpFileCacheroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if (this->cacheroot[1] != ':')
 #else
     if ( this->cacheroot[0] != '/' )
 #endif
-        this->cacheroot = (std::string)((char *)a["projectroot"]) + "/" + this->cacheroot;
+        this->cacheroot = (std::string)a["projectroot"] + "/" + this->cacheroot;
 
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
