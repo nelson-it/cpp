@@ -54,9 +54,9 @@ Deamon::Deamon()
 
     deamon = 1;
 
-    logfile = (char *)a["logfile"];
-    runningdir = (char*)a["rundir"];
-    lockfile = (char*)a["lockfile"];
+    logfile = (std::string)a["logfile"];
+    runningdir = (std::string)a["rundir"];
+    lockfile = (std::string)a["lockfile"];
 
     i = fork();
     if (i < 0) exit(1); /* fork error */

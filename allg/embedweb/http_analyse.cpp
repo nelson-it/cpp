@@ -103,18 +103,16 @@ HttpAnalyse::HttpAnalyse(ServerSocket *s)
 :SocketProvider(s),
 msg("HttpAnalyse")
 {
-
 	Argument a;
 	CsList spath;
 	CsList dele;
-	std::string projectroot;
     unsigned int i;
+	std::string projectroot(a["projectroot"]);
 
-    projectroot = (char *)a["projectroot"];
     port = std::to_string((long)a["port"]);
     sport = std::to_string((long)a["sport"]);
 
-	spath.setString((char *)a["EmbedwebHttpServerpath"], ':');
+	spath.setString(a["EmbedwebHttpServerpath"], ':');
 	for (i=0; i<spath.size(); i++)
 	{
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -127,7 +125,7 @@ msg("HttpAnalyse")
 		    serverpath.push_back(spath[i]);
 	}
 
-	spath.setString((char *)a["EmbedwebHttpDatapath"], ':');
+	spath.setString(a["EmbedwebHttpDatapath"], ':');
 	for (i=0; i<spath.size(); i++)
 	{
 	    dele.setString(spath[i],'@');
@@ -141,7 +139,7 @@ msg("HttpAnalyse")
 		    datapath[dele[0]] = dele[1];
 	}
 
-    this->dataroot = (char*)(a["EmbedwebHttpDataroot"]);
+    this->dataroot = std::string(a["EmbedwebHttpDataroot"]);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( this->dataroot[1] != ':' )
 #else

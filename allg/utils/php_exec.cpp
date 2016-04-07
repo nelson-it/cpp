@@ -29,7 +29,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
     char filename[1024];
     int log;
 
-    str = (char*)a["PhpPath"] + std::string(" ") + cmd;
+    str = std::string(a["PhpPath"]) + " " + cmd;
     vars = h->vars.p_getVars();
     for ( vi=vars->begin(); vi != vars->end(); ++vi)
     {

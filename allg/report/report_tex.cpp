@@ -23,10 +23,9 @@ ReportTex::ReportTex() :
 
     Argument a;
     std::vector<std::string>::iterator i;
-    std::string projectroot;
+    std::string projectroot(a["projectroot"]);
 
-    path.setString((char *) a["RepRoot"],':');
-    projectroot = (char*)a["projectroot"];
+    path.setString( a["RepRoot"],':');
 
     for ( i=path.begin(); i != path.end(); ++i )
     {
