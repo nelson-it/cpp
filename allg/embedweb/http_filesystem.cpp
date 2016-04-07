@@ -158,11 +158,20 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 {
     Argument a;
 
-    this->dataroot = std::string(a["EmbedwebHttpDataroot"]);
-    if ( this->dataroot[0] != '/' ) this->dataroot = (std::string)(a["projectroot"]) + "/" + this->dataroot;
-
-    this->cacheroot = std::string(a["EmbedwebHttpFileCacheroot"]);
-    if ( this->cacheroot[0] != '/' ) this->cacheroot = (std::string)(a["projectroot"]) + "/" + this->cacheroot;
+    this->dataroot = (char *)a["EmbedwebHttpDataroot"];
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if (this->dataroot[1] != ':')
+#else
+    if ( this->dataroot[0] != '/' )
+#endif
+        this->dataroot = (std::string)((char *)a["projectroot"]) + "/" + this->dataroot;
+    this->cacheroot = (char *)a["EmbedwebHttpFileCacheroot"];
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if (this->cacheroot[1] != ':')
+#else
+    if ( this->cacheroot[0] != '/' )
+#endif
+        this->cacheroot = (std::string)((char *)a["projectroot"]) + "/" + this->cacheroot;
 
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
@@ -280,6 +289,7 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
     if ( stat(dir.c_str(), &statbuf) == 0 )
         return dir;
 
+    fprintf(stderr, "%s\n", dir.c_str());
     if ( errormsg )
     {
         std::string str(msg.getSystemerror(errno));
@@ -366,10 +376,14 @@ void HttpFilesystem::readdir(HttpHeader *h)
     {
         if ( ( !pointdir && (std::string(d.cFileName))[0] == '.' )|| (std::string(d.cFileName)) == "." || (std::string(d.cFileName)) == ".." ) continue;
 
+        FileData data;
+        data.name = d.cFileName;
+        check_path(root, path + "\\" + data.name);
+        data.statbuf = statbuf;
         if ( d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
-            dirs.insert(d.cFileName);
+            dirs.push_back(data);
         else
-            files.insert(d.cFileName);
+            files.push_back(data);
     }
     while (FindNextFile(hh, &d) );
     FindClose(hh);
@@ -741,7 +755,7 @@ void HttpFilesystem::mklink(HttpHeader *h)
         if ( h->vars["symlink"] != "" )
             result = ! CreateHardLink(file2.c_str(), file1.c_str(), NULL);
         else
-            result = ! CreateSymbolicLink(file2.c_str(), file1.c_str(), NULL);
+            result = ! CreateSymbolicLink(file2.c_str(), file1.c_str(), 0);
     }
 
 #else

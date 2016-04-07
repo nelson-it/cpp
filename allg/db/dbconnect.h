@@ -50,6 +50,9 @@ public:
         INTERVAL,
         DAY,
         QUARTER,
+        CDATETIME,
+        CDATE,
+        CTIME,
 
         EMAIL = 1010,
         LINK,
