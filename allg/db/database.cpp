@@ -22,7 +22,7 @@ Database::Database() :
 {
     Argument a;
     con = NULL;
-    this->appl_schema = (char*)a["DbApplSchema"];
+    this->appl_schema = std::string(a["DbApplSchema"]);
 }
 
 Database::Database(std::string appl_schema) :

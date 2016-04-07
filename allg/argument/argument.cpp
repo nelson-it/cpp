@@ -82,12 +82,6 @@ Argument::Element::operator std::string()
     }
 }
 
-Argument::Element::operator char*()
-{
-    std::string str = *this;
-    return (char *) str.c_str();
-}
-
 Argument::Element::operator double()
 {
     Argument::DoubleWerteMap::iterator i;

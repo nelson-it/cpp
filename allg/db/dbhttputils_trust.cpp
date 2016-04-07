@@ -225,7 +225,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         cmd.clear();
         cmd.add(str);
 #endif
-        p.start(cmd, "pipe", a["projectroot"], NULL, NULL, 1);
+        p.start(cmd, "pipe", std::string(a["projectroot"]).c_str(), NULL, NULL, 1);
 
         while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
         {

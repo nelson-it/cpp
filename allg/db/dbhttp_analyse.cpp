@@ -18,7 +18,7 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 
 	this->s = s;
 	this->dbtimeout = a["DbHttpTimeout"];
-	this->realm = (char*)a["DbHttpRealm"];
+	this->realm = std::string(a["DbHttpRealm"]);
     snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
@@ -50,7 +50,7 @@ void DbHttpAnalyse::read_datadir()
 
     db = this->db->getDatabase();
 
-    db->p_getConnect("", (char*)a["DbSystemUser"], (char*)a["DbSystemPasswd"]);
+    db->p_getConnect("", a["DbSystemUser"], a["DbSystemPasswd"]);
     tab = db->p_getTable(db->getApplschema(), "folder");
 
     cols.setString("name,location");

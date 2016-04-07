@@ -160,6 +160,10 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.4/server
 
+    else ifeq "$(CODENAME)" "wily"
+             LIB_PG := -lpq
+             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.4/server
+
     else
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql

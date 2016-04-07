@@ -16,7 +16,7 @@ HttpMap::HttpMap(Http *h, std::string path, std::string origpath,
     this->path = path;
     this->origpath = origpath;
 
-    std::string root = (char *)a["projectroot"];
+    std::string root(a["projectroot"]);
 
     if ( origpath[0] != '/' && origpath[1] != ':' && origpath[0] != '\\' )
     	this->origpath = root + '/' + this->origpath;

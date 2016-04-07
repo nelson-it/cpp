@@ -93,7 +93,7 @@ ImapScan::ImapScan(Database *db)
      Argument a;
 
      this->db = db->getDatabase();
-     this->db->p_getConnect("", (char*)a["MailscanUser"], (char*)a["MailscanPasswd"]);
+     this->db->p_getConnect("", a["MailscanUser"], a["MailscanPasswd"]);
 
      #ifdef PTHREAD
      if ( this->mutex_init == 0 ) pthread_mutex_init(&this->mutex,NULL);

@@ -22,15 +22,14 @@ HttpSearchPath::HttpSearchPath(Http *h, std::string path, int noadd ) :
 
 	this->path = path;
 
-	str = (char*)a[((std::string)"EmbedwebHttpSearchPath" + path).c_str()];
+	str = std::string(a[((std::string)"EmbedwebHttpSearchPath" + path).c_str()]);
 	msg.pdebug(5, "path: %s", str.c_str());
 
 	ii = i = 0;
 	while ( (i = str.find(':', i)) != std::string::npos)
 	{
 		search.push_back(str.substr(ii, i - ii));
-		msg.pdebug(3, "%s-searchpath: %s", path.c_str(),
-		                                   str.substr(ii, i-ii).c_str());
+		msg.pdebug(3, "%s-searchpath: %s", path.c_str(), str.substr(ii, i-ii).c_str());
 		ii = i + 1;
 		i++;
 	}
