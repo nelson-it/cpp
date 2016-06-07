@@ -139,7 +139,7 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      fread(inbuf, innum, 1, h->content);
 
      fclose(h->content);
-     h->content = fopen(h->content_filename.c_str(), "wb+");
+     h->content = fopen(h->content_filename.c_str(), "wbe+");
      fseek (h->content, 0, SEEK_SET);
 
      co = outbuf = new char[innum * 4];

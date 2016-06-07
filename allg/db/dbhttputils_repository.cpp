@@ -877,7 +877,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
     if ( h->vars["hash"] == "" )
     {
-        if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY)) < 0 )
+        if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY | O_CLOEXEC )) < 0 )
         {
             fprintf(h->content, msg.get("Datei <%s> wurde nicht gefunden").c_str(), h->vars["filenameInput.old"].c_str());
             h->status = 404;
@@ -895,7 +895,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         fclose(h->content);
         p.start(cmd, h->content_filename.c_str(), getRoot(h).c_str());
         p.wait();
-        h->content = fopen(h->content_filename.c_str(), "rb+");
+        h->content = fopen(h->content_filename.c_str(), "rbe+");
         fseek(h->content, 0, SEEK_END);
         if ( p.getStatus() != 0 )
             h->content_type = "text/plain";
@@ -975,7 +975,7 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 
         std::string name = h->vars["filenameInput"];
 
-        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
         close(file);
         addfile(db, h);
     }

@@ -44,7 +44,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 	fread(buffer, size, 1, f);
 
 	fclose(act_h->content);
-	act_h->content = fopen(act_h->content_filename.c_str(), "wb+");
+	act_h->content = fopen(act_h->content_filename.c_str(), "wbe+");
 	fseek ( act_h->content, 0, SEEK_SET);
 
 	old_c = buffer;

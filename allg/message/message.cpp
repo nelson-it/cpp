@@ -758,7 +758,7 @@ void Message::mklog(std::string filename)
 	if ( out != stderr )
 		fclose(out);
 
-	out = fopen(filename.c_str(), "w");
+	out = fopen(filename.c_str(), "we");
 	if ( out == NULL )
 	{
 		out = stderr;

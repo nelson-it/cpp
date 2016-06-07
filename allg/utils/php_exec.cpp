@@ -121,7 +121,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
         }
     }
 
-    FILE *flog = fopen(filename, "r" );
+    FILE *flog = fopen(filename, "re" );
     if ( flog != NULL )
     {
         char *b;

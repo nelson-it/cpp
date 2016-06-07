@@ -141,7 +141,7 @@ DLLIMPORT int puran2_init(char *f, int w)
 	byte_swap_test.c[0] = 1;
 	byte_swap = (byte_swap_test.i != 1) ? 1 : 0;
 
-	if ((file = open(filename, O_RDONLY | O_BINARY)) < 0)
+	if ((file = open(filename, O_RDONLY | O_BINARY | O_CLOEXEC )) < 0)
 	{
 		error_str = "Puran2 can't open file";
 		error_num = PURAN2_INITERR;

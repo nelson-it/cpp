@@ -200,7 +200,7 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     p.start( cmd, h->content_filename.c_str(), NULL, NULL, NULL, 1);
     result = p.wait();
 
-    if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
+    if ( ( h->content = fopen(h->content_filename.c_str(), "rbe+")) != NULL )
     {
         fseek(h->content, 0, SEEK_END);
         if ( result == 0 )
@@ -352,7 +352,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
 
         fclose(h->content);
         h->content_filename = str;
-        if ( ( h->content = fopen(h->content_filename.c_str(), "wb+")) == NULL )
+        if ( ( h->content = fopen(h->content_filename.c_str(), "wbe+")) == NULL )
             msg.perror(E_AUTO_TMPFILE,"Kann Tempfile <%s> nicht öffnen", h->content_filename.c_str());
 
         if ( h->error_messages.size() == 0 )
@@ -419,7 +419,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     *dir = '\0';
     rmdir(str);
 
-    h->content = fopen(h->content_filename.c_str(), "rb+");
+    h->content = fopen(h->content_filename.c_str(), "rbe+");
     fseek(h->content, 0, SEEK_END);
 
 
@@ -618,7 +618,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         p.start(cmd, filename, NULL, NULL, NULL, 1);
         p.wait();
 
-        if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
+        if ( ( h->content = fopen(h->content_filename.c_str(), "rbe+")) != NULL )
         {
             char str[16];
             if ( fread(str, 4, 1, h->content) != 1 )
@@ -633,10 +633,10 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
                 char buffer[1024];
 
                 fclose(h->content);
-                h->content = fopen(h->content_filename.c_str(), "wb+");
+                h->content = fopen(h->content_filename.c_str(), "wbe+");
                 h->content_type = "text/plain";
 
-                if ( ( fp = fopen(filename, "r")) != NULL )
+                if ( ( fp = fopen(filename, "re")) != NULL )
                 {
                     while ( fgets(buffer, sizeof(buffer), fp) != NULL )
                     {
@@ -723,12 +723,12 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
             FILE *fp;
             char buffer[1024];
 
-            h->content = fopen(h->content_filename.c_str(), "wb+");
+            h->content = fopen(h->content_filename.c_str(), "wbe+");
 
             h->content_type = "text/plain";
             msg.perror(E_PDF_OPEN, "Konnte Pdf-Datei nicht öffnen");
 
-            if ( ( fp = fopen(filename, "r")) != NULL )
+            if ( ( fp = fopen(filename, "re")) != NULL )
             {
                 while ( fgets(buffer, sizeof(buffer), fp) != NULL )
                 {

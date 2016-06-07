@@ -797,7 +797,7 @@ void HttpFilesystem::download(HttpHeader *h)
     FILE *f;
 
     name = check_path(h, h->vars["filenameInput.old"], 1);
-    if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
+    if ( name != "" && ( f = fopen(name.c_str(), "re")) != NULL )
     {
         char buffer[10240];
         h->content_type = "application/octet-stream";
@@ -841,7 +841,7 @@ void HttpFilesystem::mkicon(HttpHeader *h)
     {
         if ( mod.tv_sec == this->statbuf.st_mtime )
         {
-            FILE *c = fopen(file.c_str(), "rb");
+            FILE *c = fopen(file.c_str(), "rbe");
             if ( c != NULL )
             {
                 h->status = 200;
