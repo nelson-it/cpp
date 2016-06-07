@@ -13,6 +13,10 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <sys/types.h>
+#include <pwd.h>
+#include <grp.h>
+
 #if defined (Darwin) || defined(LINUX)
 #include <sys/stat.h>
 #endif
@@ -44,18 +48,74 @@ Deamon::Deamon()
     Argument a;
     int i, lfp;
     char str[10];
+    int daemon;
     std::string logfile, runningdir, lockfile;
+    mode_t mask;
+
+    deamon = 0;
+
+    runningdir = (std::string)a["rundir"];
+    daemon     = (long)a["daemon"];
+    mask       = (long)a["umask"];
+
+    if ( runningdir != "" )
+        chdir(runningdir.c_str());
+
+    if ( mask != 0 )
+        umask(mask);
+
+    if ( geteuid() == 0 )
+    {
+        struct passwd *pwd = NULL;
+        struct group *grp = NULL;
+        std::string runuser, rungroup;
+
+        runuser = (std::string)a["runuser"];
+        if ( runuser != "" )
+        {
+            pwd = getpwnam(runuser.c_str());
+            if ( pwd == NULL )
+            {
+                msg.perror(1, "Benutzer <%s> ist unbekannt", ((std::string)a["runuser"]).c_str() );
+                exit(1);
+            }
+        }
+
+        rungroup = (std::string)a["rungroup"];
+        if ( rungroup != "" )
+        {
+            grp = getgrnam(rungroup.c_str());
+            if ( grp == NULL )
+            {
+                msg.perror(1, "Gruppe <%s> ist unbekannt", ((std::string)a["rungroup"]).c_str() );
+                exit(1);
+            }
+        }
+
+        if ( grp != NULL )
+        {
+            setgroups(0, NULL);
+            setgid(grp->gr_gid);
+        }
+        else if ( pwd != NULL )
+        {
+            setgroups(0, NULL);
+            setgid(pwd->pw_gid);
+        }
+
+        if ( pwd != NULL )
+            setuid(pwd->pw_uid);
+
+    }
 
     if (getppid() == 1) return; /* already a daemon */
 
-    deamon = 0;
-    if ( (long)a["deamon"] == 0 )
+    if ( daemon == 0 )
         return;
 
     deamon = 1;
 
     logfile = (std::string)a["logfile"];
-    runningdir = (std::string)a["rundir"];
     lockfile = (std::string)a["lockfile"];
 
     i = fork();
@@ -74,13 +134,6 @@ Deamon::Deamon()
     i = open("/dev/null", O_RDWR);
     dup(i);
     dup(i);
-
-    /* neue file permissions */
-    umask(027);
-
-    /* running directory setzen */
-    if ( runningdir != "" )
-        chdir(runningdir.c_str());
 
     /* lockfile überprüfen */
     if ( lockfile != "" )
@@ -106,7 +159,8 @@ Deamon::Deamon()
     signal(SIGTERM, signal_handler);
 
     // logfile in Message erzeugen
-    msg.mklog(logfile);
+    if ( logfile != "-")
+        msg.mklog(logfile);
 
 }
 #endif

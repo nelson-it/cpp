@@ -657,12 +657,9 @@ void HttpFilesystem::mkfile(HttpHeader *h)
             {
                 str = msg.get("Benötige einen Dateinamen");
             }
-            else if ( ::unlink((path + DIRSEP + name).c_str()) != 0 )
-            {
-                str = msg.getSystemerror(errno);
-            }
             else
             {
+                ::unlink((path + DIRSEP + name).c_str());
                 int file2 = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
                 if ( file2 < 0 )
                 {

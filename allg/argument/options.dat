@@ -4,4 +4,4 @@ liste["debug"]       = Argument::Liste("-d",      'l', 1, "0");
 liste["host"]        = Argument::Liste("-h",      'c', 1, "localhost");
 liste["projectroot"] = Argument::Liste("-r",      'c', 1, "");
 liste["project"]     = Argument::Liste("-project",'c', 1, "");
-liste["umask"]       = Argument::Liste("-umask",  'l', 1, "0022");
+liste["umask"]       = Argument::Liste("-umask",  'l', 1, "");
