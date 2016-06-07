@@ -200,9 +200,9 @@ void Argument::reset(ListeMap *liste)
       if ( host[i] == '.' || host[i] == '\0' ) break;
     host[i] = '\0';
 
-    if ((fp = fopen((this->name + ".arg").c_str(), "r")) == NULL)
+    if ((fp = fopen((this->name + ".arg").c_str(), "re")) == NULL)
     {
-        fp = fopen((fullname + ".arg").c_str(), "r");
+        fp = fopen((fullname + ".arg").c_str(), "re");
     }
 
     if ( fp != NULL ){

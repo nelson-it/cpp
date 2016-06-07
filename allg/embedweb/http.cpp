@@ -178,7 +178,7 @@ std::string Http::get_meldungtext(int status)
 		if (stat(str.c_str(), &s) == 0 ) break;
 	}
 
-    if ( (fp = fopen(str.c_str(), "rb") ) == NULL)
+    if ( (fp = fopen(str.c_str(), "rbe") ) == NULL)
     {
         if ( meldungen.find(status) != meldungen.end())
             return meldungen[status];
@@ -312,7 +312,7 @@ void Http::make_answer()
 		if (stat(str.c_str(), &s) == 0 ) break;
 	}
 
-	if ( (file = fopen(str.c_str(), "rb") ) == NULL)
+	if ( (file = fopen(str.c_str(), "rbe") ) == NULL)
 	{
 	    if ( act_h->vars["ignore_notfound"] == "" )
             msg.perror(E_NOTFOUND, "Kann Datei %s/%s nicht finden", act_h->dirname.c_str(), act_h->filename.c_str());
@@ -391,7 +391,7 @@ void Http::write_header()
 		{
 		    msg.perror(E_CONTENTLENGTH, "Kann Content-Length nicht ermitteln - versuche File neu zu öffenen");
 		    fclose(act_h->content);
-		    act_h->content = fopen(act_h->content_filename.c_str(), "rb+");
+		    act_h->content = fopen(act_h->content_filename.c_str(), "rbe+");
 		    fseek(act_h->content, 0, SEEK_END);
    		    act_h->content_length = ftell(act_h->content);
 		    if ( act_h->content_length < 0 ) act_h->content_length = 0;
@@ -636,7 +636,7 @@ void Http::get(HttpHeader *h)
 	_mktemp_s(filename, strlen(filename) + 1);
 	filename[sizeof(filename) - 1] = '\0';
 
-	act_h->content = fopen(filename, "wb+");
+	act_h->content = fopen(filename, "wbe+");
 #else
 	int fd;
 	strcpy(filename, "/tmp/HttpXXXXXX");

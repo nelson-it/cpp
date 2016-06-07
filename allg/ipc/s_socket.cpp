@@ -79,7 +79,7 @@ ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
     need_close = 0;
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
     int on = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR | SOCK_CLOEXEC, &on, sizeof(on)) < 0)
     {
         s->msg.perror(E_SOCK_OPEN, "konnte reuse Option nicht setzen");
         s->msg.line("%s", strerror(errno));
@@ -273,7 +273,7 @@ ServerSocket::ServerSocket(short socketnum )
 
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
     int on = 1;
-    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
+    if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR | SOCK_CLOEXEC, &on, sizeof(on)) < 0)
     {
         msg.perror(E_SOCK_OPEN, "konnte reuse Option nicht setzen");
         msg.line("%s", strerror(errno));

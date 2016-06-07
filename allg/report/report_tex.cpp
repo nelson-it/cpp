@@ -228,7 +228,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     {
         str = getFile(rtemplate + "/init.tex");
         if ( str == "" ) str = getFile("/allg/default/init.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
         if ( fp == NULL )
         {
@@ -265,7 +265,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         str = getFile(rtemplate + "/docinit.tex");
         if ( str == "" ) str = getFile("/allg/default/docinit.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
         if ( fp == NULL )
         {
@@ -288,7 +288,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         fprintf(out, "\\gdef\\subreptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
 
         str = getFile(rtemplate + "/subinit.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
         if (fp != NULL)
         {
@@ -344,7 +344,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         }
 
     str = getFile(rtemplate + "/header.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
     if (fp == NULL)
     {
@@ -361,7 +361,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     fclose(fp);
 
     str = getFile(rtemplate + "/record.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
     if (fp == NULL)
     {
@@ -373,10 +373,10 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
 
     str = getFile(rtemplate + "/prerecord.tex");
-    if ( str != "" ) pre = fopen(str.c_str(), "r"); else pre = NULL;
+    if ( str != "" ) pre = fopen(str.c_str(), "re"); else pre = NULL;
 
     str = getFile(rtemplate + "/postrecord.tex");
-    if ( str != "" ) post = fopen(str.c_str(), "r"); else post = NULL;
+    if ( str != "" ) post = fopen(str.c_str(), "re"); else post = NULL;
 
     for (i = 0; i < sort.size(); ++i)
         sortlist.push_back("###############");
@@ -580,7 +580,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     db->release(reptab);
 
     str = getFile(rtemplate + "/trailer.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
     if (fp == NULL)
     {
@@ -598,7 +598,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     {
         str = getFile(rtemplate + "/end.tex");
         if ( str == "" ) str = getFile("/allg/default/end.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
         if ( fp == NULL )
         {
@@ -615,7 +615,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     else
     {
         str = getFile(rtemplate + "/subend.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if ( str != "" ) fp = fopen(str.c_str(), "re"); else fp = NULL;
 
         if ( fp != NULL )
         {

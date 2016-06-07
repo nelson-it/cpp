@@ -71,7 +71,7 @@ int HttpSearchPath::request(HttpHeader *h)
 		    }
 		    else
 		    {
-		        FILE *c = fopen(file.c_str(), "rb");
+		        FILE *c = fopen(file.c_str(), "rbe");
 		        if ( c != NULL )
 		        {
 		            h->status = 200;
