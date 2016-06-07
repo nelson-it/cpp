@@ -183,6 +183,10 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.4/server
 
+    else ifeq "$(CODENAME)" "xenial"
+             LIB_PG := -lpq
+             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.5/server
+
     else
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql

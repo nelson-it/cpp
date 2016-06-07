@@ -889,8 +889,8 @@ void ServerSocket::loop()
             else
             {
                 clients[rval] = Client(this, rval, &c);
-                msg.pdebug(D_CON, "client %d connected: addr %x, port %d",
-                        rval, clients[rval].getHost(),
+                msg.pdebug(D_CON, "client %d connected: addr %s, port %d",
+                        rval, clients[rval].getHostString().c_str(),
                         clients[rval].getPort());
             }
 

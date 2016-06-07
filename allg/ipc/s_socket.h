@@ -6,6 +6,10 @@
 #endif
 
 #include <sys/time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+
 #include <map>
 #include <set>
 
@@ -90,6 +94,13 @@ class ServerSocket
 
 	unsigned int getHost()       { return host; }
 	unsigned short int getPort() { return port; }
+
+	std::string getHostString()
+	{
+	    struct in_addr in;
+	    in.s_addr = host;
+	    return inet_ntoa(in);
+	}
 
 
     };

@@ -28,6 +28,7 @@ public:
 		std::string  user_agent;
 		std::string  user;
 		std::string  passwd;
+		std::string  base;
 
 		Database     *db;
 		time_t       last_connect;
