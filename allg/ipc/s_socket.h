@@ -3,12 +3,13 @@
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <winsock.h>
-#endif
-
-#include <sys/time.h>
+#else
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#endif
+
+#include <sys/time.h>
 
 #include <map>
 #include <set>

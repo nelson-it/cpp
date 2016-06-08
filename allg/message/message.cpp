@@ -758,12 +758,7 @@ void Message::mklog(std::string filename)
 	if ( out != stderr )
 		fclose(out);
 
-#if defined (Darwin)
 	out = fopen(filename.c_str(), "w");
-#else
-	out = fopen(filename.c_str(), "we");
-#endif
-
 	if ( out == NULL )
 	{
 		out = stderr;

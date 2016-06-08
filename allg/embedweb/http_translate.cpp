@@ -44,11 +44,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 	fread(buffer, size, 1, f);
 
 	fclose(act_h->content);
-#if defined (Darwin)
 	act_h->content = fopen(act_h->content_filename.c_str(), "wb+");
-#else
-	act_h->content = fopen(act_h->content_filename.c_str(), "wbe+");
-#endif
 
 	fseek ( act_h->content, 0, SEEK_SET);
 

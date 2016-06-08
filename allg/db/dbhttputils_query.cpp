@@ -139,11 +139,7 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      fread(inbuf, innum, 1, h->content);
 
      fclose(h->content);
-#if defined (Darwin)
      h->content = fopen(h->content_filename.c_str(), "wb+");
-#else
-     h->content = fopen(h->content_filename.c_str(), "wbe+");
-#endif
 
      fseek (h->content, 0, SEEK_SET);
 

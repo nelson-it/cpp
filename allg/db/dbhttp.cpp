@@ -74,7 +74,7 @@ void DbHttp::make_answer()
             int result = 1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
             Argument a;
-            setlocale(LC_ALL, (char*)a["locale"]);
+            setlocale(LC_ALL, ((std::string)a["locale"]).c_str());
 #else
             uselocale(this->stdloc);
 #endif
