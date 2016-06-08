@@ -877,7 +877,11 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
     if ( h->vars["hash"] == "" )
     {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY )) < 0 )
+#else
         if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY | O_CLOEXEC )) < 0 )
+#endif
         {
             fprintf(h->content, msg.get("Datei <%s> wurde nicht gefunden").c_str(), h->vars["filenameInput.old"].c_str());
             h->status = 404;
@@ -975,7 +979,11 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 
         std::string name = h->vars["filenameInput"];
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+#else
         int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
+#endif
         close(file);
         addfile(db, h);
     }

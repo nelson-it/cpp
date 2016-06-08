@@ -18,6 +18,7 @@
 #include <windows.h>
 
 #define DIRSEP   "\\"
+#define lstat stat
 
 char *realpath(const char *path, char resolved_path[PATH_MAX])
 {
@@ -493,12 +494,14 @@ void HttpFilesystem::ls(HttpHeader *h)
         str[sizeof(str) - 1] =  '\0';
 
         switch ((*is).statbuf.st_mode & S_IFMT) {
+         case S_IFREG:  ft = "file";   break;
          case S_IFBLK:  ft = "bdev";   break;
          case S_IFCHR:  ft = "cdev";   break;
          case S_IFIFO:  ft = "fifo";   break;
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
          case S_IFLNK:  ft = "slink";  break;
-         case S_IFREG:  ft = "file";   break;
          case S_IFSOCK: ft = "socket"; break;
+#endif
          default:       ft = "file";   break;
          }
         snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld, filetype : \"%s\" })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
@@ -841,7 +844,7 @@ void HttpFilesystem::mkicon(HttpHeader *h)
     {
         if ( mod.tv_sec == this->statbuf.st_mtime )
         {
-            FILE *c = fopen(file.c_str(), "rbe");
+            FILE *c = fopen(file.c_str(), "rb");
             if ( c != NULL )
             {
                 h->status = 200;

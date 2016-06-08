@@ -200,17 +200,10 @@ void Argument::reset(ListeMap *liste)
       if ( host[i] == '.' || host[i] == '\0' ) break;
     host[i] = '\0';
 
-#if defined (Darwin)
     if ((fp = fopen((this->name + ".arg").c_str(), "r")) == NULL)
     {
         fp = fopen((fullname + ".arg").c_str(), "r");
     }
-#else
-    if ((fp = fopen((this->name + ".arg").c_str(), "re")) == NULL)
-    {
-        fp = fopen((fullname + ".arg").c_str(), "re");
-    }
-#endif
 
     if ( fp != NULL ){
         char buffer[10240];
