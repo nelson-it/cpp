@@ -5,4 +5,4 @@ liste["logfile"]  = Argument::Liste("-logfile", 'c', 1, "-");
 liste["lockfile"] = Argument::Liste("-lockfile",'c', 1, "");
 liste["rundir"]   = Argument::Liste("-rundir",  'c', 1, "");
 liste["runuser"]  = Argument::Liste("-runuser", 'c', 1, "");
-liste["rungroup"] = Argument::Liste("-rungroup",'c', 1, "0");
+liste["rungroup"] = Argument::Liste("-rungroup",'c', 1, "");

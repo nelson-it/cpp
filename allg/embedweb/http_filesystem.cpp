@@ -797,7 +797,7 @@ void HttpFilesystem::download(HttpHeader *h)
     FILE *f;
 
     name = check_path(h, h->vars["filenameInput.old"], 1);
-    if ( name != "" && ( f = fopen(name.c_str(), "re")) != NULL )
+    if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
     {
         char buffer[10240];
         h->content_type = "application/octet-stream";

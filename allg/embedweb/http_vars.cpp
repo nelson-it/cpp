@@ -152,7 +152,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
 				}
 				_mktemp_s(filename, strlen(filename) + 1);
 				filename[sizeof(filename) - 1] = '\0';
-                f = fopen(filename, "wbe");
+                f = fopen(filename, "wb");
 #else
                 int fd;
                 strcpy(filename, "/tmp/HttpVarsXXXXXX");
