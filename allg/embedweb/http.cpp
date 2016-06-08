@@ -178,7 +178,11 @@ std::string Http::get_meldungtext(int status)
 		if (stat(str.c_str(), &s) == 0 ) break;
 	}
 
+#if defined (Darwin)
+    if ( (fp = fopen(str.c_str(), "rb") ) == NULL)
+#else
     if ( (fp = fopen(str.c_str(), "rbe") ) == NULL)
+#endif
     {
         if ( meldungen.find(status) != meldungen.end())
             return meldungen[status];

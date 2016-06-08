@@ -895,7 +895,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         fclose(h->content);
         p.start(cmd, h->content_filename.c_str(), getRoot(h).c_str());
         p.wait();
-        h->content = fopen(h->content_filename.c_str(), "rbe+");
+        h->content = fopen(h->content_filename.c_str(), "rb+");
         fseek(h->content, 0, SEEK_END);
         if ( p.getStatus() != 0 )
             h->content_type = "text/plain";
