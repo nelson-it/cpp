@@ -855,12 +855,10 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
 
         t1 = t2 = "";
 
-        if ((std::string) r[2] != ""
-                && (i = tabnums.find( offset_unionnum + atoi((char*) r[2]))) != tabnums.end())
+        if ((std::string) r[2] != "" && (i = tabnums.find( offset_unionnum + atoi((char*) r[2]))) != tabnums.end())
             t1 = i->second;
 
-        if ((std::string) r[5] != ""
-                && (i = tabnums.find( offset_unionnum + atoi((char*) r[5]))) != tabnums.end())
+        if ((std::string) r[5] != "" && (i = tabnums.find( offset_unionnum + atoi((char*) r[5]))) != tabnums.end())
             t2 = i->second;
 
         v1     = ((char*) r[3]);
@@ -873,8 +871,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
 
         if (t1 != "" && t2 == "" )
         {
-            DbTable *t = tables[ToString::convert((long) count_unionnum) + "_"
-                    + t1];
+            DbTable *t = tables[ToString::convert((long) count_unionnum) + "_" + t1];
             DbTable::Column c = t->getColumn(v1);
             c.value = v2;
             c.can_null = 0;
@@ -883,8 +880,7 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
 
         if (t1 == "" && t2 != "")
         {
-            DbTable *t = tables[ToString::convert((long) count_unionnum) + "_"
-                    + t2];
+            DbTable *t = tables[ToString::convert((long) count_unionnum) + "_" + t2];
             DbTable::Column c = t->getColumn(v2);
             c.value = v1;
             c.can_null = 0;
@@ -898,9 +894,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
             while (i < v1.size() && (i = v1.find("#", i)) != std::string::npos)
             {
                 j = v1.find_first_of(".#", i + 1);
-                if (j != std::string::npos && v1[j] != '#') v1.replace(
-                        i, j - i, tabnums[offset_unionnum + atoi(
-                                v1.substr(i + 1, j - i - 1).c_str())]);
+                if (j != std::string::npos && v1[j] != '#')
+                    v1.replace( i, j - i, tabnums[offset_unionnum + atoi(v1.substr(i + 1, j - i - 1).c_str())]);
                 i++;
             }
 
@@ -908,9 +903,8 @@ DbQuery::setName(std::string schema, std::string name, CsList *cols, std::string
             while (i < v2.size() && (i = v2.find("#", i)) != std::string::npos)
             {
                 j = v2.find_first_of(".#", i + 1);
-                if (j != std::string::npos && v2[j] != '#') v2.replace(
-                        i, j - i, tabnums[offset_unionnum + atoi(
-                                v2.substr(i + 1, j - i - 1).c_str())]);
+                if (j != std::string::npos && v2[j] != '#')
+                    v2.replace( i, j - i, tabnums[offset_unionnum + atoi(v2.substr(i + 1, j - i - 1).c_str())]);
                 i++;
             }
 
