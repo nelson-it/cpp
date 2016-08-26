@@ -88,7 +88,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
                         else
                         {
                             header_ready = 1;
-                            fwrite(c + 1, anzahl - ( c - buffer ) - 1, 1, h->content );
+                            add_content(h , c + 1, anzahl - ( c - buffer ) - 1);
                             c = ce - 1;
                         }
                     }
@@ -99,7 +99,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
             }
             else
             {
-                fwrite(buffer, anzahl, 1, h->content );
+                add_content(h , buffer, anzahl);
             }
         }
         else if ( anzahl < 0 && errno != EAGAIN )
