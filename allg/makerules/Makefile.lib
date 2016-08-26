@@ -82,6 +82,7 @@ $(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/embedweb/http_analyse.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_translate.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_content.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_cookie.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_vars.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_map.cpp \
