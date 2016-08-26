@@ -44,7 +44,7 @@ int DbHttpUtilsConnect::request(Database *db, HttpHeader *h)
 	{
 		h->status = 200;
 		h->content_type = "text/xml";
-		fprintf(h->content,
+		add_content(h, 
 				"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 				h->charset.c_str());
 	    (this->*(i->second))(db, h);
@@ -67,7 +67,7 @@ void DbHttpUtilsConnect::start( Database *db, HttpHeader *h)
 	if ( db->p_getConnect()->start() )
 		if ( h->vars["rollback"] != "" )
 			db->p_getConnect()->rollback();
-	fprintf(h->content, "<body>ok</body>");
+	add_content(h,  "<body>ok</body>");
 }
 
 void DbHttpUtilsConnect::end( Database *db, HttpHeader *h)
@@ -76,7 +76,7 @@ void DbHttpUtilsConnect::end( Database *db, HttpHeader *h)
 		db->p_getConnect()->rollback();
 	else
 		db->p_getConnect()->end();
-	fprintf(h->content, "<body>ok</body>");
+	add_content(h,  "<body>ok</body>");
 }
 
 void DbHttpUtilsConnect::func_mod_xml(Database *db, HttpHeader *h)
@@ -113,9 +113,9 @@ void DbHttpUtilsConnect::func_mod_xml(Database *db, HttpHeader *h)
 
     stm += ")";
     if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
-    	fprintf(h->content,"<body><schema>%s</schema><fullname>%s</fullname></body>",h->vars["par0"].c_str(), h->vars["par1"].c_str());
+    	add_content(h, "<body><schema>%s</schema><fullname>%s</fullname></body>",h->vars["par0"].c_str(), h->vars["par1"].c_str());
     else
-    	fprintf(h->content,"<body>error</body>");
+    	add_content(h, "<body>error</body>");
 
     if ( h->vars["sqlend"] != "" )
         db->p_getConnect()->end();
@@ -161,7 +161,7 @@ void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
     else
     {
         msg.perror(E_TYPE, "#mne_lang#Unbekanter typ <%s>", h->vars[typ].c_str());
-        fprintf(h->content,"<body>error</body>");
+        add_content(h, "<body>error</body>");
         if ( h->vars["sqlend"] != "" )
             db->p_getConnect()->end();
 
@@ -180,12 +180,12 @@ void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
     {
     	DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
     	if ( r->size() == 0 )
-    	  fprintf(h->content,"<body>ok</body>");
+    	  add_content(h, "<body>ok</body>");
     	else
-    		fprintf(h->content,"<body><result>%s</result></body>",ToString::mkxml(((*r)[0][0]).format(&msg)).c_str());
+    		add_content(h, "<body><result>%s</result></body>",ToString::mkxml(((*r)[0][0]).format(&msg)).c_str());
     }
     else
-    	fprintf(h->content,"<body>error</body>");
+    	add_content(h, "<body>error</body>");
 
     if ( h->vars["sqlend"] != "" )
         db->p_getConnect()->end();
@@ -200,9 +200,9 @@ void DbHttpUtilsConnect::func_del_xml(Database *db, HttpHeader *h)
     stm += h->vars["schemaInput.old"] + "','" + h->vars["fullnameInput.old"] + "')";
 
     if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
-    	fprintf(h->content,"<body>ok</body>");
+    	add_content(h, "<body>ok</body>");
     else
-    	fprintf(h->content,"<body>error</body>");
+    	add_content(h, "<body>error</body>");
 
     if ( h->vars["sqlend"] != "" )
         db->p_getConnect()->end();
@@ -221,42 +221,42 @@ void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)
         DbConnect::ResultVec::iterator rv, re;
         DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
 
-        fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
+        add_content(h, "<head encoding=\"%s\">", h->charset.c_str());
 
         if ( r->size() > 0 )
         {
             for (i=0; i < (*r)[0].size(); ++i)
             {
-                fprintf(h->content, "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n",
+                add_content(h,  "<d><id>result%d</id><typ>%d</typ><name>result%d</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n",
                         i, ((*r)[0][i]).typ, i);
             }
         }
 
-        fprintf(h->content, "</head>");
-        fprintf(h->content, "<body>");
+        add_content(h,  "</head>");
+        add_content(h,  "<body>");
 
         for (rm = r->begin(); rm != r->end(); ++rm)
         {
-            fprintf(h->content, "<r>");
+            add_content(h,  "<r>");
             rv = (*rm).begin();
             re = (*rm).end();
             for (; rv != re; ++rv)
-                fprintf(h->content, "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
-            fprintf(h->content, "</r>");
+                add_content(h,  "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
+            add_content(h,  "</r>");
         }
 
         if ( r->empty() )
-            fprintf(h->content, "<r>ok</r>");
+            add_content(h,  "<r>ok</r>");
 
-        fprintf(h->content, "</body>");
+        add_content(h,  "</body>");
     }
     else if ( stm != "" )
     {
-        fprintf(h->content,"<body>error</body>");
+        add_content(h, "<body>error</body>");
     }
     else
     {
-        fprintf(h->content,"<body>ok</body>");
+        add_content(h, "<body>ok</body>");
 
     }
 
@@ -272,6 +272,6 @@ void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
 
     this->read_datadir();
 
-    fprintf(h->content,"<body>ok</body>");
+    add_content(h, "<body>ok</body>");
 }
 

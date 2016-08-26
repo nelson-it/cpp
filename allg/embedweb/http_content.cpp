@@ -23,7 +23,7 @@ void HttpContent::add_content(HttpHeader *h, const char *format, ... )
     va_list ap;
     va_start(ap, format);
 
-    vfprintf(h->content, format, ap);
+    vfprintf(h->content,  format, ap);
 }
 
 

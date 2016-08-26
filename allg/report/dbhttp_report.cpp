@@ -160,7 +160,7 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
 
     if ( ! h->vars.exists("companyownprefix") )
     {
-        fprintf(h->content, "kein companyownprefix angegeben");
+        add_content(h,  "kein companyownprefix angegeben");
         return;
     }
 
@@ -204,9 +204,9 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     {
         fseek(h->content, 0, SEEK_END);
         if ( result == 0 )
-            fprintf(h->content,"ok");
+            add_content(h, "ok");
         else
-            fprintf(h->content, "notok");
+            add_content(h,  "notok");
     }
 }
 
@@ -699,18 +699,18 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
         	                if ( tab->modify(&vals, &where) == 0 )
         	                {
-        	                    fprintf(h->content, "ok");
+        	                    add_content(h,  "ok");
         	                }
         	                else
         	                {
-        	                    fprintf(h->content, "error");
+        	                    add_content(h,  "error");
         	                }
         	                db->release(tab);
         	            }
         	            else
         	            {
         	                rewind(h->content);
-        	                fprintf(h->content,"%s", crypt);
+        	                add_content(h, "%s", crypt);
         	            }
         	        }
         	        delete str;

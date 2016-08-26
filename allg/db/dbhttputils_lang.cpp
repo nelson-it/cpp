@@ -81,10 +81,10 @@ void DbHttpUtilsLanguage::get( Database *db, HttpHeader *h)
     if ( ! r->empty() )
     {
 	str = (char*)((*r)[0][0]);
-	fprintf(h->content, "top.mneMain.language = '%s';\n", str.c_str());
+	add_content(h,  "top.mneMain.language = '%s';\n", str.c_str());
 
 	if ( (std::string)((*r)[0][1]) != "" ) str = (char*)((*r)[0][1]);
-	fprintf(h->content, "top.mneMain.dateformat='%s';\n", str.c_str());
+	add_content(h,  "top.mneMain.dateformat='%s';\n", str.c_str());
     }
 
     db->release(t);

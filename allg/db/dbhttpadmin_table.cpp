@@ -90,7 +90,7 @@ void DbHttpAdminTable::column_add_xml( Database *db, HttpHeader *h)
 	h->content_type = "text/xml";
 
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -98,7 +98,7 @@ void DbHttpAdminTable::column_add_xml( Database *db, HttpHeader *h)
 	if ( tab->getColumn(column).name != "" )
 	{
 		msg.perror(E_COLDUP, "Spalte <%s> ist schon vorhanden", column.c_str());
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 	}
 	else
 	{
@@ -125,18 +125,18 @@ void DbHttpAdminTable::column_add_xml( Database *db, HttpHeader *h)
 
 			if ( tabname->insert(&values) == 0 )
 			{
-				fprintf(h->content, "<body>");
-				fprintf(h->content, "<%s>%s</%s>", "schema", schema.c_str(), "schema");
-				fprintf(h->content, "<%s>%s</%s>", "table",  table.c_str(),  "table");
-				fprintf(h->content, "<%s>%s</%s>", "column", column.c_str(), "column");
-				fprintf(h->content, "</body>");
+				add_content(h,  "<body>");
+				add_content(h,  "<%s>%s</%s>", "schema", schema.c_str(), "schema");
+				add_content(h,  "<%s>%s</%s>", "table",  table.c_str(),  "table");
+				add_content(h,  "<%s>%s</%s>", "column", column.c_str(), "column");
+				add_content(h,  "</body>");
 			}
 			else
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 			db->release(tabname);
 		}
 		else
-			fprintf(h->content, "<body>error</body>");
+			add_content(h,  "<body>error</body>");
 	}
 
 	if ( h->vars["sqlend"] != "" )
@@ -159,7 +159,7 @@ void DbHttpAdminTable::column_mod_xml( Database *db, HttpHeader *h)
 	h->content_type = "text/xml";
 
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -167,7 +167,7 @@ void DbHttpAdminTable::column_mod_xml( Database *db, HttpHeader *h)
 	if ( tab->getColumn(columnold).name == "" )
 	{
 		msg.perror(E_COLNO, "keine Spalte <%s> vorhanden", columnold.c_str());
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 	}
 	else
 	{
@@ -206,19 +206,19 @@ void DbHttpAdminTable::column_mod_xml( Database *db, HttpHeader *h)
 				if ( tabname->select(&values, &where)->empty() )
 					tabname->insert(&values);
 
-				fprintf(h->content, "<body>");
-				fprintf(h->content, "<%s>%s</%s>", "schema", schema.c_str(), "schema");
-				fprintf(h->content, "<%s>%s</%s>", "table",  table.c_str(),  "table");
-				fprintf(h->content, "<%s>%s</%s>", "column", column.c_str(), "column");
-				fprintf(h->content, "</body>");
+				add_content(h,  "<body>");
+				add_content(h,  "<%s>%s</%s>", "schema", schema.c_str(), "schema");
+				add_content(h,  "<%s>%s</%s>", "table",  table.c_str(),  "table");
+				add_content(h,  "<%s>%s</%s>", "column", column.c_str(), "column");
+				add_content(h,  "</body>");
 			}
 			else
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 
 			db->release(tabname);
 		}
 		else
-			fprintf(h->content, "<body>error</body>");
+			add_content(h,  "<body>error</body>");
 	}
 
 	if ( h->vars["sqlend"] != "" )
@@ -239,7 +239,7 @@ void DbHttpAdminTable::column_del_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -247,7 +247,7 @@ void DbHttpAdminTable::column_del_xml( Database *db, HttpHeader *h)
 	if ( tab->getColumn(columnold).name == "" )
 	{
 		msg.perror(E_COLNO, "keine Spalte <%s> vorhanden", columnold.c_str());
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 	}
 	else
 	{
@@ -261,14 +261,14 @@ void DbHttpAdminTable::column_del_xml( Database *db, HttpHeader *h)
 			where["colname"] = columnold;
 
 			if ( tabname->del(&where) == 0 )
-				fprintf(h->content, "<body>ok</body>");
+				add_content(h,  "<body>ok</body>");
 			else
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 
 			db->release(tabname);
 		}
 		else
-			fprintf(h->content, "<body>error</body>");
+			add_content(h,  "<body>error</body>");
 	}
 
 	if ( h->vars["sqlend"] != "" )
@@ -283,7 +283,7 @@ void DbHttpAdminTable::table_add_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -318,17 +318,17 @@ void DbHttpAdminTable::table_add_xml( Database *db, HttpHeader *h)
 
 		if ( tabname->insert(&values) == 0 )
 		{
-			fprintf(h->content, "<body>");
-			fprintf(h->content, "<%s>%s</%s>", "schema", schema.c_str(), "schema");
-			fprintf(h->content, "<%s>%s</%s>", "table",  table.c_str(),  "table");
-			fprintf(h->content, "</body>");
+			add_content(h,  "<body>");
+			add_content(h,  "<%s>%s</%s>", "schema", schema.c_str(), "schema");
+			add_content(h,  "<%s>%s</%s>", "table",  table.c_str(),  "table");
+			add_content(h,  "</body>");
 		}
 		else
-			fprintf(h->content, "<body>error</body>");
+			add_content(h,  "<body>error</body>");
 		db->release(tabname);
 	}
 	else
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "" )
 		tab->end();
@@ -343,7 +343,7 @@ void DbHttpAdminTable::table_mod_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -401,20 +401,20 @@ void DbHttpAdminTable::table_mod_xml( Database *db, HttpHeader *h)
 
 			if ( tabname->modify(&values, &where) == 0 )
 			{
-			fprintf(h->content, "<body>");
-			fprintf(h->content, "<%s>%s</%s>", "schema", schema.c_str(), "schema");
-			fprintf(h->content, "<%s>%s</%s>", "table",  table.c_str(),  "table");
-			fprintf(h->content, "</body>");
+			add_content(h,  "<body>");
+			add_content(h,  "<%s>%s</%s>", "schema", schema.c_str(), "schema");
+			add_content(h,  "<%s>%s</%s>", "table",  table.c_str(),  "table");
+			add_content(h,  "</body>");
 			}
 			else
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 		}
 		else
-			fprintf(h->content, "<body>error</body>");
+			add_content(h,  "<body>error</body>");
 		db->release(tabname);
 	}
 	else
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 
 	if ( result == 0 && h->vars["showhistoryInput"] != "" )
 		tab->add_history(table + "id");
@@ -433,7 +433,7 @@ void DbHttpAdminTable::table_del_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 	DbTable *tab;
@@ -455,9 +455,9 @@ void DbHttpAdminTable::table_del_xml( Database *db, HttpHeader *h)
 	if ( tab->check_history() ) tab->del_history();
 
 	if ( tab->remove(schema + "." + table) == 0 )
-		fprintf(h->content, "<body>ok</body>");
+		add_content(h,  "<body>ok</body>");
 	else
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "" )
 		tab->end();
@@ -472,7 +472,7 @@ void DbHttpAdminTable::pkey_add_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -490,12 +490,12 @@ void DbHttpAdminTable::pkey_add_xml( Database *db, HttpHeader *h)
 	con = db->p_getConstraint();
 	if ( con->create_primary(schema, table, name, cols, text_de, text_en, custom) == 0 )
 	{
-	    fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+	    add_content(h,  "<body><name>%s</name></body>", name.c_str());
 	    DbConstraintError e;
 	    e.read(db, 0);
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -508,7 +508,7 @@ void DbHttpAdminTable::pkey_mod_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -530,15 +530,15 @@ void DbHttpAdminTable::pkey_mod_xml( Database *db, HttpHeader *h)
         if ( con->create_primary(schema, table, name, cols, text_de, text_en, custom) == 0 )
         {
 
-            fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+            add_content(h,  "<body><name>%s</name></body>", name.c_str());
             DbConstraintError e;
             e.read(db, 0);
         }
         else
-            fprintf(h->content,"<body>error</body>");
+            add_content(h, "<body>error</body>");
     }
     else
-        fprintf(h->content,"<body>error</body>");
+        add_content(h, "<body>error</body>");
 
     if ( h->vars["sqlend"] != "")
         db->p_getConnect()->end();
@@ -552,7 +552,7 @@ void DbHttpAdminTable::pkey_del_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -568,10 +568,10 @@ void DbHttpAdminTable::pkey_del_xml( Database *db, HttpHeader *h)
 	{
         DbConstraintError e;
         e.read(db, 0);
-        fprintf(h->content,"<body>ok</body>");
+        add_content(h, "<body>ok</body>");
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -584,7 +584,7 @@ void DbHttpAdminTable::check_add_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -601,12 +601,12 @@ void DbHttpAdminTable::check_add_xml( Database *db, HttpHeader *h)
 	con = db->p_getConstraint();
 	if ( con->create_check(schema, table, name, check, text_de, text_en, custom) == 0 )
 	{
-	    fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+	    add_content(h,  "<body><name>%s</name></body>", name.c_str());
         DbConstraintError e;
         e.read(db, 0);
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -619,7 +619,7 @@ void DbHttpAdminTable::check_mod_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -639,15 +639,15 @@ void DbHttpAdminTable::check_mod_xml( Database *db, HttpHeader *h)
 	{
 	    if ( con->create_check(schema, table, name, check, text_de, text_en, custom) == 0 )
 		{
-		    fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+		    add_content(h,  "<body><name>%s</name></body>", name.c_str());
             DbConstraintError e;
             e.read(db, 0);
 		}
 		else
-			fprintf(h->content,"<body>error</body>");
+			add_content(h, "<body>error</body>");
     }
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -661,7 +661,7 @@ void DbHttpAdminTable::check_del_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -675,12 +675,12 @@ void DbHttpAdminTable::check_del_xml( Database *db, HttpHeader *h)
 	con = db->p_getConstraint();
 	if ( con->remove(schema, table, nameold) == 0 )
 	{
-	    fprintf(h->content,"<body>ok</body>");
+	    add_content(h, "<body>ok</body>");
         DbConstraintError e;
         e.read(db, 0);
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -693,7 +693,7 @@ void DbHttpAdminTable::fkey_add_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -716,12 +716,12 @@ void DbHttpAdminTable::fkey_add_xml( Database *db, HttpHeader *h)
     con = db->p_getConstraint();
 	if ( con->create_foreign(schema, table, name, cols, rschema, rtable, rcols, text_de, text_en, custom) == 0 )
 	{
-	    fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+	    add_content(h,  "<body><name>%s</name></body>", name.c_str());
         DbConstraintError e;
         e.read(db, 0);
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -734,7 +734,7 @@ void DbHttpAdminTable::fkey_mod_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -760,15 +760,15 @@ void DbHttpAdminTable::fkey_mod_xml( Database *db, HttpHeader *h)
 	{
 	    if ( con->create_foreign(schema, table, name, cols, rschema, rtable, rcols, text_de, text_en, custom) == 0 )
 		{
-		    fprintf(h->content, "<body><name>%s</name></body>", name.c_str());
+		    add_content(h,  "<body><name>%s</name></body>", name.c_str());
             DbConstraintError e;
             e.read(db, 0);
 		}
 		else
-			fprintf(h->content,"<body>error</body>");
+			add_content(h, "<body>error</body>");
     }
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -782,7 +782,7 @@ void DbHttpAdminTable::fkey_del_xml( Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -796,12 +796,12 @@ void DbHttpAdminTable::fkey_del_xml( Database *db, HttpHeader *h)
 	con = db->p_getConstraint();
 	if ( con->remove(schema, table, nameold) == 0 )
 	{
-	    fprintf(h->content,"<body>ok</body>");
+	    add_content(h, "<body>ok</body>");
         DbConstraintError e;
         e.read(db, 0);
 	}
 	else
-		fprintf(h->content,"<body>error</body>");
+		add_content(h, "<body>error</body>");
 
 	if ( h->vars["sqlend"] != "")
 		db->p_getConnect()->end();
@@ -815,10 +815,10 @@ void DbHttpAdminTable::conrefresh(Database *db, HttpHeader *h)
     h->status = 200;
     h->content_type = "text/xml";
 
-    fprintf(h->content,
+    add_content(h, 
             "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
             h->charset.c_str());
-    fprintf(h->content,"<body>ok</body>");
+    add_content(h, "<body>ok</body>");
     DbConstraintError e;
     e.read(db, h->vars["sqlend"] != "");
     return;

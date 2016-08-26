@@ -77,7 +77,7 @@ void DbHttpUtilsImap::folder_xml(Database *dbin, HttpHeader *h)
     else
     {
         msg.perror(E_MAILBOX, "Die Mailbox <%s> wurde nicht gefunden", h->vars["imapmailboxid"].c_str());
-        fprintf(h->content,"<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>",  h->charset.c_str());
+        add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>",  h->charset.c_str());
         db->release(tab);
         delete db;
         return;
@@ -90,24 +90,24 @@ void DbHttpUtilsImap::folder_xml(Database *dbin, HttpHeader *h)
 
     folder = imap.getFolder();
 
-    fprintf(h->content,
+    add_content(h, 
                 "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
                 h->charset.c_str());
-    fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
-    fprintf(h->content, "<d><id>folder</id><typ>2</typ><name>Folder</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
-    fprintf(h->content, "<d><id>name</id><typ>2</typ><name>Name</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
+    add_content(h, "<head encoding=\"%s\">", h->charset.c_str());
+    add_content(h,  "<d><id>folder</id><typ>2</typ><name>Folder</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
+    add_content(h,  "<d><id>name</id><typ>2</typ><name>Name</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n");
 
-    fprintf(h->content, "</head>");
-    fprintf(h->content, "<body>");
+    add_content(h,  "</head>");
+    add_content(h,  "<body>");
 
     for (i = folder.begin(); i != folder.end(); ++i )
     {
-        fprintf(h->content, "<r>");
-        fprintf(h->content, "<v>%s</v><v>%s</v>\n", ToString::mkxml( i->first.c_str()).c_str(),ToString::mkxml( i->second.c_str()).c_str());
-        fprintf(h->content, "</r>");
+        add_content(h,  "<r>");
+        add_content(h,  "<v>%s</v><v>%s</v>\n", ToString::mkxml( i->first.c_str()).c_str(),ToString::mkxml( i->second.c_str()).c_str());
+        add_content(h,  "</r>");
     }
 
-    fprintf(h->content, "</body>");
+    add_content(h,  "</body>");
 }
 
 void DbHttpUtilsImap::rescan_xml(Database *db, HttpHeader *h)
@@ -116,15 +116,15 @@ void DbHttpUtilsImap::rescan_xml(Database *db, HttpHeader *h)
     Imap::Headers::iterator i;
     Imap::Header::iterator ii;
 
-    fprintf(h->content,
+    add_content(h, 
             "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
             h->charset.c_str());
-    fprintf(h->content,"<head encoding=\"%s\">", h->charset.c_str());
-    fprintf(h->content, "<d><id>from</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Absender").c_str());
-    fprintf(h->content, "<d><id>subject</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Betreff").c_str());
+    add_content(h, "<head encoding=\"%s\">", h->charset.c_str());
+    add_content(h,  "<d><id>from</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Absender").c_str());
+    add_content(h,  "<d><id>subject</id><typ>2</typ><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", msg.get("Betreff").c_str());
 
-    fprintf(h->content, "</head>");
-    fprintf(h->content, "<body>");
+    add_content(h,  "</head>");
+    add_content(h,  "<body>");
 
     if ( h->vars["no_vals"] != "true" && h->vars["no_vals"] != "t")
     {
@@ -135,10 +135,10 @@ void DbHttpUtilsImap::rescan_xml(Database *db, HttpHeader *h)
 
     for ( i = header.begin(); i != header.end(); ++i )
     {
-        fprintf(h->content, "<r>");
-        fprintf(h->content, "<v>%s</v><v>%s</v>\n", ToString::mkxml(i->second["FROM"]).c_str(), ToString::mkxml(i->second["SUBJECT"]).c_str());
-        fprintf(h->content, "</r>");
+        add_content(h,  "<r>");
+        add_content(h,  "<v>%s</v><v>%s</v>\n", ToString::mkxml(i->second["FROM"]).c_str(), ToString::mkxml(i->second["SUBJECT"]).c_str());
+        add_content(h,  "</r>");
     }
 
-    fprintf(h->content, "</body>");
+    add_content(h,  "</body>");
 }

@@ -192,7 +192,7 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
 
     mk_selectcolumns(db, h, tab, vals, anzahl_cols, where, wop);
 
-    fprintf(h->content,
+    add_content(h, 
             "<?xml version=\"1.0\" encoding=\"%s\"?><result><head>",
             h->charset.c_str());
 
@@ -201,7 +201,7 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
         lang = "de";
     for (i=0; i < anzahl_cols; ++i)
     {
-        fprintf(h->content, "<d><id>%s</id><typ>%ld</typ><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
+        add_content(h,  "<d><id>%s</id><typ>%ld</typ><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                 vals[i].name.c_str(), ( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp, vals[i].text[lang].c_str(), vals[i].regexp.c_str(), vals[i].regexphelp[lang].c_str(), vals[i].regexpmod.c_str());
     }
 
@@ -213,7 +213,7 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
         }
     }
 
-    fprintf(h->content, "</head>");
+    add_content(h,  "</head>");
 
    if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
     {
@@ -224,22 +224,22 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();
 
-        fprintf(h->content, "<body>");
+        add_content(h,  "<body>");
         for (rm = r->begin(); rm != r->end(); ++rm, ++i)
         {
-            fprintf(h->content, "<r>");
+            add_content(h,  "<r>");
             rv = (*rm).begin();
             re = (*rm).end();
             for (i=0; rv != re; ++rv,++i)
             {
                 if ( vals[i].dpytyp == DbConnect::BINARY )
-                    fprintf(h->content, "<v>binary</v>\n");
+                    add_content(h,  "<v>binary</v>\n");
                 else
-                    fprintf(h->content, "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
+                    add_content(h,  "<v>%s</v>\n", ToString::mkxml( rv->format(&msg)).c_str());
             }
-            fprintf(h->content, "</r>");
+            add_content(h,  "</r>");
         }
-        fprintf(h->content, "</body>");
+        add_content(h,  "</body>");
     }
 
     if (h->vars["lastquery"] != "" )
@@ -275,7 +275,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
     CsList cols(h->vars["cols"]);
     if ( cols.size() != 1 )
     {
-        fprintf(h->content, "%s", msg.get("Es ist mehr als eine Spalte angebegen").c_str());
+        add_content(h,  "%s", msg.get("Es ist mehr als eine Spalte angebegen").c_str());
         db->release(tab);
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();
@@ -289,7 +289,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
     r = tab->select(&vals, &where, &wop, NULL, ( h->vars["distinct"] != "" && h->vars["distinct"] != "0" && h->vars["distinct"] != "false" ) );
     if ( r->size() > 1 )
     {
-        fprintf(h->content, "%s", msg.get("Abfrage hat mehr als ein Ergebnis").c_str());
+        add_content(h,  "%s", msg.get("Abfrage hat mehr als ein Ergebnis").c_str());
     }
     else if ( r->size() == 0 )
     {
@@ -339,7 +339,7 @@ void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
     h->status = 200;
     h->content_type = "text/xml";
 
-    fprintf(h->content,
+    add_content(h, 
             "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
             h->charset.c_str());
 
@@ -373,13 +373,13 @@ void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
     if ( act_table->insert(&vals) == 0 )
     {
         DbTable::ValueMap::iterator i;
-        fprintf(h->content, "<body>");
+        add_content(h,  "<body>");
         for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
-            fprintf(h->content, "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
-        fprintf(h->content, "</body>");
+            add_content(h,  "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
+        add_content(h,  "</body>");
     }
     else
-        fprintf(h->content, "<body>error</body>");
+        add_content(h,  "<body>error</body>");
 
     db->release(act_table);
     return;
@@ -456,20 +456,20 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         msg.perror(E_MOD, "Modifizieren der gesammten Tabelle nicht gestattet");
         if ( h->content_type == "text/xml" )
         {
-            fprintf(h->content,
+            add_content(h, 
                     "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
                     h->charset.c_str());
-            fprintf(h->content, "<body>error</body>");
+            add_content(h,  "<body>error</body>");
         }
         else if ( h->content_type == "text/html" )
         {
             if ( h->vars["script"] != "" )
             {
-                fprintf(h->content,"<script type=\"text/javascript\">\n");
-                fprintf(h->content,"<!--\n");
-                fprintf(h->content,"%s\n", h->vars["script"].c_str());
-                fprintf(h->content,"//-->\n");
-                fprintf(h->content,"</script>\n");
+                add_content(h, "<script type=\"text/javascript\">\n");
+                add_content(h, "<!--\n");
+                add_content(h, "%s\n", h->vars["script"].c_str());
+                add_content(h, "//-->\n");
+                add_content(h, "</script>\n");
             }
         }
     }
@@ -485,47 +485,47 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         if ( h->content_type == "text/xml" )
         {
             DbTable::ValueMap::iterator i;
-            fprintf(h->content,
+            add_content(h, 
                     "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
                     h->charset.c_str());
-            fprintf(h->content, "<body>");
+            add_content(h,  "<body>");
             for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
-                fprintf(h->content, "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
-            fprintf(h->content, "</body>");
+                add_content(h,  "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
+            add_content(h,  "</body>");
         }
         else if ( h->content_type == "text/html")
         {
             if ( h->vars["script"] != "" )
             {
-                fprintf(h->content,"<script type=\"text/javascript\">\n");
-                fprintf(h->content,"<!--\n");
-                fprintf(h->content,"%s\n", h->vars["script"].c_str());
-                fprintf(h->content,"//-->\n");
-                fprintf(h->content,"</script>\n");
+                add_content(h, "<script type=\"text/javascript\">\n");
+                add_content(h, "<!--\n");
+                add_content(h, "%s\n", h->vars["script"].c_str());
+                add_content(h, "//-->\n");
+                add_content(h, "</script>\n");
             }
-            fprintf(h->content,"ok");
+            add_content(h, "ok");
         }
     }
     else
     {
         if ( h->content_type == "text/xml" )
         {
-            fprintf(h->content,
+            add_content(h, 
                     "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
                     h->charset.c_str());
-            fprintf(h->content, "<body>error</body>");
+            add_content(h,  "<body>error</body>");
         }
         else if ( h->content_type == "text/html" )
         {
             if ( h->vars["script"] != "" )
             {
-                fprintf(h->content,"<script type=\"text/javascript\">\n");
-                fprintf(h->content,"<!--\n");
-                fprintf(h->content,"%s\n", h->vars["script"].c_str());
-                fprintf(h->content,"//-->\n");
-                fprintf(h->content,"</script>\n");
+                add_content(h, "<script type=\"text/javascript\">\n");
+                add_content(h, "<!--\n");
+                add_content(h, "%s\n", h->vars["script"].c_str());
+                add_content(h, "//-->\n");
+                add_content(h, "</script>\n");
             }
-            fprintf(h->content, "error");
+            add_content(h,  "error");
         }
 
     }
@@ -560,7 +560,7 @@ void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
     h->status = 200;
     h->content_type = "text/xml";
 
-    fprintf(h->content,
+    add_content(h, 
             "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
             h->charset.c_str());
 
@@ -582,12 +582,12 @@ void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
     if ( where.size() == 0 )
     {
         msg.perror(E_DEL, "Löschen der gesammten Tabelle nicht gestattet");
-        fprintf(h->content, "<body>error</body>");
+        add_content(h,  "<body>error</body>");
     }
     else if ( act_table->del(&where) == 0 )
-        fprintf(h->content, "<body>ok</body>");
+        add_content(h,  "<body>ok</body>");
     else
-        fprintf(h->content, "<body>error</body>");
+        add_content(h,  "<body>error</body>");
 
     db->release(act_table);
 
