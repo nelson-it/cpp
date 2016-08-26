@@ -91,7 +91,7 @@ void DbHttp::make_answer()
                     if ((pos = str.find("#request#")) != std::string::npos)
                         str.replace(pos, 9, act_h->dirname + " " + act_h->filename);
 
-                    fwrite(str.c_str(), str.size(), 1, act_h->content);
+                    add_contentb(act_h, str.c_str(), str.size() );
                 }
                 else if (act_h->translate)
                 {
@@ -156,7 +156,7 @@ void DbHttp::make_answer()
             if ((pos = str.find("#request#")) != std::string::npos) str.replace(
                     pos, 9, act_h->dirname + " " + act_h->filename);
 
-            fwrite(str.c_str(), str.size(), 1, act_h->content);
+            add_contentb(act_h, str.c_str(), str.size() );
         }
         else if (act_h->translate)
         {

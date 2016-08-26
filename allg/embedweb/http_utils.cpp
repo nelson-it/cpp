@@ -278,7 +278,7 @@ void HttpUtils::proxy(HttpHeader *h)
     int l;
     while( ( l = recv(sock, tmp, sizeof(tmp), 0)) > 0 )
     {
-        fwrite(tmp, l, 1, h->content);
+        add_contentb(h, tmp, l);
     }
 
     close(sock);

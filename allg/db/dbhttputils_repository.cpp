@@ -909,7 +909,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     if ( h->vars["hash"] == "" )
     {
         while ( ( rlen = ::read(file, buffer, sizeof(buffer))) > 0 )
-            fwrite(buffer, rlen, 1,  h->content);
+            DbHttpProvider::add_contentb(h, buffer, rlen );
         close(file);
     }
 }
@@ -944,7 +944,7 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
     while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
     {
         if ( rlen > 0 )
-            fwrite(buffer, rlen, 1,  h->content);
+            DbHttpProvider::add_contentb(h, buffer, rlen );
         else
             if ( rlen < 0 && errno != EAGAIN ) break;
     }

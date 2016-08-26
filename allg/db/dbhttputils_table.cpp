@@ -309,7 +309,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
         CryptBase64 base64;
         unsigned char *out = (unsigned char*) new char[(*r)[0][0].length];
         rlen = base64.decode((unsigned char*)((char *)(*r)[0][0]), out, strlen(((char *)(*r)[0][0])));
-        fwrite(out, 1, rlen, h->content);
+        add_contentb(h, (char *)out, rlen );
         delete out;
     }
 

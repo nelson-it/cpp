@@ -230,7 +230,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
         {
             if ( anzahl > 0 )
-                fwrite(buffer, 1, anzahl, h->content);
+                add_contentb(h, buffer, anzahl );
             else if ( anzahl < 0 && errno != EAGAIN ) break;
         }
 

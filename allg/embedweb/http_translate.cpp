@@ -52,7 +52,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 
 	while ( ( c = strstr(old_c, "#") ) != NULL )
 	{
-		fwrite(old_c, c - old_c, 1, act_h->content);
+		add_contentb(act_h, old_c, c - old_c );
 
 		str.clear();
 		c++;
@@ -140,10 +140,10 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 			old_c = c;
 		}
 
-		fwrite(str.c_str(), str.size(), 1, act_h->content);
+		add_contentb(act_h, str.c_str(), str.size() );
 	}
 
-	fwrite(old_c, ( buffer + size ) - old_c, 1, act_h->content);
+	add_contentb(act_h, old_c, ( buffer + size ) - old_c );
 
 	delete[] buffer;
 	return;
