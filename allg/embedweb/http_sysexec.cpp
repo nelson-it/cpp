@@ -44,6 +44,7 @@ int HttpSysexec::request(HttpHeader *h)
     }
 
     h->status = 200;
+    h->translate = 0;
     execute(h);
     return 1;
 }
@@ -64,10 +65,11 @@ void HttpSysexec::execute ( HttpHeader *h)
     ips = (a["HttpSysexecUserip"]).getStringWerte();
 
     host = this->http->getServersocket()->getHost(h->client);
+    command = h->dirname;
     for ( i = 0; i < ips.size(); ++i )
         if (  check_ip(ips[i].c_str(), host ) ) break;
 
-    if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 ) )
+    if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 && command.find("/user") != 0 ) )
     {
         msg.perror(E_NOFUNC, "keine Berechtigung");
         if ( h->content_type == "text/xml" )
@@ -78,7 +80,6 @@ void HttpSysexec::execute ( HttpHeader *h)
     }
 
     cmd.add("exec/system/programs/rexec");
-    command = h->dirname;
     if ( command.find_first_not_of("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_/") != std::string::npos )
     {
         h->status = 404;
