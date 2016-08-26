@@ -4,12 +4,13 @@
 #include <string>
 
 #include "http.h"
+#include "http_content.h"
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 int inet_aton(const char *cp_arg, struct in_addr *addr);
 #endif
 
-class HttpProvider
+class HttpProvider : protected HttpContent
 {
     enum E_ERROR
     {

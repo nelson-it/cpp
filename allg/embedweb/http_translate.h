@@ -5,8 +5,9 @@ class Http;
 class HttpHeader;
  
 #include <message/message.h>
+#include "http_content.h"
 
-class HttpTranslate
+class HttpTranslate : private HttpContent
 {
     Message msg;
 public:

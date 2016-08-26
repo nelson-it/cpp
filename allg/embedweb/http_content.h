@@ -20,7 +20,7 @@ public:
     virtual ~HttpContent();
 
     virtual void add_content(HttpHeader *h, const char *format, ...);
-    virtual void add_content(HttpHeader *h, const char *buffer, int anzahl);
+    virtual void add_contentb(HttpHeader *h, const char *buffer, int anzahl);
 };
 
 #endif /* http_content_mne */

@@ -254,7 +254,7 @@ void Http::make_answer()
 		if (pos != std::string::npos)
 			str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
-		fwrite(str.c_str(), str.size(), 1, act_h->content);
+		add_contentb(act_h, str.c_str(), str.size() );
 		return;
 	}
 
@@ -267,7 +267,7 @@ void Http::make_answer()
 		if (pos != std::string::npos)
 			str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
-		fwrite(str.c_str(), str.size(), 1, act_h->content);
+		add_contentb(act_h, str.c_str(), str.size() );
 		return;
 	}
 
@@ -292,7 +292,7 @@ void Http::make_answer()
 				if (pos != std::string::npos)
 					str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
-				fwrite(str.c_str(), str.size(), 1, act_h->content);
+				add_contentb(act_h, str.c_str(), str.size() );
 			}
 		}
 
@@ -332,7 +332,7 @@ void Http::make_answer()
 		    if (pos != std::string::npos)
 			    str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
-		    fwrite(str.c_str(), str.size(), 1, act_h->content);
+		    add_contentb(act_h, str.c_str(), str.size() );
 		    act_h->error_messages.clear();
 		    act_h->error_types.clear();
 	    }

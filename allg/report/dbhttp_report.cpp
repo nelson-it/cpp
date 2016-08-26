@@ -480,7 +480,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
             clen = ((*r)[0][0]).length;
             unsigned char *str = (unsigned char *)new char[clen];
             len = base64.decode((unsigned char*)((char *)(*r)[0][0]), str, strlen((char *)(*r)[0][0]));
-            fwrite(str, len, 1, h->content);
+            add_contentb(h, (char *)str, len );
             db->release(tab);
             delete str;
 

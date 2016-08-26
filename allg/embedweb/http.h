@@ -9,12 +9,13 @@
 
 #include "http_header.h"
 #include "http_translate.h"
+#include "http_content.h"
 
 class HttpProvider;
 class HttpMap;
 class HttpAnalyse;
 
-class Http : public Message::MessageClient
+class Http : protected HttpContent, public Message::MessageClient
 {
     friend class HttpSsi;
 

@@ -151,7 +151,7 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      iconv_close(iv);
 
      *co = '\0';
-     fwrite(outbuf, (co - outbuf), 1, h->content);
+     add_contentb(h, outbuf, (co - outbuf));
 
      delete[] outbuf;
      delete[] inbuf;
