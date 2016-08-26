@@ -3,8 +3,9 @@
 
 #include "process.h"
 #include <embedweb/http_header.h>
+#include <embedweb/http_content.h>
 
-class PhpExec : private Process
+class PhpExec : private HttpContent, private Process
 {
     enum ERROR_TYPES
     {
