@@ -73,9 +73,9 @@ void HttpSysexec::execute ( HttpHeader *h)
     {
         msg.perror(E_NOFUNC, "keine Berechtigung");
         if ( h->content_type == "text/xml" )
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else
-            fprintf(h->content, "error");
+            add_content(h,  "error");
         return;
     }
 
@@ -147,16 +147,16 @@ void HttpSysexec::execute ( HttpHeader *h)
         }
 
         if ( h->content_type == "text/xml" )
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else
-            fprintf(h->content, "error");
+            add_content(h,  "error");
     }
     else
     {
         if ( h->content_type == "text/xml" )
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+            add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
         else
-            fprintf(h->content, "ok");
+            add_content(h,  "ok");
     }
 }
 

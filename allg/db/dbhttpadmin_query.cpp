@@ -57,7 +57,7 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -102,7 +102,7 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 							h->vars[typ].c_str())) < 0)
 			{
 				msg.perror(E_JADD, "Fehler beim hinzufügen eines Joins");
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 				return;
 			}
 
@@ -172,7 +172,7 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 						"Tabelle <%s> oder Spalte <%s> beim addieren "
 							"zum Selektieren nicht vorhanden",
 						h->vars[t].c_str(), h->vars[n].c_str());
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 				return;
 			}
 		}
@@ -222,7 +222,7 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 					"addieren zur Whereclause nicht vorhanden",
 						h->vars[lefttab].c_str(), h->vars[righttab].c_str(),
 						h->vars[leftval].c_str(), h->vars[rightval].c_str());
-				fprintf(h->content, "<body>error</body>");
+				add_content(h,  "<body>error</body>");
 				return;
 			}
 		}
@@ -237,9 +237,9 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 					     h->vars["copy"] != "");
 
 	if ( result >= 0  )
-		fprintf(h->content, "<body><queryid>%s</queryid></body>",query->getQueryid().c_str());
+		add_content(h,  "<body><queryid>%s</queryid></body>",query->getQueryid().c_str());
 	else
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 
 	db->release(query);
 	return;
@@ -253,7 +253,7 @@ void DbHttpAdminQuery::del(Database *db, HttpHeader *h)
 	h->status = 200;
 	h->content_type = "text/xml";
 
-	fprintf(h->content,
+	add_content(h, 
 			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
 			h->charset.c_str());
 
@@ -261,9 +261,9 @@ void DbHttpAdminQuery::del(Database *db, HttpHeader *h)
 
 	query = db->p_getQuerycreator();
 	if ( query->del(queryid) == 0 )
-		fprintf(h->content, "<body>ok</body>");
+		add_content(h,  "<body>ok</body>");
 	else
-		fprintf(h->content, "<body>error</body>");
+		add_content(h,  "<body>error</body>");
 
     db->release(query);
 

@@ -56,14 +56,14 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
 {
     if ( r.isnull )
     {
-        fprintf(h->content, "%s", sep.c_str());
+        add_content(h,  "%s", sep.c_str());
         return;
     }
 
     switch( dpytyp )
     {
     case DbConnect::BINARY:
-        fprintf(h->content, "%s\"binary\"", sep.c_str());
+        add_content(h,  "%s\"binary\"", sep.c_str());
         break;
     case DbConnect::DATE:
     {
@@ -76,7 +76,7 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
             memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), dateformat.c_str(),&tm);
-        fprintf(h->content, "%s%s", sep.c_str(), str);
+        add_content(h,  "%s%s", sep.c_str(), str);
         break;
     }
     case DbConnect::TIME:
@@ -90,7 +90,7 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
             memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), "%H:%M",&tm);
-        fprintf(h->content, "%s%s", sep.c_str(), str);
+        add_content(h,  "%s%s", sep.c_str(), str);
     }
     break;
     case DbConnect::DATETIME:
@@ -107,17 +107,17 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
             memset(&tm, 0, sizeof(tm));
         }
         strftime(str, sizeof(str), (dateformat + " %H:%M").c_str(),&tm);
-        fprintf(h->content, "%s%s", sep.c_str(), str);
+        add_content(h,  "%s%s", sep.c_str(), str);
     }
         break;
     case DbConnect::INTERVAL:
-            fprintf(h->content, "%s%02ld:%02ld", sep.c_str(), ((long)(r)) / 3600, (((long)(r)) % 3600) / 60 );
+            add_content(h,  "%s%02ld:%02ld", sep.c_str(), ((long)(r)) / 3600, (((long)(r)) % 3600) / 60 );
         break;
     case DbConnect::DAY:
-        fprintf(h->content, "%s\"%s\"", sep.c_str(), ToString::mkcsv( days[r.format(&msg, NULL, 0, colfs.c_str())]).c_str());
+        add_content(h,  "%s\"%s\"", sep.c_str(), ToString::mkcsv( days[r.format(&msg, NULL, 0, colfs.c_str())]).c_str());
         break;
     default:
-        fprintf(h->content, "%s\"%s\"", sep.c_str(), ToString::mkcsv( r.format(&msg, NULL, 0, colfs.c_str())).c_str());
+        add_content(h,  "%s\"%s\"", sep.c_str(), ToString::mkcsv( r.format(&msg, NULL, 0, colfs.c_str())).c_str());
     }
 }
 
@@ -219,7 +219,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         h->content_type = "text/xml";
 
     if ( !exports )
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>\n", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>\n", h->charset.c_str());
 
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
@@ -309,9 +309,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         if ( headmap.size() == 0 ) return;
 
         if ( exports )
-            fprintf(h->content,"\"%s\"", ToString::mkcsv(keyname).c_str());
+            add_content(h, "\"%s\"", ToString::mkcsv(keyname).c_str());
         else
-            fprintf(h->content, "<head>\n<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(), "", "", "");
+            add_content(h,  "<head>\n<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[1].c_str(), dpytyp[1], colfs[1].c_str(), ToString::mkxml(keyname.c_str()).c_str(), "", "", "");
 
         for ( k=3; k<cols.size(); ++k)
         {
@@ -333,11 +333,11 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                     snprintf(str, sizeof(str), "%ld", (long)k );
                     if ( hide.find(str) == std::string::npos )
                     {
-                        fprintf(h->content,";\"%s\"",ToString::mkcsv(query->getName(pos)).c_str());
+                        add_content(h, ";\"%s\"",ToString::mkcsv(query->getName(pos)).c_str());
                     }
                 }
                 else
-                    fprintf(h->content,
+                    add_content(h, 
                             "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                             query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
                             query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str(), query->getRegexpmod(pos).c_str());
@@ -357,9 +357,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         {
             DbConnect::Result rr = *ci;
             if ( exports )
-                fprintf(h->content,";\"%s\"",ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str());
+                add_content(h, ";\"%s\"",ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str());
             else
-                fprintf(h->content, "<d><id>%s%d</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[0].c_str(), (int)i, dpytyp[2], colfs[2].c_str(), ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str(),"", "", "");
+                add_content(h,  "<d><id>%s%d</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n", colids[0].c_str(), (int)i, dpytyp[2], colfs[2].c_str(), ToString::mkxml(rr.format(&msg, NULL, 0, colfs[0].c_str())).c_str(),"", "", "");
         }
 
         if ( h->vars["distinct"] != "" && h->error_found == 0 )
@@ -381,7 +381,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
         }
 
         if ( ! exports )
-            fprintf(h->content, "</head><body>\n");
+            add_content(h,  "</head><body>\n");
         else
         {
             DbHttpAnalyse::Client::Userprefs u = this->http->getUserprefs();
@@ -389,7 +389,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
             if ( u["region"] == "US" ) dateformat = this->dateformat["us"];
             else if ( u["language"] == "en") dateformat = this->dateformat["en"];
             else if ( u["language"] == "fr") dateformat = this->dateformat["fr"];
-            fprintf(h->content,"\n");
+            add_content(h, "\n");
         }
 
         for ( hi = headmap.begin(); hi != headmap.end(); ++hi )
@@ -403,9 +403,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                 else
                 {
                     if ( dpytyp[1] != DbConnect::BINARY )
-                        fprintf(h->content, "<r><v>%s</v>", ToString::mkxml( (hi->second[i])[vals[1]].format(&msg, NULL, 0, colfs[1].c_str())).c_str());
+                        add_content(h,  "<r><v>%s</v>", ToString::mkxml( (hi->second[i])[vals[1]].format(&msg, NULL, 0, colfs[1].c_str())).c_str());
                     else
-                        fprintf(h->content, "<v>binary</v>");
+                        add_content(h,  "<v>binary</v>");
                 }
 
                 for ( k=3; k<vals.size(); k++)
@@ -422,9 +422,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                     else
                     {
                         if ( dpytyp[vals[k]] != DbConnect::BINARY )
-                            fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[k]].format(&msg, NULL, 0, colfs[k].c_str())).c_str());
+                            add_content(h,  "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[k]].format(&msg, NULL, 0, colfs[k].c_str())).c_str());
                         else
-                            fprintf(h->content, "<v>binary</v>");
+                            add_content(h,  "<v>binary</v>");
                     }
                 }
 
@@ -440,9 +440,9 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                         else
                         {
                             if ( dpytyp[0] != DbConnect::BINARY )
-                                fprintf(h->content, "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[2]].format(&msg, NULL, 0, colfs[2].c_str())).c_str());
+                                add_content(h,  "<v>%s</v>", ToString::mkxml( (hi->second[i])[vals[2]].format(&msg, NULL, 0, colfs[2].c_str())).c_str());
                             else
-                                fprintf(h->content, "<v>binary</v>");
+                                add_content(h,  "<v>binary</v>");
                         }
                         i++;
                     }
@@ -450,21 +450,21 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
                     {
                         DbConnect::Result r;
                         if ( exports )
-                            fprintf(h->content, ";");
+                            add_content(h,  ";");
                         else
-                            fprintf(h->content, "<v></v>");
+                            add_content(h,  "<v></v>");
                     }
                 }
 
                 if ( exports )
-                    fprintf(h->content, "\n");
+                    add_content(h,  "\n");
                 else
-                    fprintf(h->content, "</r>");
+                    add_content(h,  "</r>");
             }
         }
 
         if ( ! exports )
-            fprintf(h->content, "</body>");
+            add_content(h,  "</body>");
         else
             mk_export(h);
     }
@@ -518,7 +518,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         query->setName(h->vars["schema"], h->vars["query"], NULL,  h->vars["unionnum"]);
 
     if ( !exports )
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><head>\n", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><head>\n", h->charset.c_str());
 
     if ( cols.empty() )
     {
@@ -532,9 +532,9 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
             if ( colid[0] != '-' )
             {
                 if ( exports )
-                    fprintf(h->content,"%s\"%s\"",komma.c_str(),ToString::mkcsv(colname).c_str());
+                    add_content(h, "%s\"%s\"",komma.c_str(),ToString::mkcsv(colname).c_str());
                  else
-                    fprintf(h->content,
+                    add_content(h, 
                         "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                         colid.c_str(), coltyp, colformat.c_str(), colname.c_str(),regexp.c_str(), regexphelp.c_str(), regexpmod.c_str());
                 colfs.push_back(colformat);
@@ -564,12 +564,12 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                     snprintf(str, sizeof(str), "%ld", (long)i );
                     if ( hide.find(str) == std::string::npos )
                     {
-                        fprintf(h->content,"%s\"%s\"",komma.c_str(),ToString::mkcsv(query->getName(pos)).c_str());
+                        add_content(h, "%s\"%s\"",komma.c_str(),ToString::mkcsv(query->getName(pos)).c_str());
                         komma = ";";
                     }
                 }
                  else
-                    fprintf(h->content,
+                    add_content(h, 
                         "<d><id>%s</id><typ>%ld</typ><format>%s</format><name>%s</name><regexp><reg>%s</reg><help>%s</help><mod>%s</mod></regexp></d>\n",
                         query->getId(pos).c_str(), coltyp, colformat.c_str(), query->getName(pos).c_str(),
                         query->getRegexp(pos).c_str(), query->getRegexphelp(pos).c_str(), query->getRegexpmod(pos).c_str());
@@ -604,9 +604,9 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     }
 
     if ( exports )
-        fprintf(h->content,"\n");
+        add_content(h, "\n");
      else
-    fprintf(h->content, "</head>");
+    add_content(h,  "</head>");
 
     if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
     {
@@ -640,7 +640,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         }
 
         if ( ! exports )
-            fprintf(h->content, "<body>\n");
+            add_content(h,  "<body>\n");
         else
         {
             DbHttpAnalyse::Client::Userprefs u = this->http->getUserprefs();
@@ -653,7 +653,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         {
             komma = "";
             if ( ! exports )
-                fprintf(h->content, "<r>");
+                add_content(h,  "<r>");
             rv = (*rm).begin();
             re = (*rm).end();
             if ( cols.empty() )
@@ -668,9 +668,9 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                     else
                     {
                         if ( dpytyp[i] != DbConnect::BINARY )
-                            fprintf(h->content, "<v>%s</v>", ToString::mkxml( rv->format(&msg, NULL, 0, colfs[i].c_str())).c_str());
+                            add_content(h,  "<v>%s</v>", ToString::mkxml( rv->format(&msg, NULL, 0, colfs[i].c_str())).c_str());
                         else
-                            fprintf(h->content, "<v>binary</v>");
+                            add_content(h,  "<v>binary</v>");
                     }
                 }
             }
@@ -692,21 +692,21 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
                     {
 
                         if ( dpytyp[i] != DbConnect::BINARY )
-                            fprintf(h->content, "<v>%s</v>", ToString::mkxml( (*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())).c_str());
+                            add_content(h,  "<v>%s</v>", ToString::mkxml( (*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())).c_str());
                         else
-                            fprintf(h->content, "<v>binary</v>");
+                            add_content(h,  "<v>binary</v>");
                     }
                 }
             }
             if ( exports )
-                fprintf(h->content, "\n");
+                add_content(h,  "\n");
             else
-                fprintf(h->content, "</r>\n");
+                add_content(h,  "</r>\n");
         }
 
         if ( ! exports )
         {
-            fprintf(h->content, "</body>");
+            add_content(h,  "</body>");
         }
         else
         {

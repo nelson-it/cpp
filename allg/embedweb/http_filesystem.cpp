@@ -453,23 +453,23 @@ void HttpFilesystem::ls(HttpHeader *h)
     idname = ( idname == "" ) ? "fullname" : idname;
     rootname = ( rootname == "" ) ? "root" : rootname;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     readdir(h);
     if ( h->error_found )
     {
-        fprintf(h->content, "<body>error</body>");
+        add_content(h,  "<body>error</body>");
         return;
     }
 
-    fprintf(h->content,"<head>");
+    add_content(h, "<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
-    fprintf(h->content,"</head><body>");
+    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
+    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
+    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
+    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
+    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
+    add_content(h, "</head><body>");
 
     dir = this->dir;
     if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
@@ -482,9 +482,9 @@ void HttpFilesystem::ls(HttpHeader *h)
         str[sizeof(str) - 1] =  '\0';
         snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : false, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
         if ( singledir )
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
+            add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
         else
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), "submenu", "", i++ );
+            add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), "submenu", "", i++ );
     }
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
@@ -505,10 +505,10 @@ void HttpFilesystem::ls(HttpHeader *h)
          default:       ft = "file";   break;
          }
         snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld, filetype : \"%s\" })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
-        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
+        add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
     }
 
-    fprintf(h->content,"</body>");
+    add_content(h, "</body>");
     return;
 
 }
@@ -520,7 +520,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
 
     if ( dir == "" || name == "" )
     {
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -528,7 +528,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     if ( ! CreateDirectory((dir + DIRSEP + name).c_str(), NULL) )
     {
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #else
@@ -537,7 +537,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
         msg.line("%s", str.c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -547,7 +547,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     chmod((dir + DIRSEP + name).c_str(), (02777 & ~ mask));
 
 #endif
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 
 
 }
@@ -557,7 +557,7 @@ void HttpFilesystem::rmdir(HttpHeader *h)
 
     if (  name == "" )
     {
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -566,7 +566,7 @@ void HttpFilesystem::rmdir(HttpHeader *h)
     if ( ! RemoveDirectory(name.c_str()) )
     {
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #else
@@ -576,11 +576,11 @@ void HttpFilesystem::rmdir(HttpHeader *h)
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
         msg.line("%s", str.c_str());
 
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #endif
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 }
 
 void HttpFilesystem::mv(HttpHeader *h)
@@ -595,7 +595,7 @@ void HttpFilesystem::mv(HttpHeader *h)
 
     if ( getDir(h) == "" || oldname == "" || newname == "" )
     {
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -603,7 +603,7 @@ void HttpFilesystem::mv(HttpHeader *h)
     if ( ! MoveFile((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) )
      {
          msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
-         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
          return;
      }
 #else
@@ -612,11 +612,11 @@ void HttpFilesystem::mv(HttpHeader *h)
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
         msg.line("%s", str.c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #endif
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 
 
 }
@@ -697,14 +697,14 @@ void HttpFilesystem::mkfile(HttpHeader *h)
 
     if ( h->vars["script"] != "" )
     {
-        fprintf(h->content,"<script type=\"text/javascript\">\n");
-        fprintf(h->content,"<!--\n");
-        fprintf(h->content,"%s\n", h->vars["script"].c_str());
-        fprintf(h->content,"//-->\n");
-        fprintf(h->content,"</script>\n");
+        add_content(h, "<script type=\"text/javascript\">\n");
+        add_content(h, "<!--\n");
+        add_content(h, "%s\n", h->vars["script"].c_str());
+        add_content(h, "//-->\n");
+        add_content(h, "</script>\n");
     }
 
-    fprintf(h->content, "%s", str.c_str());
+    add_content(h,  "%s", str.c_str());
 }
 
 void HttpFilesystem::rmfile(HttpHeader *h)
@@ -713,7 +713,7 @@ void HttpFilesystem::rmfile(HttpHeader *h)
 
     if (  name == "" )
     {
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -721,7 +721,7 @@ void HttpFilesystem::rmfile(HttpHeader *h)
     if ( ! DeleteFile(name.c_str()) )
     {
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #else
@@ -731,11 +731,11 @@ void HttpFilesystem::rmfile(HttpHeader *h)
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
         msg.line("%s", str.c_str());
 
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #endif
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 }
 
 void HttpFilesystem::mklink(HttpHeader *h)
@@ -743,7 +743,7 @@ void HttpFilesystem::mklink(HttpHeader *h)
     std::string root,dir1,dir2,file1,file2;
     int result;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     result = ( root = this->getRoot(h) ) == "";
 
@@ -788,10 +788,10 @@ void HttpFilesystem::mklink(HttpHeader *h)
     if ( result )
     {
         msg.perror(E_CREATELINK,"Kann hardlink <%s -> %s> nicht erstellen", (h->vars["dirInput.old"] + "/" + h->vars["filenameInput.old"]).c_str(), (h->vars["dirInput"] + "/" + h->vars["filenameInput"]).c_str());
-        fprintf(h->content, "<body>error</body>");
+        add_content(h,  "<body>error</body>");
         return;
     }
-    fprintf(h->content, "<body>ok</body>");
+    add_content(h,  "<body>ok</body>");
 }
 
 void HttpFilesystem::download(HttpHeader *h)

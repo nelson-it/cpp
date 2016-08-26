@@ -70,31 +70,31 @@ void HttpUtils::mk_window(HttpHeader *h, char *str)
 	h->status = 200;
 	h->content_type = "text/html";
 
-	fprintf(h->content, "<!DOCTYPE HTML PUBLIC \"-");
-	fprintf(h->content, "//W3C//DTD HTML 4.01 Transitional//DE\">");
-	fprintf(h->content, "<html>");
-	fprintf(h->content, "<head>");
-	fprintf(h->content, "<title>Nelson technische Informatik - count</title>");
-	fprintf(h->content, "<meta http-equiv=\"Content-Type\" ");
-	fprintf(h->content, "content=\"text/html; ");
-	fprintf(h->content, "charset=iso-8859-1\">");
-	fprintf(h->content, "<link id=\"MainStyleLink\" rel=\"stylesheet\" ");
-	fprintf(h->content, "type=\"text/css\">");
-	fprintf(h->content, "<script language=\"JavaScript\" ");
-	fprintf(h->content, "type=\"text/JavaScript\">");
-	fprintf(h->content, "window.onload = function() ");
-	fprintf(h->content, "{ ");
-	fprintf(h->content, "top.mneMain.mneMisc.setStyle(document, ");
-	fprintf(h->content, "\"MainStyleLink\");");
-	fprintf(h->content, "var d = new Date(); ");
-	fprintf(h->content, "document.getElementById('uhr').firstChild.data = ");
-	fprintf(h->content, " top.mneMain.mneMisc.addNull(d.getHours(),2) + ':' ");
-	fprintf(h->content, " + top.mneMain.mneMisc.addNull(d.getMinutes(),2); } ");
-	fprintf(h->content, "</script>\n");
-	fprintf(h->content, "</head>\r\n");
-	fprintf(h->content, "<body class=\"MneCount\">\r\n");
-	fprintf(h->content, "<div id=\"uhr\" class=\"MneCount\">%s</div>\r\n", str);
-	fprintf(h->content, "</body>");
+	add_content(h,  "<!DOCTYPE HTML PUBLIC \"-");
+	add_content(h,  "//W3C//DTD HTML 4.01 Transitional//DE\">");
+	add_content(h,  "<html>");
+	add_content(h,  "<head>");
+	add_content(h,  "<title>Nelson technische Informatik - count</title>");
+	add_content(h,  "<meta http-equiv=\"Content-Type\" ");
+	add_content(h,  "content=\"text/html; ");
+	add_content(h,  "charset=iso-8859-1\">");
+	add_content(h,  "<link id=\"MainStyleLink\" rel=\"stylesheet\" ");
+	add_content(h,  "type=\"text/css\">");
+	add_content(h,  "<script language=\"JavaScript\" ");
+	add_content(h,  "type=\"text/JavaScript\">");
+	add_content(h,  "window.onload = function() ");
+	add_content(h,  "{ ");
+	add_content(h,  "top.mneMain.mneMisc.setStyle(document, ");
+	add_content(h,  "\"MainStyleLink\");");
+	add_content(h,  "var d = new Date(); ");
+	add_content(h,  "document.getElementById('uhr').firstChild.data = ");
+	add_content(h,  " top.mneMain.mneMisc.addNull(d.getHours(),2) + ':' ");
+	add_content(h,  " + top.mneMain.mneMisc.addNull(d.getMinutes(),2); } ");
+	add_content(h,  "</script>\n");
+	add_content(h,  "</head>\r\n");
+	add_content(h,  "<body class=\"MneCount\">\r\n");
+	add_content(h,  "<div id=\"uhr\" class=\"MneCount\">%s</div>\r\n", str);
+	add_content(h,  "</body>");
 }
 
 void HttpUtils::count(HttpHeader *h)
@@ -116,7 +116,7 @@ void HttpUtils::time(HttpHeader *h)
 {
 	h->content_type = "text/plain";
 	h->status = 200;
-	fprintf(h->content, "%d", ((int)::time(NULL)));
+	add_content(h,  "%d", ((int)::time(NULL)));
 }
 
 void HttpUtils::logout(HttpHeader *h)
@@ -130,7 +130,7 @@ void HttpUtils::logout(HttpHeader *h)
     snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
     str[sizeof(str) - 1] = '\0';
     h->set_cookies[str] = "Logout";
-    fprintf(h->content,"<?xml version=\"1.0\" encoding=\"%s\"?><result><body>logout</body>",h->charset.c_str());
+    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>logout</body>",h->charset.c_str());
 }
 
 void HttpUtils::file(HttpHeader *h)
@@ -176,22 +176,22 @@ void HttpUtils::file(HttpHeader *h)
 
     if ( h->vars["script"] != "" )
     {
-        fprintf(h->content,"<script type=\"text/javascript\">\n");
-        fprintf(h->content,"<!--\n");
-        fprintf(h->content,"%s\n", h->vars["script"].c_str());
-        fprintf(h->content,"//-->\n");
-        fprintf(h->content,"</script>\n");
+        add_content(h, "<script type=\"text/javascript\">\n");
+        add_content(h, "<!--\n");
+        add_content(h, "%s\n", h->vars["script"].c_str());
+        add_content(h, "//-->\n");
+        add_content(h, "</script>\n");
         if ( h->content_type == "text/plain")
         {
             h->content_type = "text/html";
             if ( h->vars["data"].substr(0,10) == "##########" )
-                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", str.c_str());
+                add_content(h,  "<textarea id=\"data\" >%s</textarea>", str.c_str());
             else
-                fprintf(h->content, "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(str.c_str()).c_str());
+                add_content(h,  "<textarea id=\"data\" >%s</textarea>", ToString::mkhtml(str.c_str()).c_str());
             return;
         }
     }
-    fprintf(h->content,"%s%s",h->vars["data"].c_str(), endtag.c_str());
+    add_content(h, "%s%s",h->vars["data"].c_str(), endtag.c_str());
 }
 
 void HttpUtils::locale(HttpHeader *h)
@@ -202,8 +202,8 @@ void HttpUtils::locale(HttpHeader *h)
     struct lconv *l;
     l = localeconv();
 
-    fprintf(h->content,"<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d></head><body>",h->charset.c_str());
-    fprintf(h->content, "<r><v>%s</v><v>%s</v></r></body>",l->decimal_point, l->thousands_sep);
+    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d></head><body>",h->charset.c_str());
+    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>",l->decimal_point, l->thousands_sep);
 
     return;
 }

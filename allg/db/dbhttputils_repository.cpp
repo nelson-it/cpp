@@ -171,7 +171,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
     if ( (root = HttpFilesystem::getRoot(h)) == "" )
     {
         msg.perror(E_MKREPOSITORY,"Der Aktenschrank <%s> existiert nicht", h->vars["rootInput"].c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -194,7 +194,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
         if ( result != 0 )
         {
             msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens eines Aktenordners");
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
             return;
         }
 
@@ -216,7 +216,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             if ( result != 0 )
             {
                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens eines Aktenordners");
-                fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+                DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
                 return;
             }
 
@@ -231,7 +231,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             if ( result != 0 )
             {
                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens eines Aktenordners");
-                fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+                DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
                 return;
             }
 
@@ -249,7 +249,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
             if ( result != 0 )
             {
                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens eines Aktenordners");
-                fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+                DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
                 return;
             }
         }
@@ -273,7 +273,7 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
 
     h->status = 200;
     h->content_type = "text/xml";
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     root = h->vars["rootInput.old"];
     name = h->vars["nameInput.old"];
@@ -281,14 +281,14 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
     if ( HttpFilesystem::getRoot(h) == "" || check_path(HttpFilesystem::getRoot(h).c_str(), name.c_str()) == "" )
     {
         msg.perror(E_MKREPOSITORY,"Der Aktenordner <%s> existiert nicht", (root + ":" + name).c_str());
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
     if ( name == "" || h->vars["nameInput"] == "" )
     {
         msg.perror(E_MKREPOSITORY,"Die Aktenordner müssen eine Namen haben");
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -307,7 +307,7 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
             std::string str = msg.getSystemerror(errno);
             msg.perror(E_MKREPOSITORY,"Fehler während des Umbenennen eines Aktenordners");
             msg.line("%s", str.c_str());
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
     }
@@ -334,14 +334,14 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
     if ( (root = HttpFilesystem::getRoot(h)) == "" )
     {
         msg.perror(E_MKREPOSITORY,"Der Aktenordner <%s> existiert nicht", (h->vars["rootInput.old"] + ":" + h->vars["nameInput.old"]).c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
     if ( h->vars["nameInput.old"] == "" )
      {
          msg.perror(E_DELREPOSITORY,"Der Aktenordner muss eine Namen haben");
-         fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+         DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
          return;
      }
 
@@ -358,7 +358,7 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
             std::string str = msg.getSystemerror(GetLastError());
             msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
             msg.line("%s", str.c_str());
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
             return;
         }
     }
@@ -368,7 +368,7 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
         msg.line("%s", str.c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 #endif
@@ -508,12 +508,12 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     idname = ( idname == "" ) ? "name" : idname;
     rootname = ( rootname == "" ) ? "root" : rootname;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     readdir(h);
     if ( h->error_found )
     {
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -527,7 +527,7 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
     {
         msg.perror(E_MKREPOSITORY,"Fehler während des Listens eines Ordners");
         msg.line("%s", execlog.c_str());
-        fprintf(h->content, "error");
+        DbHttpProvider::add_content(h,  "error");
         return;
     }
 
@@ -576,15 +576,15 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         }
     }
 
-    fprintf(h->content,"<head>");
+    DbHttpProvider::add_content(h, "<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "status",  "status");
-    fprintf(h->content,"</head><body>");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "status",  "status");
+    DbHttpProvider::add_content(h, "</head><body>");
 
     dir = this->dir;
     if ( dir != "" && dir.substr(dir.length() - 2) != DIRSEP )
@@ -598,9 +598,9 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         fullname = ToString::substitute(fullname, DIRSEP, "/");
 
         if ( singledir )
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
         else
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), "submenu", "", i++, st.c_str() );
+            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), "submenu", "", i++, st.c_str() );
     }
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
@@ -608,10 +608,10 @@ void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
         std::string fullname = dir + (*is).name;
         std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
         fullname = ToString::substitute(fullname, DIRSEP, "/");
-        fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
+        DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
     }
 
-    fprintf(h->content,"</body>");
+    DbHttpProvider::add_content(h, "</body>");
     return;
 
 }
@@ -622,13 +622,13 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
     CsList cmd;
     int result;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
     if ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )
     {
 
         if ( getDir(h) == "" )
         {
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
 
@@ -643,24 +643,24 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
         {
             msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
             msg.line("%s", execlog.c_str());
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
     }
     else
         execlog = "";
 
-    fprintf(h->content,"<head>");
+    DbHttpProvider::add_content(h, "<head>");
 
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "author", msg.get("geändert von").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>1000</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "comitdate", msg.get("geändert am").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "notiz",    msg.get("Änderungsnotiz").c_str());
-    fprintf(h->content,"<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "hash",   "hash");
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "author", msg.get("geändert von").c_str());
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>1000</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "comitdate", msg.get("geändert am").c_str());
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "notiz",    msg.get("Änderungsnotiz").c_str());
+    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "hash",   "hash");
 
-    fprintf(h->content,"</head><body>");
+    DbHttpProvider::add_content(h, "</head><body>");
 
     if ( h->vars["status"] != "" )
-        fprintf(h->content,"<r><v>%s</v><v>%ld</v><v>%s</v><v>%s</v></r>", "",time(NULL), h->vars["status"].c_str(), "" );
+        DbHttpProvider::add_content(h, "<r><v>%s</v><v>%ld</v><v>%s</v><v>%s</v></r>", "",time(NULL), h->vars["status"].c_str(), "" );
 
     CsList l(execlog, '\n');
     for ( i=0; i<l.size(); ++i )
@@ -668,11 +668,11 @@ void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
         if ( l[i] != "" )
         {
             CsList ele(l[i],'@');
-            fprintf(h->content,"<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v></r>", ele[1].c_str(),ele[2].c_str(),ele[3].c_str(),ele[0].c_str() );
+            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v></r>", ele[1].c_str(),ele[2].c_str(),ele[3].c_str(),ele[0].c_str() );
         }
     }
 
-    fprintf(h->content, "</body>");
+    DbHttpProvider::add_content(h,  "</body>");
 }
 
 void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
@@ -693,7 +693,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
         if ( getRoot(h) == "" )
         {
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
 
@@ -834,7 +834,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
 void DbHttpUtilsRepository::dblog(Database *db, HttpHeader *h)
 {
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     if ( h->vars["repositoryidInput.old"] != "" )
         dblog_update(db, h);
@@ -846,7 +846,7 @@ void DbHttpUtilsRepository::dblog(Database *db, HttpHeader *h)
     }
     else
     {
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
     }
 
 }
@@ -883,7 +883,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         if ( ( file = open ((path + DIRSEP + h->vars["filenameInput.old"]).c_str(), O_RDONLY | O_CLOEXEC )) < 0 )
 #endif
         {
-            fprintf(h->content, msg.get("Datei <%s> wurde nicht gefunden").c_str(), h->vars["filenameInput.old"].c_str());
+            DbHttpProvider::add_content(h,  msg.get("Datei <%s> wurde nicht gefunden").c_str(), h->vars["filenameInput.old"].c_str());
             h->status = 404;
             h->content_type = "text/plain";
             return;
@@ -994,10 +994,10 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
     int n = 0;
     DIR *d;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
     if ( getDir(h) == "" )
     {
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -1007,7 +1007,7 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
         std::string e = msg.getSystemerror(errno);
         msg.perror(E_DEL, "Fehler während des Löschen eines Ordners");
         msg.line("%s", e.c_str());
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -1018,7 +1018,7 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
     if (n == 4)
     {
         msg.perror(E_DEL, "Ordner nicht leer");
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -1048,12 +1048,12 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
     int result;
 
     if ( h->content_type == "text/xml")
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     if ( getDir(h) == "" )
     {
         if ( h->content_type == "text/xml")
-            fprintf(h->content,"<body>error</body>");
+            DbHttpProvider::add_content(h, "<body>error</body>");
         return;
     }
 
@@ -1070,7 +1070,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
         msg.perror(E_MKREPOSITORY,"Fehler während des Hinzufügen einer Datei");
         msg.line("%s", execlog.c_str());
         if ( h->content_type == "text/xml")
-            fprintf(h->content,"<body>error</body>");
+            DbHttpProvider::add_content(h, "<body>error</body>");
         return;
     }
 
@@ -1093,7 +1093,7 @@ void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
     dblog_update(db,h);
 
     if ( h->content_type == "text/xml")
-        fprintf(h->content,"<body>ok</body>");
+        DbHttpProvider::add_content(h, "<body>ok</body>");
 }
 
 void DbHttpUtilsRepository::mkfile ( Database *db, HttpHeader *h)
@@ -1115,11 +1115,11 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     DbTable *tab;
     DbTable::ValueMap where, vals;
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
 
     if ( getDir(h) == "" )
     {
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -1144,7 +1144,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     {
         msg.perror(E_MKREPOSITORY,"Fehler während des Löschens einer Datei");
         msg.line("%s", execlog.c_str());
-        fprintf(h->content, "<body>error</body>");
+        DbHttpProvider::add_content(h,  "<body>error</body>");
         return;
     }
 
@@ -1158,7 +1158,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
         {
             msg.pwarning(W_COMMIT,"Keine Änderungen gefunden");
             msg.line("%s", execlog.c_str());
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
     }
@@ -1170,7 +1170,7 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     tab->del(&where,1);
     db->release(tab);
 
-    fprintf(h->content, "<body>ok</body>");
+    DbHttpProvider::add_content(h,  "<body>ok</body>");
 }
 
 void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
@@ -1190,7 +1190,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
 
     if ( getDir(h) == "" || oldname == "" || newname == "" )
     {
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -1205,7 +1205,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
     {
         msg.perror(E_MKREPOSITORY,"Fehler während des Umbenenens einer Datei");
         msg.line("%s", execlog.c_str());
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
 
@@ -1219,7 +1219,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
         {
             msg.pwarning(W_COMMIT,"Keine Änderungen gefunden");
             msg.line("%s", execlog.c_str());
-            fprintf(h->content, "<body>error</body>");
+            DbHttpProvider::add_content(h,  "<body>error</body>");
             return;
         }
     }
@@ -1239,7 +1239,7 @@ void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
     (*h->vars.p_getVars())["filenameInput.old"] = ToString::substitute((path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
     dblog_update(db, h);
 
-    fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
 }
 
 void DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
@@ -1268,11 +1268,11 @@ void DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
         {
             msg.perror(E_COMMIT,"Fehler während des Akzeptierens der Änderungen");
             msg.line("%s", execlog.c_str());
-            fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+            DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
             return;
         }
 
-        fprintf(h->content, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
     }
 }
 
