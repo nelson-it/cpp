@@ -43,33 +43,33 @@ void XmlTextTex::mk_text(XmlParseNode *node, int num)
 
     emptytext = 0;
 
-    fprintf(fp, "{");
+    add_content("{");
 
     if ( size == "xxs" )
-        fprintf(fp, "\\tiny ");
+        add_content("\\tiny ");
     else if ( size == "xs" )
-        fprintf(fp, "\\footnotesize ");
+        add_content("\\footnotesize ");
     else if ( size == "s" )
-        fprintf(fp, "\\small ");
+        add_content("\\small ");
     else if ( size == "n" )
-        fprintf(fp, "\\normalsize ");
+        add_content("\\normalsize ");
     else if ( size == "l" )
-        fprintf(fp, "\\large ");
+        add_content("\\large ");
     else if ( size == "xl" )
-        fprintf(fp, "\\Large ");
+        add_content("\\Large ");
     else if ( size == "xxl" )
-        fprintf(fp, "\\LARGE ");
+        add_content("\\LARGE ");
 
     if ( node->getAttr("weight") == "bold" )
-        fprintf(fp, "\\bf ");
+        add_content("\\bf ");
 
     if ( node->getAttr("style") == "italic" )
-        fprintf(fp, "\\it ");
+        add_content("\\it ");
 
     if ( node->getData() == " " )
-        fprintf(fp, "\\ ");
+        add_content("\\ ");
     else
-        fprintf(fp, "%s", ToString::mktex(node->getData()).c_str());
+        add_content("%s", ToString::mktex(node->getData()).c_str());
 }
 
 void XmlTextTex::mk_text_end(XmlParseNode *node, int num)
@@ -77,20 +77,20 @@ void XmlTextTex::mk_text_end(XmlParseNode *node, int num)
     if ( node->getData() == "" )
         return;
 
-    fprintf(fp, "}");
+    add_content("}");
 }
 
 
 void XmlTextTex::mk_part(XmlParseNode *node, int num)
 {
-    fprintf(fp, "%s", partbegin.c_str());
+    add_content("%s", partbegin.c_str());
 
     if ( node->getAttr("align") == "left" )
-    	fprintf(fp, "%s", leftbegin.c_str());
+    	add_content("%s", leftbegin.c_str());
     if ( node->getAttr("align") == "center" )
-    	fprintf(fp, "%s", centerbegin.c_str());
+    	add_content("%s", centerbegin.c_str());
     if ( node->getAttr("align") == "right" )
-    	fprintf(fp, "%s", rightbegin.c_str());
+    	add_content("%s", rightbegin.c_str());
 
     emptytext = -1;
 }
@@ -98,19 +98,19 @@ void XmlTextTex::mk_part(XmlParseNode *node, int num)
 void XmlTextTex::mk_part_end(XmlParseNode *node, int num)
 {
 	   if ( node->getAttr("align") == "left" )
-	    	fprintf(fp, "%s", leftend.c_str());
+	    	add_content("%s", leftend.c_str());
 	   if ( node->getAttr("align") == "center" )
-	    	fprintf(fp, "%s", centerend.c_str());
+	    	add_content("%s", centerend.c_str());
 	   if ( node->getAttr("align") == "right" )
-	    	fprintf(fp, "%s", rightend.c_str());
+	    	add_content("%s", rightend.c_str());
 
        if ( emptytext == 1 )
        {
-           fprintf(fp, "}");
+           add_content("}");
            emptytext = -1;
        }
        else
-	    fprintf(fp, "%s", partend.c_str());
+	    add_content("%s", partend.c_str());
 }
 
 
@@ -123,16 +123,16 @@ void XmlTextTex::mk_itemize(XmlParseNode *node, int num)
     partend = "}\\par";
 
     if ( node->getAttr("relwidth") != "" )
-         fprintf(fp, "\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
-    fprintf(fp, "\\begin{itemize}");
+         add_content("\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
+    add_content("\\begin{itemize}");
 }
 
 void XmlTextTex::mk_itemize_end(XmlParseNode *node, int num)
 {
-    fprintf(fp, "\\end{itemize}%%\n");
+    add_content("\\end{itemize}%%\n");
 
     if ( node->getAttr("relwidth") != "" )
-        fprintf(fp, "}%%\n");
+        add_content("}%%\n");
 
     partbegin = node->getAttr("partbegin");
     partend = node->getAttr("partend");
@@ -148,16 +148,16 @@ void XmlTextTex::mk_enumerate(XmlParseNode *node, int num)
     partend = "}\\par";
 
     if ( node->getAttr("relwidth") != "" )
-         fprintf(fp, "\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
-    fprintf(fp, "\\begin{enumerate}");
+         add_content("\\parbox{0.%s\\textwidth}{",node->getAttr("relwidth").c_str());
+    add_content("\\begin{enumerate}");
 }
 
 void XmlTextTex::mk_enumerate_end(XmlParseNode *node, int num)
 {
-    fprintf(fp, "\\end{enumerate}%%\n");
+    add_content("\\end{enumerate}%%\n");
 
     if ( node->getAttr("relwidth") != "" )
-        fprintf(fp, "}%%\n");
+        add_content("}%%\n");
     partbegin = node->getAttr("partbegin");
     partend = node->getAttr("partend");
 
@@ -166,7 +166,7 @@ void XmlTextTex::mk_enumerate_end(XmlParseNode *node, int num)
 
 void XmlTextTex::mk_item(XmlParseNode *node, int num)
 {
-    fprintf(fp, "\\item");
+    add_content("\\item");
 }
 
 void XmlTextTex::mk_item_end(XmlParseNode *node, int num)
@@ -185,19 +185,19 @@ void XmlTextTex::mk_table(XmlParseNode *node, int num)
     if ( node->getAttr("padding") != "0" ) padding = "";
 
     if ( node->getAttr("align") == "center" )
-	    fprintf(fp, "{\\trivlist\\centering\\item");
+	    add_content("{\\trivlist\\centering\\item");
 
 	if ( node->getAttr("align")== "right" )
-	    fprintf(fp, "{\\trivlist\\raggedleft\\item");
+	    add_content("{\\trivlist\\raggedleft\\item");
 
-    fprintf(fp, "\\begin{tabular}{");
+    add_content("\\begin{tabular}{");
 
     for ( i=0; i<max_cols; ++i )
     {
     	char format[256];
     	char str[256];
     	if ( border )
-            fprintf(fp, "|");
+            add_content("|");
 
     	sprintf(str, "width%d", i);
     	if ( node->getAttr(str) != "" )
@@ -205,26 +205,26 @@ void XmlTextTex::mk_table(XmlParseNode *node, int num)
     	else
     		sprintf(format, "l");
 
-    	fprintf(fp, "%s%s%s", padding, format, padding);
+    	add_content("%s%s%s", padding, format, padding);
     }
 
     if ( border )
-        fprintf(fp, "|");
-    fprintf(fp, "}\n" );
+        add_content("|");
+    add_content("}\n" );
 
     if ( border )
-        fprintf(fp, "\\hline");
+        add_content("\\hline");
 
 }
 
 void XmlTextTex::mk_table_end(XmlParseNode *node, int num)
 {
-    fprintf(fp, "\\end{tabular}");
+    add_content("\\end{tabular}");
 
     if ( node->getAttr("align") == "center" || node->getAttr("align") == "left")
-	    fprintf(fp, "\\endtrivlist}\n");
+	    add_content("\\endtrivlist}\n");
     else
-        fprintf(fp, "\\par\n");
+        add_content("\\par\n");
 }
 
 void XmlTextTex::mk_tabrow(XmlParseNode *node, int num)
@@ -235,9 +235,9 @@ void XmlTextTex::mk_tabrow(XmlParseNode *node, int num)
 void XmlTextTex::mk_tabrow_end(XmlParseNode *node, int num)
 {
     if ( act_tab->getAttr("border") == "1" )
-        fprintf(fp, "\\\\\n\\hline\n");
+        add_content("\\\\\n\\hline\n");
     else
-        fprintf(fp, "\\\\\n");
+        add_content("\\\\\n");
 }
 
 
@@ -258,7 +258,7 @@ void XmlTextTex::mk_tabcol(XmlParseNode *node, int num)
     rightbegin = "\\hfill";
     rightend = "";
 
-    fprintf(fp, "%s", act_tab->getAttr("colsep").c_str());
+    add_content("%s", act_tab->getAttr("colsep").c_str());
     act_tab->setAttr("colsep", "&");
 
 }

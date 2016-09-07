@@ -26,27 +26,31 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 	int size;
 	char *c, *old_c;
 	std::string str;
-	FILE *f;
 	Argument a;
 
-	if ( file != NULL ) f = file;
-	else f = act_h->content;
+	if ( file != NULL )
+	{
+	    fseek( file, 0, SEEK_END);
+	    size = ftell(file);
+	    if ( size < 0 ) msg.perror(1, "Fehler bei ftell");
+	    fseek( file, 0, SEEK_SET);
 
-	fseek( f, 0, SEEK_END);
-	size = ftell(f);
-	if ( size < 0 ) msg.perror(1, "Fehler bei ftell");
-	fseek( f, 0, SEEK_SET);
+	    if ( size < 0 ) size = 0;
 
-	if ( size < 0 ) size = 0;
+	    buffer = new char[size + 1];
+	    buffer[size] = '\0';
+	    fread(buffer, size, 1, file);
+	}
+	else
+	{
+	    size = act_h->content_length;
+	    buffer = new char[size + 1];
+	    buffer[size] = '\0';
+	    memcpy(buffer, act_h->content, act_h->content_length);
+	    act_h->content[0] = '\0';
+	    act_h->content_length = 0;
+	}
 
-	buffer = new char[size + 1];
-	buffer[size] = '\0';
-	fread(buffer, size, 1, f);
-
-	fclose(act_h->content);
-	act_h->content = fopen(act_h->content_filename.c_str(), "wb+");
-
-	fseek ( act_h->content, 0, SEEK_SET);
 
 	old_c = buffer;
 

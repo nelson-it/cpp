@@ -17,7 +17,6 @@ class DbHttpReport : public DbHttpProvider
 		E_PDF_WHERE,
 		E_PDF_WVAL,
 		E_PDF_READ,
-		E_AUTO_TMPFILE,
 		E_AUTO_STATUS,
 		E_PDF_HEADER,
 		MAX_ERROR = 1000

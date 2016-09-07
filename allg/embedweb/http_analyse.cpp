@@ -586,7 +586,6 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 				http_headers[client] = act_h = new HttpHeader;
 				chttp = http_headers.find(client);
 
-				act_h->clear();
 				act_h->client = client;
 				analyse_header();
 				act_h->needed_postdata = act_h->post_length;

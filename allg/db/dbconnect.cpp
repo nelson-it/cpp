@@ -251,7 +251,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
                 std::map<std::string,std::string> classmap;
                 XmlTextHtml xml(&(format[1]), classmap);
                 xml.setXml((char*)value);
-                xml.mk_output(NULL);
+                xml.mk_output();
                 delete[] (char*)rbuff;
                 rbuff = new char[xml.getHtml().length() + 1];
                 strcpy((char*)rbuff, xml.getHtml().c_str());

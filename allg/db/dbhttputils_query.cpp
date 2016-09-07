@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <iconv.h>
 
 #include <map>
@@ -127,21 +128,16 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      char *inbuf, *outbuf, *ci, *co;
      size_t innum,outnum;
 
-     fseek( h->content, 0, SEEK_END);
-     innum = ftell(h->content);
-     fseek( h->content, 0, SEEK_SET);
+     innum = h->content_length;
 
 #ifndef MACOS
      if ( innum < 0 ) innum = 0;
 #endif
      ci = inbuf = new char[innum + 1];
      inbuf[innum] = '\0';
-     fread(inbuf, innum, 1, h->content);
+     memcpy(inbuf, h->content, innum);
 
-     fclose(h->content);
-     h->content = fopen(h->content_filename.c_str(), "wb+");
-
-     fseek (h->content, 0, SEEK_SET);
+     h->content_length = 0;
 
      co = outbuf = new char[innum * 4];
      outnum = ( innum * 4 - 1);

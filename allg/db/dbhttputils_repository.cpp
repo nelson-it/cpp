@@ -314,7 +314,7 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
 
     (*h->vars.p_getVars()).erase("rootInput.old");
     (*h->vars.p_getVars()).erase("nameInput.old");
-    rewind(h->content);
+    DbHttpProvider::del_content(h);
     table.modify_xml(db,h);
 }
 
@@ -381,7 +381,7 @@ void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
     (*h->vars.p_getVars())["table"] = "fileinterests";
     table.delete_xml(db,h);
 
-    rewind(h->content);
+    DbHttpProvider::del_content(h);
     (*h->vars.p_getVars())["table"] = "repository";
     table.delete_xml(db,h);
 
@@ -841,7 +841,7 @@ void DbHttpUtilsRepository::dblog(Database *db, HttpHeader *h)
 
     if ( h->error_found == 0 )
     {
-        rewind(h->content);
+        DbHttpProvider::del_content(h);
         query.data_xml(db, h);
     }
     else
@@ -888,6 +888,12 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
             h->content_type = "text/plain";
             return;
         }
+        else
+        {
+            while ( ( rlen = ::read(file, buffer, sizeof(buffer))) > 0 )
+                DbHttpProvider::add_contentb(h, buffer, rlen );
+            close(file);
+        }
     }
     else
     {
@@ -896,21 +902,20 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         cmd.add("show");
         cmd.add(h->vars["hash"] + ":" + h->vars["filenameInput.old"]);
 
-        fclose(h->content);
-        p.start(cmd, h->content_filename.c_str(), getRoot(h).c_str());
+        h->content[0] = '\0';
+        h->content_length = 0;
+        p.start(cmd, "pipe", getRoot(h).c_str());
+        while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
+        {
+            if ( rlen > 0 )
+                DbHttpProvider::add_contentb(h, buffer, rlen );
+            else
+                if ( rlen < 0 && errno != EAGAIN ) break;
+        }
+
         p.wait();
-        h->content = fopen(h->content_filename.c_str(), "rb+");
-        fseek(h->content, 0, SEEK_END);
         if ( p.getStatus() != 0 )
             h->content_type = "text/plain";
-    }
-
-
-    if ( h->vars["hash"] == "" )
-    {
-        while ( ( rlen = ::read(file, buffer, sizeof(buffer))) > 0 )
-            DbHttpProvider::add_contentb(h, buffer, rlen );
-        close(file);
     }
 }
 
@@ -971,7 +976,7 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
     HttpFilesystem::mkdir(h);
     if ( h->error_found == 0 )
     {
-        rewind(h->content);
+        DbHttpProvider::del_content(h);
         if ( h->vars["filenameInput.old"] == "" )
             (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
         else
@@ -1027,12 +1032,12 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
 
     (*h->vars.p_getVars())["dirInput.old"] = h->vars["dirInput.old"] + DIRSEP + h->vars["filenameInput.old"];
     (*h->vars.p_getVars())["filenameInput.old"] = ".gitignore";
-    rewind(h->content);
+    DbHttpProvider::del_content(h);
 
     rmfile(db, h);
     if ( h->error_found )
     {
-        rewind(h->content);
+        DbHttpProvider::del_content(h);
         h->error_found = 0;
         h->error_messages.clear();
 

@@ -81,8 +81,7 @@ void XmlTextHtml::mk_end()
 {
 	if (typ == O_XML)
 		html = ToString::mkxml(html);
-	if ( fp != NULL )
-        fprintf(fp, "%s", html.c_str());
+    add_content("%s", html.c_str());
 }
 
 void XmlTextHtml::mk_text(XmlParseNode *node, int num)
