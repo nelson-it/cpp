@@ -14,6 +14,7 @@
 
 #include <utils/process.h>
 #include <utils/tostring.h>
+#include <utils/tmpfile.h>
 #include <crypt/base64.h>
 
 #define MKREPORT "mkreport"
@@ -155,6 +156,8 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
     int result;
     CsList cmd;
+    int rlen;
+    char buffer[1024];
 
     h->content_type = "text/plain";
 
@@ -194,20 +197,21 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     cmd.add(h->vars.getFile("data").c_str());
 #endif
 
-    fclose(h->content);
-
     Process p(this->http->getServersocket());
-    p.start( cmd, h->content_filename.c_str(), NULL, NULL, NULL, 1);
+    p.start( cmd, "pipe", NULL, NULL, NULL, 1);
+    while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
+    {
+        if ( rlen > 0 )
+            DbHttpProvider::add_contentb(h, buffer, rlen );
+        else
+            if ( rlen < 0 && errno != EAGAIN ) break;
+    }
     result = p.wait();
 
-    if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
-    {
-        fseek(h->content, 0, SEEK_END);
-        if ( result == 0 )
-            add_content(h, "ok");
-        else
-            add_content(h,  "notok");
-    }
+    if ( result == 0 )
+        add_content(h, "ok");
+    else
+        add_content(h,  "notok");
 }
 
 void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
@@ -229,10 +233,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     unsigned int i,j;
 
     unsigned int pdfcount;
-    char str[10240];
-    char* dir;
-
-    std::string content_filename;
+    char resultfile[1024];
 
     h->status = 200;
 
@@ -285,33 +286,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         return;
     }
 
-    *str = '\0';
-    if ( getenv ("TMPDIR") != NULL)
-    {
-        strncpy(str, getenv("TMPDIR"), sizeof(str) -1 );
-        strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
-    }
-    else if ( getenv ("TMP") != NULL)
-    {
-        strncpy(str, getenv("TMP"), sizeof(str) -1 );
-        strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
-    }
-    else
-    {
-        strncpy(str, "/tmp", sizeof(str) -1 );
-        strncat(str, DIRSEP, sizeof(str) - strlen(str) - 1);
-    }
-
-    strncat(str, "HttpReportAutoXXXXXX", sizeof(str) - strlen(str) - 1);
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    mktemp(str);
-    mkdir(str);
-#else
-    mkdtemp(str);
-#endif
-
-    dir = &str[strlen(str)];
+    TmpDir tmpdir("HttpAutoreportXXXXXX");
 
     values["status"] = time(NULL);
     tab->modify(&values, &where);
@@ -330,7 +305,6 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     db->p_getConnect()->end();
 
     db->p_getConnect()->start();
-    content_filename = h->content_filename;
 
     if (  r.size() == 0 && h->vars["rowwarning"] != "false" )
         msg.pwarning(W_NOROWS, "Der Autoreport <%s> hat keine Zeilen", ( h->vars["schema"] + "." + h->vars["autoreport"]).c_str());
@@ -348,12 +322,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         CsList list;
         CsList cols(repwcol);
 
-        sprintf(dir, "%sreport%d", DIRSEP, pdfcount++);
-
-        fclose(h->content);
-        h->content_filename = str;
-        if ( ( h->content = fopen(h->content_filename.c_str(), "wb+")) == NULL )
-            msg.perror(E_AUTO_TMPFILE,"Kann Tempfile <%s> nicht öffnen", h->content_filename.c_str());
+        sprintf(resultfile, "%sreport%d", DIRSEP, pdfcount++);
 
         if ( h->error_messages.size() == 0 )
             this->start_function(db, query, &r[i], startschema, startfunction, cols);
@@ -368,7 +337,11 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
             (*h->vars.p_getVars())["language"] = "de";
 
         if ( h->error_messages.size() == 0 )
+        {
+            del_content(h);
             index(db,h,report.c_str());
+            save_content(h, (std::string(tmpdir.get_name()) + resultfile).c_str());
+        }
 
         if ( h->error_messages.size() == 0 )
             this->start_function(db, query, &r[i], readyschema, readyfunction, cols);
@@ -385,43 +358,36 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     db->p_getConnect()->end();
     delete db;
 
-    if ( h->content != NULL ) fclose(h->content);
-    h->content_filename = content_filename;
-
     if ( h->error_messages.size() == 0 && r.size() > 0  )
     {
-        *dir = '\0';
+        TmpFile resultfile("HttpAutoRepLogXXXXXX");
+        TmpFile logfile("HttpAutoRepLogXXXXXX");
         int status;
         CsList cmd;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         cmd.add(std::string("bash -c 'export PATH=`pwd`:$PATH; ") + MKPDF);
-        cmd.add(ToString::substitute(ToString::substitute(h->content_filename.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+        cmd.add(ToString::substitute(ToString::substitute(resultfile.get_name(), "\\", "/"), "C:", "/cygdrive/c"));
         cmd.add(ToString::substitute(ToString::substitute(str, "\\", "/"), "C:", "/cygdrive/c"));
 #else
         cmd.add(MKPDF);
-        cmd.add(h->content_filename);
-        cmd.add(str);
+        cmd.add(resultfile.get_name());
+        cmd.add(tmpdir.get_name());
 #endif
 
         Process p(this->http->getServersocket());
         p.start(cmd, NULL, NULL, NULL, NULL, 1);
         if ( ( status = p.wait()) != 0 )
             msg.perror(E_AUTO_STATUS, "Status des Kindprozesses ist <%d>", status);
+
+        contentf(h, resultfile.get_name());
     }
 
-    for ( i=0; i<pdfcount; i++)
-    {
-        sprintf(dir, "%sreport%d", DIRSEP, i);
-        unlink(str);
-    }
-
-    *dir = '\0';
-    rmdir(str);
-
-    h->content = fopen(h->content_filename.c_str(), "rb+");
-    fseek(h->content, 0, SEEK_END);
-
+   for ( i=0; i<pdfcount; i++)
+   {
+       sprintf(resultfile, "%sreport%d", DIRSEP, i);
+       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
+   }
 
 }
 
@@ -536,56 +502,23 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     	}
     }
 
+     TmpFile resultfile("HttpReportXXXXXX", 1);
+     TmpFile logfile("HttpRepLogXXXXXX");
+
     report.userprefs = this->http->getUserprefs();
-    if ( report.mk_report(db,str,0,h->content, h->vars["language"], h->vars["schema"], h->vars["query"], &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
+    if ( report.mk_report(db,str,0,resultfile.get_fp(), h->vars["language"], h->vars["schema"], h->vars["query"], &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
     {
         msg.pwarning(W_NOROWS, "Der Report <%s> hat keine Zeilen", str);
     }
 
     if ( h->error_messages.empty() )
     {
-    	char str[512];
-    	*str = '\0';
-    	str[sizeof(str) -1] = '\0';
-        char filename[512];
+        FILE *file;
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    	*filename = '\0';
-    	if ( getenv ("TEMP") != NULL)
-    	{
-    		strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
-    		strncat(filename, "\\HttpReportXXXXXX", sizeof(filename) - strlen(str) - 1);
-    	}
-    	_mktemp_s(filename, strlen(filename) + 1);
-    	filename[sizeof(filename) - 1] = '\0';
-#else
-    	if ( getenv ("TMPDIR") != NULL)
-    	{
-    		strncpy(filename, getenv("TMPDIR"), sizeof(str) -1 );
-    		strncat(filename, "/", sizeof(str) - strlen(str) - 1);
-    	}
-    	else if ( getenv ("TMP") != NULL)
-    	{
-    		strncpy(filename, getenv("TMP"), sizeof(str) -1 );
-    		strncat(filename, "/", sizeof(str) - strlen(str) - 1);
-    	}
-    	else
-    	{
-    	    strcpy(filename, "/tmp/");
-    	}
-    	strncat(filename, "HttpReportXXXXXX", sizeof(str) - strlen(str) - 1);
-
-    	int fd = mkstemp(filename);
-    	if ( fd != -1 )
-    	{
-    	    close(fd);
-    	    unlink(filename);
-    	}
-#endif
     	HttpTranslate trans;
-        trans.make_answer(h, NULL);
-
-        fclose(h->content);
+        trans.make_answer(h, resultfile.get_fp());
+        resultfile.close();
+        save_content(h, resultfile.get_name());
 
         CsList cmd;
         cmd.add(MKREPORT);
@@ -603,7 +536,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        cmd.add(ToString::substitute(ToString::substitute(h->content_filename.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+        cmd.add(ToString::substitute(ToString::substitute(resultfile.get_name(), "\\", "/"), "C:", "/cygdrive/c"));
         std::string s = "bash -c 'export PATH=`pwd`:$PATH; ";
         unsigned int j;
         for ( j = 0; j<cmd.size(); j++)
@@ -612,47 +545,30 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         cmd.clear();
         cmd.add(s);
 #else
-        cmd.add(h->content_filename);
+        cmd.add(resultfile.get_name());
 #endif
         Process p(this->http->getServersocket());
-        p.start(cmd, filename, NULL, NULL, NULL, 1);
+        p.start(cmd, logfile.get_name(), NULL, NULL, NULL, 1);
         p.wait();
 
-        if ( ( h->content = fopen(h->content_filename.c_str(), "rb+")) != NULL )
+        if ( ( file = fopen(resultfile.get_name(), "rb+")) != NULL )
         {
             char str[16];
-            if ( fread(str, 4, 1, h->content) != 1 )
+            if ( fread(str, 4, 1, file) != 1 )
         	{
-        		msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
+                h->content_type = "text/plain";
+        		msg.perror(E_PDF_HEADER, "Datei ist keine PDF Datei");
         	}
         	str[4] = '\0';
         	if ( strncmp((char*)str, "%PDF", 4) != 0 )
         	{
         		msg.perror(E_PDF_HEADER, "Datei ist keine PDF Datei");
-                FILE *fp;
-                char buffer[1024];
 
-                fclose(h->content);
-                h->content = fopen(h->content_filename.c_str(), "wb+");
                 h->content_type = "text/plain";
-
-                if ( ( fp = fopen(filename, "r")) != NULL )
-                {
-                    while ( fgets(buffer, sizeof(buffer), fp) != NULL )
-                    {
-                        while ( buffer[strlen(buffer) - 1] == '\n' ||
-                                buffer[strlen(buffer) - 1] == '\r' )
-                            buffer[strlen(buffer) - 1] = '\0';
-
-                        if ( *buffer != '\0' )
-                            msg.line("%s", buffer);
-                    }
-                }
-                if ( fp != NULL ) fclose(fp);
+                contentf(h, logfile.get_name());
         	}
         	else
         	{
-        	    fseek(h->content, 0, SEEK_END);
         	    if ( ( pdfschema != "" && pdftable != "" ) || h->vars["base64"] != "" )
         	    {
         	        DbTable::ValueMap where;
@@ -660,16 +576,17 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         	        CsList cols("pdf");
         	        int len,clen;
 
-        	        len = ftell(h->content);
+        	        fseek(file, 0, SEEK_END);
+        	        len = ftell(file);
+        	        fseek(file, 0, SEEK_SET);
+
         	        clen = (((len + 3 ) / 3 * 4 + 76) / 76) * 77 + 77;
         	        unsigned char *str = (unsigned char*)new char[len + 1];
         	        unsigned char *crypt = (unsigned char*)new char[ clen + 2];
-        	        rewind(h->content);
 
-        	        if ( fread(str, len, 1, h->content) != 1 )
+        	        if ( fread(str, len, 1, file) != 1 )
         	        {
         	            msg.perror(E_PDF_READ, "konnte Pdfdaten nicht lesen");
-        	            fseek(h->content, 0, SEEK_END);
         	        }
         	        else if ( strncmp((char*)str, "%PDF", 4) == 0 )
         	        {
@@ -683,7 +600,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         	                DbTable::ValueMap where = mk_pdfwhere(h, &pdfwcol, &pdfwval);
         	                tab->modify(&values, &where);
         	                db->release(tab);
-        	                fseek(h->content, 0, SEEK_END);
+        	                contentf(h, file);
         	            }
         	            else if ( h->vars["base64schema"] != "" && h->vars["base64table"] != "" )
         	            {
@@ -695,59 +612,41 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         	                vals[h->vars["base64data"]]= std::string((char *)crypt);
 
         	                h->content_type = "text/plain";
-        	                rewind(h->content);
+        	                del_content(h);
 
         	                if ( tab->modify(&vals, &where) == 0 )
-        	                {
         	                    add_content(h,  "ok");
-        	                }
         	                else
-        	                {
         	                    add_content(h,  "error");
-        	                }
         	                db->release(tab);
         	            }
         	            else
         	            {
-        	                rewind(h->content);
+        	                del_content(h);
         	                add_content(h, "%s", crypt);
         	            }
         	        }
         	        delete str;
         	        delete crypt;
         	    }
+        	    else
+        	    {
+        	    resultfile.close();
+        	    contentf(h, resultfile.get_name());
+        	    }
             }
         }
         else
         {
-            FILE *fp;
-            char buffer[1024];
-
-            h->content = fopen(h->content_filename.c_str(), "wb+");
-
             h->content_type = "text/plain";
-            msg.perror(E_PDF_OPEN, "Konnte Pdf-Datei nicht öffnen");
-
-            if ( ( fp = fopen(filename, "r")) != NULL )
-            {
-                while ( fgets(buffer, sizeof(buffer), fp) != NULL )
-                {
-                    while ( buffer[strlen(buffer) - 1] == '\n' ||
-                            buffer[strlen(buffer) - 1] == '\r' )
-                        buffer[strlen(buffer) - 1] = '\0';
-
-                    if ( *buffer != '\0' )
-                        msg.line("%s", buffer);
-                }
-            }
-            if ( fp != NULL ) fclose(fp);
+            msg.perror(E_PDF_READ, "konnte PDF Datei nicht öffnen");
+            contentf(h, logfile.get_name());
         }
-        unlink(filename);
     }
     else
     {
         h->content_type = "text/plain";
-        rewind(h->content);
+        del_content(h);
     }
 
     if ( h->vars["sqlend"] == "1" )

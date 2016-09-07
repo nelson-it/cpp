@@ -83,7 +83,7 @@ void HttpSysexec::execute ( HttpHeader *h)
     if ( command.find_first_not_of("1234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_/") != std::string::npos )
     {
         h->status = 404;
-        rewind(h->content);
+        del_content(h);
         msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", command.c_str());
         return;
     }

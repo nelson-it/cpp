@@ -134,7 +134,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     {
         h->content_type = "text/plain";
         h->status = 404;
-        rewind(h->content);
+        del_content(h);
         add_content(h,  "error");
         msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
         return;
@@ -209,7 +209,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
             {
                 h->content_type = "text/plain";
                 h->status = 404;
-                rewind(h->content);
+                del_content(h);
                 add_content(h,  "error");
                 msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
                 return;
@@ -255,7 +255,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         buffer[sizeof(buffer) -1] = '\0';
         h->extra_header.push_back(buffer);
 
-        rewind(h->content);
+        del_content(h);
         add_content(h,  "error");
         msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
         return;

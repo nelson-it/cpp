@@ -339,8 +339,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             XmlTextTex xml;
             xml.setXml(mi->second);
             fprintf(out, "\\gdef\\%s{", mi->first.c_str());
-            xml.mk_output(out);
-            fprintf(out, "}%%\n");
+            xml.mk_output();
+            fprintf(out, "%s}%%\n", xml.get_string());
         }
 
     str = getFile(rtemplate + "/header.tex");
@@ -516,8 +516,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
                     XmlTextTex xml;
                     xml.setXml((char *) ((*iprm)[i]));
                     fprintf(out, "\\gdef\\%s{", ToString::mktexmacro(ids[i]).c_str());
-                    xml.mk_output(out);
-                    fprintf(out, "}%%\n");
+                    xml.mk_output();
+                    fprintf(out, "%s}%%\n", xml.get_string());
                 }
             }
             else

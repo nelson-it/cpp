@@ -809,9 +809,8 @@ void HttpFilesystem::download(HttpHeader *h)
         h->extra_header.push_back(buffer);
 
         h->status = 200;
-        fclose(h->content);
-        h->content = f;
-        fseek(h->content, 0, SEEK_END);
+        contentf(h, f);
+        fclose(f);
     }
     else
     {
@@ -848,10 +847,9 @@ void HttpFilesystem::mkicon(HttpHeader *h)
             if ( c != NULL )
             {
                 h->status = 200;
-                fclose(h->content);
-                h->content = c;
+                contentf(h, c);
+                fclose(c);
                 h->translate = 1;
-                fseek(c, 0, SEEK_END);
                 return;
             }
         }

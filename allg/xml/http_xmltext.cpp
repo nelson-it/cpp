@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -72,7 +73,8 @@ void HttpXmlText::html(HttpHeader *h)
 	//    str = "<part><text size=\"n\">" + str + "</text></part>";
 
 	xml.setXml(str);
-	xml.mk_output(h->content);
+	xml.mk_output();
+	add_content(h, xml.get_string(), strlen(xml.get_string()));
 }
 
 void HttpXmlText::htmledit(HttpHeader *h)
@@ -82,6 +84,7 @@ void HttpXmlText::htmledit(HttpHeader *h)
 	h->content_type = "text/plain";
 	h->status = 200;
 	xml.setXml(h->vars["xmltext"]);
-	xml.mk_output(h->content);
+	xml.mk_output();
+	add_content(h, xml.get_string(), strlen(xml.get_string()));
 }
 

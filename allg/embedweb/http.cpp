@@ -350,8 +350,6 @@ void Http::make_answer()
         if (act_h->filename.find(".php") == (act_h->filename.size() - 4 ))
         {
             act_h->age = 0;
-            fclose(file);
-            file = 0;
             PhpExec(str, act_h);
         }
 
@@ -362,10 +360,7 @@ void Http::make_answer()
 		}
 		else if (file != NULL)
 		{
-			fclose(act_h->content);
-			act_h->content = file;
-			fseek(file, 0, SEEK_END);
-			file = NULL;
+		    contentf(act_h, file);
 		}
 
 		if (file != NULL)
@@ -379,29 +374,6 @@ void Http::write_header()
     int status;
     unsigned int count;
 	char buffer[10240];
-
-	if (act_h->content_length != 0)
-		msg.pwarning(W_CONTENTLENGTH, "Content-Length ist schon gesetzt %s %s",
-				act_h->dirname.c_str(), act_h->filename.c_str());
-
-	if (act_h->content != NULL)
-	{
-		act_h->content_length = ftell(act_h->content);
-		if ( act_h->content_length < 0 )
-		{
-		    msg.perror(E_CONTENTLENGTH, "Kann Content-Length nicht ermitteln - versuche File neu zu öffenen");
-		    fclose(act_h->content);
-		    act_h->content = fopen(act_h->content_filename.c_str(), "rb+");
-		    fseek(act_h->content, 0, SEEK_END);
-   		    act_h->content_length = ftell(act_h->content);
-		    if ( act_h->content_length < 0 ) act_h->content_length = 0;
-		}
-		fseek(act_h->content, 0, SEEK_SET);
-	}
-	else
-	{
-		act_h->content_length = 0;
-	}
 
 	if ( act_h->proxy )
 	    return;
@@ -608,71 +580,25 @@ void Http::send()
 	write_trailer();
 
 	s->flush(act_h->client);
-
-	if (act_h->content != NULL)
-	{
-		fclose(act_h->content);
-		act_h->content = NULL;
-	}
-
 }
 
 void Http::get(HttpHeader *h)
 {
-	char filename[512];
 	struct timeval t1, t2;
 	long diff;
 
 	gettimeofday(&t1, NULL);
 
 	act_h = h;
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-	*filename = '\0';
-	if ( getenv ("TEMP") != NULL)
-	{
-		strncpy(filename, getenv("TEMP"), sizeof(filename) -1 );
-		strncat(filename, "\\HttpXXXXXX", sizeof(filename) - strlen(filename) - 1);
-	}
-	_mktemp_s(filename, strlen(filename) + 1);
-	filename[sizeof(filename) - 1] = '\0';
-
-	act_h->content = fopen(filename, "wb+");
-#else
-	int fd;
-	strcpy(filename, "/tmp/HttpXXXXXX");
-	fd = mkstemp(filename);
-	if ( fd >= 0 )
-	{
-	    if ( ( act_h->content = fdopen(fd, "wb+") ) == NULL )
-	        close(fd);
-	}
-#endif
+    h->content[0] = '\0';
+    h->content_length = 0;
 
 	msg.add_msgclient(this);
 	setThreadonly();
-	msg.pdebug(D_HEADER, "tempfile: %s", filename);
-
-	if ( act_h->content == NULL)
-	{
-		msg.perror(E_TEMPFILE, "Kann temporäre Datei <%s> nicht öffnen", filename);
-
-		s->close(act_h->client);
-		return;
-	}
-	act_h->content_filename = filename;
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-	if ( ! SetHandleInformation((HANDLE)_get_osfhandle(fileno(h->content)), HANDLE_FLAG_INHERIT, 0) )
-		msg.pwarning(E_TEMPFILE, "SetHandleInformation schlug fehl");
-#endif
 
 	send();
 
 	msg.del_msgclient(this);
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-	DeleteFile(filename);
-#else
-	unlink(filename);
-#endif
 	act_h = NULL;
 
 	gettimeofday(&t2, NULL);

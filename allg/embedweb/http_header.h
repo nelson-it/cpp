@@ -32,6 +32,8 @@ public:
         OS_ANDORID
     };
 
+    static const int CONTENT_SIZE = 10240;
+
     typedef std::map<std::string, std::string> SetCookies;
 
     std::vector<std::string> serverpath;
@@ -84,11 +86,11 @@ public:
 
     std::string location;
     std::string realm;
-    std::string content_filename;
     std::string content_type;
     std::string charset;
 
-    FILE       *content;
+    char       *content;
+    long        content_maxsize;
     long        content_length;
 
     SetCookies set_cookies;
@@ -102,21 +104,25 @@ public:
     int warning_found;
     int message_found;
 
-public:
     HttpHeader()
     {
-        content = NULL;
+        content = new char[CONTENT_SIZE];
+        content_maxsize = CONTENT_SIZE;
         post_data = NULL;
         user_data = NULL;
         clear();
     }
+
     ~HttpHeader()
     {
-        if ( content != NULL )   fclose(content);
+        if ( content != NULL )   delete[] content;
         if ( post_data != NULL ) delete[] post_data;
         if ( user_data != NULL ) delete (char *)user_data;
     }
 
+    int client;
+
+private:
     void clear()
     {
         client = -1;
@@ -144,8 +150,9 @@ public:
         user   = "";
         passwd = "";
 
-        if ( content   != NULL ) fclose(content);
-        if ( post_data != NULL ) delete post_data;
+        *content = '\0';
+        content_length = 0;
+        if ( post_data != NULL ) delete[] post_data;
         if ( user_data != NULL ) delete (char*)user_data;
 
         post_data = NULL;
@@ -161,11 +168,8 @@ public:
 
         realm = "";
         location = "";
-        content_filename = "";
         content_type   = "text/html";
         charset        = "UTF-8";
-        content        = NULL;
-        content_length = 0;
 
         cookies.clear();
         set_cookies.clear();
@@ -181,7 +185,6 @@ public:
 
     }
 
-    int client;
 
 };
 

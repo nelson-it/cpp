@@ -4,6 +4,9 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
+#include <strings.h>
 
 #include "xmltext.h"
 
@@ -191,7 +194,30 @@ void XmlText::write(XmlParseNode *node, int num)
 	}
 }
 
-void XmlText::mk_output(FILE *fp, OUTPUT_TYP typ )
+void XmlText::add_content( const char *format, ... )
+{
+    int n;
+    int oldsize = strlen(xmlstring);
+    va_list ap;
+    va_start(ap, format);
+
+    n = vsnprintf(&xmlstring[strlen(xmlstring)], xmllength, format, ap);
+    if ( ( oldsize + n + 1 ) >= xmllength )
+    {
+        while ( ( oldsize + n + 1 ) >= xmllength ) xmllength += XMLSIZE;
+        char *str = new char[xmllength];
+        memcpy(str, xmlstring, oldsize);
+        str[oldsize] = '\0';
+        delete[] xmlstring;
+        xmlstring = str;
+
+        va_start(ap, format);
+        vsnprintf(&xmlstring[strlen(xmlstring)], xmllength, format, ap);
+    }
+
+}
+
+void XmlText::mk_output(OUTPUT_TYP typ )
 {
 
 	unsigned int i;
@@ -203,7 +229,6 @@ void XmlText::mk_output(FILE *fp, OUTPUT_TYP typ )
 		return;
 	}
 
-	this->fp = fp;
 	this->typ = typ;
 
 	act_rowcount = 0;

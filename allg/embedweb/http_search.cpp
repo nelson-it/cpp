@@ -75,10 +75,9 @@ int HttpSearchPath::request(HttpHeader *h)
 		        if ( c != NULL )
 		        {
 		            h->status = 200;
-		            fclose(h->content);
-		            h->content = c;
+		            contentf(h, c);
+		            fclose(c);
 		            h->translate = 1;
-		            fseek(c, 0, SEEK_END);
 		            return 1;
 		        }
 		        else

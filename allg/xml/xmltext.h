@@ -44,7 +44,10 @@ protected:
 	};
 	int act_node_typ;
 
-	FILE *fp;
+	char *xmlstring;
+	int xmllength;
+	static const int XMLSIZE = 10240;
+
 	OUTPUT_TYP typ;
 
 
@@ -78,11 +81,14 @@ protected:
 	virtual void mk_tabcol(XmlParseNode *node, int num) = 0;
 	virtual void mk_tabcol_end(XmlParseNode *node, int num) {};
 
-public:
-	XmlText() {act_tab = NULL; };
-	virtual ~XmlText(){};
+	virtual void add_content( const char* format, ...);
 
-	void mk_output(FILE *fp, OUTPUT_TYP typ = O_PLAIN );
+public:
+	XmlText() {act_tab = NULL; xmlstring = new char[XMLSIZE]; *xmlstring = '\0'; xmllength = XMLSIZE; };
+	virtual ~XmlText(){ delete [] xmlstring; };
+
+	void mk_output(OUTPUT_TYP typ = O_PLAIN );
+	const char *get_string() { return xmlstring; }
 };
 
 #endif /* xml_text_mne */
