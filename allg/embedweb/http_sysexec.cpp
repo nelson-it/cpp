@@ -122,7 +122,7 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     Message log("HttpSysexec Kommando", 1);
     int havelog = 0;
-    logtext = command + "\n";
+    logtext = "";
     while( ( anzahl = p.read(buffer, sizeof(buffer))) != 0 )
     {
         if ( anzahl > 0 )
@@ -134,18 +134,10 @@ void HttpSysexec::execute ( HttpHeader *h)
         else if ( anzahl < 0 && errno != EAGAIN ) break;
     }
 
-    if ( p.getStatus() != 0 || havelog )
+    if ( p.getStatus() != 0 )
     {
-        if ( p.getStatus() == 0 )
-        {
-            msg.pwarning(E_ERRORFOUND, logtext.c_str());
-        }
-        else
-        {
-            msg.perror(E_ERRORFOUND, "Fehler gefunden");
-            msg.perror(E_ERRORFOUND, "%s", logtext.c_str());
-        }
-
+        msg.perror(E_ERRORFOUND, "Fehler gefunden");
+        msg.iline("%s", logtext.c_str());
         if ( h->content_type == "text/xml" )
             add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else
@@ -153,6 +145,9 @@ void HttpSysexec::execute ( HttpHeader *h)
     }
     else
     {
+        if ( havelog )
+            msg.pwarning(E_ERRORFOUND, logtext.c_str());
+
         if ( h->content_type == "text/xml" )
             add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
         else

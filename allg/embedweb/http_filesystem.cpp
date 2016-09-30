@@ -544,7 +544,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     mode_t mask;
     mask = umask(0);
     umask(mask);
-    chmod((dir + DIRSEP + name).c_str(), (02777 & ~ mask));
+    chmod((dir + DIRSEP + name).c_str(), (0777 & ~ mask) );
 
 #endif
     add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());

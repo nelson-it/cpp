@@ -183,7 +183,7 @@ DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsList *sort,
                         {
                             str = " ( " + sel_field[j][index] + " ) " + op + " " + (*wval)[i];
                         }
-                        else if ( vt == DbConnect::CHAR  && sel_null[index] && (*wval)[i] == "" )
+                        else if ( vt == DbConnect::CHAR  && sel_null[index] && (*wval)[i] == "" && ! ornull )
                         {
                             if (op == "=") str =  " ( " + sel_field[j][index] + " ) IS NULL";
                             else str =  " ( " + sel_field[j][index] + " ) IS NOT NULL";
