@@ -132,6 +132,7 @@ public:
 	void ptext(const char *buffer, int nolog = 0);
 	void wdebug(int debuglevel, const char *str, int length);
 
+	void iline(const char *str, ...);
 	void line(const char *str, ...);
 
 	int getErrorfound();

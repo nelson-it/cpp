@@ -16,98 +16,98 @@ class DbTable
     enum ERROR_TYPES
     {
         OK = 0,
-	NO_VALUES
+        NO_VALUES
     };
 
 public:
     class Value
     {
     public:
-         std::string value;
-	 char *buffer;
-	 int size;
+        std::string value;
+        char *buffer;
+        int size;
 
-	 Value();
-	 Value( const Value &in);
-	 Value &operator=(const Value &in);
+        Value();
+        Value( const Value &in);
+        Value &operator=(const Value &in);
 
-	 Value(const char *v);
-	 Value(char *v);
-	 Value(char *v, int size);  // Large Objects
-	 Value(std::string v);
-	 Value(int v);
-	 Value(long v);
-	 Value(double v);
+        Value(const char *v);
+        Value(char *v);
+        Value(char *v, int size);  // Large Objects
+        Value(std::string v);
+        Value(int v);
+        Value(long v);
+        Value(double v);
 
-	 ~Value();
+        ~Value();
     };
 
     class Column
     {
-	friend class DbTable;
+        friend class DbTable;
 
         int have_value;
 
     public:
-	enum COLTYPE_MASK
-	{
-	   DBDEF  = 1,
-	   DBNULL = 2
-	};
+        enum COLTYPE_MASK
+        {
+            DBDEF  = 1,
+            DBNULL = 2
+        };
 
-	enum NULL_TYPE
-	{
-	    NOTNULL_NOTDEF = 0,
-	    NOTNULL_DEF,
-	    NULL_NOTDEF,
-	    NULL_DEF
-	};
+        enum NULL_TYPE
+        {
+            NOTNULL_NOTDEF = 0,
+            NOTNULL_DEF,
+            NULL_NOTDEF,
+            NULL_DEF
+        };
 
-	enum DIFF_TYPE
-	{
-	    D_OK     = 0,
-	    D_TYP    = 1,
-	    D_SIZE   = 2,
-	    D_NULL   = 4,
-	    D_VALUE  = 8
-	};
+        enum DIFF_TYPE
+        {
+            D_OK     = 0,
+            D_TYP    = 1,
+            D_SIZE   = 2,
+            D_NULL   = 4,
+            D_VALUE  = 8
+        };
 
-	std::string name;
+        std::string name;
 
-    int int_typ;
-    int typ;
-	int size;
-	int can_null;
+        int int_typ;
+        int typ;
+        int size;
+        int can_null;
 
-	std::string value;
+        std::string value;
 
-	std::map<std::string,std::string> text;
+        std::map<std::string,std::string> text;
 
-	std::string regexp;
-    std::map<std::string,std::string> regexphelp;
-    std::string regexpmod;
+        std::string regexp;
+        std::map<std::string,std::string> regexphelp;
+        std::string regexpmod;
 
-    long dpytyp;
-    int num;
+        long dpytyp;
+        int num;
 
         Column();
         Column(std::string name);
         Column(std::string name, int typ, std::string value = "",
-	       int can_null = Column::NOTNULL_DEF, std::string reg_exp = "",
-	       long dpytyp = -1);
+                int can_null = Column::NOTNULL_DEF, std::string reg_exp = "",
+                long dpytyp = -1);
         Column(std::string name, int typ, int size, std::string value = "",
-	       int can_null = Column::NOTNULL_DEF, std::string reg_exp = "",
-	       long dpytyp = -1);
+                int can_null = Column::NOTNULL_DEF, std::string reg_exp = "",
+                long dpytyp = -1);
 
-	std::string styp( int typ = -1 );
+        std::string styp( int typ = -1 );
     };
 
     class TableName
     {
     public:
         std::string schema;
-	std::string name;
-	std::string typ;
+        std::string name;
+        std::string typ;
     };
 
     typedef std::vector<TableName> TableVec;
@@ -132,11 +132,11 @@ protected:
     virtual void start_columncheck();
     virtual int columncheck();
     void ok_columncheck(std::string name)
-        { cols[name].have_value = 1; }
+    { cols[name].have_value = 1; }
 
 public:
     DbTable() : msg("DbTable")
-    { have_usertime_columns = 0; }
+{ have_usertime_columns = 0; }
     virtual ~DbTable() {cols.empty(); }
 
     int empty() { return cols.empty(); }
@@ -149,7 +149,7 @@ public:
     virtual void setName(std::string schema, std::string name, int ready=0) = 0;
 
     virtual int create(std::string schema, std::string name,
-                       ColumnMap *cols, int ready = 0)=0;
+            ColumnMap *cols, int ready = 0)=0;
     virtual int create(std::string name, ColumnMap *cols, int ready = 0) = 0;
     virtual int create(ColumnMap *cols, int ready = 0) = 0;
     virtual int rename(std::string newschema, std::string newname, int ready = 0) = 0;
@@ -159,11 +159,11 @@ public:
     virtual int chk_usertime_columns() { return have_usertime_columns; }
 
     virtual int chk_column(std::string name, Column col, int modify = 0,
-                           int ready = 0) = 0;
+            int ready = 0) = 0;
     virtual int add_column(std::string name, Column col, int ready = 0) = 0;
     virtual int del_column(std::string name, int ready = 0) = 0;
     virtual int  mv_column(std::string oldname, std::string newname,
-                           int ready = 0) = 0;
+            int ready = 0) = 0;
 
     virtual int check_history(int ready = 0) = 0;
     virtual void  add_history(std::string id, int ready = 0) = 0;
@@ -181,9 +181,7 @@ public:
 
     void del_allcolumns()
     {
-        ColumnMapAll::iterator a;
-	if ( ( a = all_cols.find(schema + "." + name)) != all_cols.end() )
-	  all_cols.erase(a);
+        all_cols.clear();
     }
 
     ColumnMap    getColumns() { return cols; }

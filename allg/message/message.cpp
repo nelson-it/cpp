@@ -596,6 +596,15 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 
 }
 
+void Message::iline(const char *str, ... )
+{
+    ignore_lang = 1;
+    va_list ap;
+    va_start(ap,str);
+    line(str, ap);
+    ignore_lang = 0;
+
+}
 void Message::line(const char *str, ... )
 {
 #ifdef PTHREAD
