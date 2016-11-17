@@ -28,6 +28,7 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 	std::string str;
 	Argument a;
 
+
 	if ( file != NULL )
 	{
 	    fseek( file, 0, SEEK_END);
@@ -47,10 +48,8 @@ void HttpTranslate::make_answer(HttpHeader *act_h, FILE *file )
 	    buffer = new char[size + 1];
 	    buffer[size] = '\0';
 	    memcpy(buffer, act_h->content, act_h->content_length);
-	    act_h->content[0] = '\0';
-	    act_h->content_length = 0;
+	    del_content(act_h);
 	}
-
 
 	old_c = buffer;
 

@@ -258,7 +258,7 @@ void Http::make_answer()
 		return;
 	}
 
-	if (act_h->status != 404)
+	if (act_h->status != 404 && act_h->status != 1000 )
 	{
 		act_h->age = 0;
 	    str = this->get_meldungtext(act_h->status);
@@ -268,6 +268,11 @@ void Http::make_answer()
 			str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
 		add_contentb(act_h, str.c_str(), str.size() );
+		if ( act_h->content_type.find("text") == 0 )
+		{
+		    http_translate.make_answer(act_h, NULL);
+		    act_h->translate = 0;
+		}
 		return;
 	}
 

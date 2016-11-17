@@ -18,6 +18,7 @@
 #include <utils/tostring.h>
 
 class DbHttpProvider;
+class DbHttpApplication;
 
 class DbHttp : public Http
 {
@@ -31,6 +32,7 @@ class DbHttp : public Http
 #endif
 
     DbHttpAnalyse *analyse;
+    DbHttpApplication *application;
 
     Provider dbprovider;
 
@@ -62,6 +64,7 @@ public:
     }
 
     int check_group(HttpHeader *h, const char *group);
+    int check_sysaccess(HttpHeader *h);
 
     void clear_cache()
 	{

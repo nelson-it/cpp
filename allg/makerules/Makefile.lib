@@ -136,6 +136,7 @@ $(SHLIB_PRE)mnedbhttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/db/dbhttp_analyse.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttp.cpp \
                 \
+                $(PROJECT_ROOT)/allg/db/dbhttp_application.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_connect.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_table.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_query.cpp \

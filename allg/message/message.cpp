@@ -598,10 +598,52 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 
 void Message::iline(const char *str, ... )
 {
-    ignore_lang = 1;
+#ifdef PTHREAD
+    Param *p = p_getParam();
+    void *tid = PTHREADID;
+
+    int debug = p->debug;
+    Pthread_mutex_unlock(&mutex);
+#endif
     va_list ap;
+
+    if ( this->msg_typ == M_DEBUG && debug < last_debuglevel )
+    {
+#ifdef PTHREAD
+        Pthread_mutex_unlock(&mutex);
+#endif
+        return;
+    }
+
     va_start(ap,str);
-    line(str, ap);
+    fprintf(out, "                ");
+    vfprintf(out, str, ap);
+
+    va_end(ap);
+
+    if ( ! logonly && this->msg_typ != M_DEBUG && this->msg_typ != M_UNDEF && ! msg_clients.empty() )
+    {
+        MessageClients::iterator i;
+        char s[10240];
+        unsigned int j;
+        va_start(ap,str);
+        for ( j=0; j<strlen(id); j++) s[j] = ' ';
+        s[j++] = ' ';
+        s[j] = '\0';
+
+        vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
+        s[sizeof(s) - 1] = '\0';
+
+        for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )
+        {
+            if ( (*i)->tid == NULL || (*i)->tid == tid )
+                (*i)->pline(s);
+        }
+        va_end(ap);
+    }
+
+    fprintf(out,"\n");
+    fflush(out);
     ignore_lang = 0;
 
 }
@@ -649,8 +691,7 @@ void Message::line(const char *str, ... )
         if ( msg_trans == NULL || ignore_lang)
             vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), str, ap );
         else
-            vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s),
-                    msg_trans->get(str, id).c_str(), ap );
+            vsnprintf(&s[strlen(s)], sizeof(s) - strlen(s), msg_trans->get(str, id).c_str(), ap );
         s[sizeof(s) - 1] = '\0';
 
         for ( i=msg_clients.begin(); i != msg_clients.end(); ++i )

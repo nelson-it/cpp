@@ -66,10 +66,12 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     host = this->http->getServersocket()->getHost(h->client);
     command = h->dirname;
+
+
     for ( i = 0; i < ips.size(); ++i )
         if (  check_ip(ips[i].c_str(), host ) ) break;
 
-    if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 && command.find("/user") != 0 ) )
+    if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 && this->http->check_sysaccess(h) == 0 ))
     {
         msg.perror(E_NOFUNC, "keine Berechtigung");
         if ( h->content_type == "text/xml" )

@@ -165,10 +165,10 @@ public:
         }
     }
 
-    ResultMat    get_result() { return result; }
+    ResultMat    get_result() { return result;  }
     ResultMat *p_get_result() { return &result; }
 
-    ResultMat    getResult() { return result; }
+    ResultMat    getResult() { return result;  }
     ResultMat *p_getResult() { return &result; }
 
     virtual std::string mk_index();
