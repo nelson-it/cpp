@@ -32,25 +32,23 @@ void HttpContent::add_content(HttpHeader *h, const char *format, ...)
     int n;
 
     va_start(ap, format);
+    n = vsnprintf(&h->content[h->content_length], h->content_maxsize - h->content_length, format, ap);
+    va_end(ap);
 
-    n = vsnprintf(&h->content[h->content_length],
-            h->content_maxsize - h->content_length, format, ap);
-    if ((h->content_length + n + 1) >= h->content_maxsize)
+    while ((h->content_length + n + 1) >= h->content_maxsize)
     {
-        while ((h->content_length + n + 1) >= h->content_maxsize)
-            h->content_maxsize += h->CONTENT_SIZE;
+        h->content_maxsize += h->CONTENT_SIZE;
         char *str = new char[h->content_maxsize];
         memcpy(str, h->content, h->content_length);
         delete[] h->content;
         h->content = str;
 
         va_start(ap, format);
-        n = vsnprintf(&h->content[h->content_length],
-                h->content_maxsize - h->content_length, format, ap);
+        n = vsnprintf(&h->content[h->content_length], h->content_maxsize - h->content_length, format, ap);
+        va_end(ap);
     }
 
     h->content_length += n;
-
 }
 
 void HttpContent::add_contentb(HttpHeader *h, const char* buffer, int anzahl)
@@ -104,8 +102,8 @@ void HttpContent::contentf(HttpHeader *h, const char* file)
 void HttpContent::save_content(HttpHeader *h, const char* file)
 {
     FILE *f;
-    if ((f = fopen(file, "wb")) != NULL) fwrite(h->content, h->content_length,
-            1, f);
+    if ((f = fopen(file, "wb")) != NULL )
+        fwrite(h->content, h->content_length, 1, f);
     else msg_content.perror(E_FILE, "konnte Datei <%s> nicht öffnen", file);
 
     fclose(f);

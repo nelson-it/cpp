@@ -107,6 +107,7 @@ public:
     void pline(char *str);
 
     virtual int  check_group(HttpHeader *h, const char *group) { return false; }
+    virtual int  check_sysaccess(HttpHeader *h )               { return false; }
 
 };
 

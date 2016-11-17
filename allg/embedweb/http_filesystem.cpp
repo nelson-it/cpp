@@ -227,7 +227,7 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
     if ( m == h->datapath.end() )
     {
-        if ( h->user == "admindb" && root == "admin" )
+        if ( ( h->user == "admindb" || http->check_group(h, "adminsystem") ) && root == "admin" )
             return this->dataroot;
         return "";
     }
@@ -814,7 +814,14 @@ void HttpFilesystem::download(HttpHeader *h)
     }
     else
     {
-        h->status = 404;
+        h->content_type = "application/octet-stream";
+        char buffer[10240];
+        h->content_type = "application/octet-stream";
+        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", msg.get("Datei nicht gefunden.txt").c_str());
+        buffer[sizeof(buffer) -1] = '\0';
+        h->extra_header.push_back(buffer);
+
+        h->status = 200;
     }
 }
 

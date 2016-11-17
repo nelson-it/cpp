@@ -14,9 +14,11 @@
 
 #include "dbhttp.h"
 #include "dbhttp_provider.h"
+#include "dbhttp_application.h"
+
 
 DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
-Http(s, analyse, 0), msg("DbHttp")
+        Http(s, analyse, 0), msg("DbHttp")
 {
     Argument a;
     char str[1024];
@@ -32,11 +34,13 @@ Http(s, analyse, 0), msg("DbHttp")
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
 
+    application = new DbHttpApplication(this, this->trans->p_getDb());
     analyse->add_http(this);
 }
 
 DbHttp::~DbHttp()
 {
+    delete application;
     delete trans;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -104,6 +108,7 @@ void DbHttp::make_answer()
 
     if (act_client != NULL)
     {
+        HttpProvider *p = NULL;
         int result = 1;
         std::map<std::string, std::string>::iterator i;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -111,7 +116,6 @@ void DbHttp::make_answer()
         std::map<std::string, locale_t>::iterator l;
 #endif
         std::string lstr;
-        HttpProvider *p;
 
         act_h->id = act_h->cookies[cookieid.c_str()];
         act_h->user = act_client->user;
@@ -133,11 +137,13 @@ void DbHttp::make_answer()
         uselocale(l->second);
 #endif
 
-        if (act_h->status == 404 && (p = find_provider(&dbprovider)) != NULL)
+        if (act_h->status == 404 )
         {
-            result = ((DbHttpProvider *) p)->request(act_client->db, act_h);
+            if ( (p = find_provider(&dbprovider)) != NULL )
+                result = ((DbHttpProvider *) p)->request(act_client->db, act_h);
         }
-        else
+
+        if ( p == NULL || act_h->status == 1000 )
         {
 #ifdef PTHREAD
             if ( act_h->vars.exists("asynchron") )
@@ -195,8 +201,7 @@ void DbHttp::add_provider(DbHttpProvider *p)
     }
     else
     {
-        msg.perror(E_PRO_EXISTS, "DbHttpProvider \"%s\" ist schon registriert",
-                path.c_str());
+        msg.perror(E_PRO_EXISTS, "DbHttpProvider \"%s\" ist schon registriert", path.c_str());
     }
 }
 
@@ -213,8 +218,7 @@ void DbHttp::del_provider(DbHttpProvider *p)
     }
     else
     {
-        msg.perror(E_PRO_NOT_EXISTS,
-                "DbHttpProvider \"%s\" ist nicht registriert", path.c_str());
+        msg.perror(E_PRO_NOT_EXISTS, "DbHttpProvider \"%s\" ist nicht registriert", path.c_str());
     }
 }
 
@@ -226,8 +230,24 @@ int  DbHttp::check_group(HttpHeader *h, const char *group)
     DbConnect *con = this->act_client->db->p_getConnect();
     std::string stm = "SELECT t2.rolname AS loginname "
             "FROM pg_roles t0 "
-              "JOIN pg_auth_members t1 ON t0.rolname = 'adminsystem'::name AND t0.oid = t1.roleid "
+              "JOIN pg_auth_members t1 ON t0.rolname = '" + std::string(group) + "'::name AND t0.oid = t1.roleid "
               "JOIN pg_roles t2 ON t1.member = t2.oid AND t2.rolname = '" + h->user + "'";
+
+    con->execute(stm, 1);
+    return con->have_result();
+}
+
+int  DbHttp::check_sysaccess(HttpHeader *h)
+{
+    if ( act_client == NULL )
+        return false;
+
+    DbConnect *con = this->act_client->db->p_getConnect();
+    std::string stm = "SELECT DISTiNCT t3.command "
+            "FROM pg_roles t0 "
+              "JOIN pg_auth_members t1 ON t0.oid = t1.roleid "
+              "JOIN pg_roles t2 ON t1.member = t2.oid AND t2.rolname = '" + h->user + "'"
+              "JOIN mne_system.access t3 ON (( t0.rolname = t3.access OR t2.rolname = t3.access OR t3.access = 'user' ) AND t3.command = '" + h->dirname + "' )";
 
     con->execute(stm, 1);
     return con->have_result();

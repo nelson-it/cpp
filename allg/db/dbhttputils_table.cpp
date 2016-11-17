@@ -52,6 +52,16 @@ int DbHttpUtilsTable::request(Database *db, HttpHeader *h)
     }
     else
     {
+        if ( h->filename == "index.html")
+        {
+            unsigned int i;
+            if ( (i = h->dirname.rfind('/')) != std::string::npos )
+            {
+                h->filename = h->dirname.substr(i+1);
+                if ( i != 0 ) h->dirname = h->dirname.substr(0, i-1);
+                else h->dirname = "";
+            }
+        }
         file_dat(db, h);
         if ( h->status == 200 )
             return 1;
@@ -304,7 +314,8 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
         str[sizeof(str) -1] = '\0';
         h->extra_header.push_back(str);
 
-        h->content_type = (char*)(((*r)[0])[1]);
+        //h->content_type = (char*)(((*r)[0])[1]);
+        h->content_type = "application/octet-stream";
 
         CryptBase64 base64;
         unsigned char *out = (unsigned char*) new char[(*r)[0][0].length];

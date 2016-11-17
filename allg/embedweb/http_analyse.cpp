@@ -554,9 +554,7 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 		}
 
-		else if ( act_h != NULL &&
-				act_h->client == client &&
-				act_h->needed_postdata == 0 )
+		else if ( act_h != NULL && act_h->client == client && act_h->needed_postdata == 0 )
 		{
 			check_user(act_h);
 
