@@ -145,13 +145,19 @@ void Imap::read_answer(int need_split)
     if (sock < 1) return;
 
     len = 0;
+    fd_set rd;
+
     while (notready)
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        while ((i = ::recv(sock, &response[len], size - len, 0)) > 0)
-            len += i;
+        FD_ZERO(&rd);
+        FD_SET((unsigned)sock, &rd);
+        select( sock + 1, &rd, (fd_set*)0, (fd_set*)0, NULL);
+        i = ::recv(sock, &response[len], size - len, 0);
+        if ( i > 0) len += i;
+        msg.pdebug(6,"%s", response);
 
-        if (i < 0 && errno != EAGAIN && errno != 0 )
+        if (i < 0 && errno != EAGAIN && errno != 0 && errno != EINTR )
 #else
         while ((i = read(sock, &response[len], size - len)) > 0)
             len += i;
@@ -221,7 +227,6 @@ void Imap::read_answer(int need_split)
         }
     }
 
-    msg.pdebug(10,"%s", response);
     if ( need_split )
     {
         CsList a(response, '\n', 1);
@@ -334,7 +339,7 @@ void Imap::connect(std::string server, std::string user, std::string passwd)
 
 }
 
-CsList Imap:: split(std::string str)
+CsList Imap:: split_folder(std::string str)
 {
     std::string::size_type i;
     std::string c;
@@ -344,6 +349,8 @@ CsList Imap:: split(std::string str)
     for ( i = 0; i<str.size(); ++i)
     {
         if ( str[i] == '"')  havespace = ( havespace ) ? 0 : 1;
+        if ( str[i] == '(')  havespace = 1;
+        if ( str[i] == ')')  havespace = 0;
         if ( str[i] == ' ' && havespace == 0 )
         {
             if ( c != "" ) l.add(c);
@@ -370,10 +377,14 @@ Imap::Folder Imap::getFolder()
 
         for ( i = 0; answer.size() > 0 && i < (answer.size()-1); ++i)
         {
-            CsList a = split(answer[i]);
+            CsList a = split_folder(answer[i]);
             std::string str,name;
             std::string::size_type j;
             char c;
+
+            msg.pdebug(6, "Answer: %s\n", answer[i].c_str());
+            for ( j=0; j<a.size(); ++j)
+                msg.pdebug(6, "Element %s\n", a[j].c_str() );
 
             if ( a.size() != 5 )
             {
