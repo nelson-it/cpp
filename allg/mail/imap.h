@@ -40,7 +40,7 @@ private:
     int bracket_found;
     std::string num;
 
-    CsList split(std::string str);
+    CsList split_folder(std::string str);
 
     std::string quoteString(const std::string& text);
     int write_cmd(char *cmd, int len, int need_split = 1);
