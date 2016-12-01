@@ -145,11 +145,11 @@ void Imap::read_answer(int need_split)
     if (sock < 1) return;
 
     len = 0;
-    fd_set rd;
 
     while (notready)
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
+        fd_set rd;
         FD_ZERO(&rd);
         FD_SET((unsigned)sock, &rd);
         select( sock + 1, &rd, (fd_set*)0, (fd_set*)0, NULL);

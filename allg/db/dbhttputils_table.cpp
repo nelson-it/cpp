@@ -314,8 +314,9 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
         str[sizeof(str) -1] = '\0';
         h->extra_header.push_back(str);
 
-        //h->content_type = (char*)(((*r)[0])[1]);
-        h->content_type = "application/octet-stream";
+        h->content_type = (char*)(((*r)[0])[1]);
+        if ( h->content_type == "" )
+          h->content_type = "application/octet-stream";
 
         CryptBase64 base64;
         unsigned char *out = (unsigned char*) new char[(*r)[0][0].length];
