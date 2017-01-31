@@ -6,12 +6,14 @@
 #include <stdio.h>
 
 #include <string.h>
-#include <unistd.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define DIRSEP   "\\"
 #define unlink DeleteFile
+#include <windows.h>
+#include <sys/unistd.h>
 #else
+#include <unistd.h>
 #define DIRSEP   "/"
 #endif
 
@@ -22,7 +24,6 @@ TmpFile::TmpFile(const char *tmpl, int needopen) :
 {
     *filename = '\0';
     fp = NULL;
-    int fd;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( getenv ("TEMP") != NULL)
@@ -33,6 +34,7 @@ TmpFile::TmpFile(const char *tmpl, int needopen) :
     _mktemp_s(filename, strlen(filename) + 1);
     filename[sizeof(filename) - 1] = '\0';
 #else
+    int fd;
     if (getenv("TMPDIR") != NULL)
     {
         strncpy(filename, getenv("TMPDIR"), sizeof(filename) - 1);
@@ -49,6 +51,7 @@ TmpFile::TmpFile(const char *tmpl, int needopen) :
     }
     strncat(filename, tmpl, sizeof(filename) - strlen(filename) - 1);
     filename[sizeof(filename) - 1] = '\0';
+
     fd = mkstemp(filename);
     if (fd != -1)
     {
@@ -60,6 +63,7 @@ TmpFile::TmpFile(const char *tmpl, int needopen) :
         msg.perror(1, "kann temporäres für <%s> nicht öffnen", tmpl);
     }
 #endif
+
     if (needopen)
     {
         fp = fopen(filename, "wb+");

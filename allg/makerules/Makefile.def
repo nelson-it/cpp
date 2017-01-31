@@ -167,7 +167,7 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
               INC_PG := -I/usr/i686-w64-mingw32/sys-root/mingw/include -I$(POSTGRES_ROOT)/include
 
     else ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
-       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/9.3/
+       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/9.5/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I/usr/i686-w64-mingw32/sys-root/mingw/include -I$(POSTGRES_ROOT)/include
 
