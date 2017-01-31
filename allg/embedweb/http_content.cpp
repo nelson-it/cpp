@@ -35,7 +35,7 @@ void HttpContent::add_content(HttpHeader *h, const char *format, ...)
     n = vsnprintf(&h->content[h->content_length], h->content_maxsize - h->content_length, format, ap);
     va_end(ap);
 
-    while ((h->content_length + n + 1) >= h->content_maxsize)
+    while ( n < 0 )
     {
         h->content_maxsize += h->CONTENT_SIZE;
         char *str = new char[h->content_maxsize];

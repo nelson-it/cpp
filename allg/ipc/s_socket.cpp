@@ -2,6 +2,7 @@
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <winsock2.h>
+#define SOCK_CLOEXEC 0
 #endif
 
 #ifdef PTHREAD
@@ -66,7 +67,6 @@ ServerSocket::Client::Client()
 
 ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
 {
-    int on;
 
     this->s = s;
     this->fd = fd;
@@ -80,6 +80,7 @@ ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
 
     need_close = 0;
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
+    int on;
     on = 1;
     if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
     {
@@ -265,7 +266,6 @@ ServerSocket::ServerSocket(short socketnum )
     int length;
     int rval;
     struct sockaddr_in server;
-    int on;
 
     if ( ( sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0 ) ) < 0 )
     {
@@ -275,6 +275,7 @@ ServerSocket::ServerSocket(short socketnum )
     }
 
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
+    int on;
     on = 1;
     if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
     {
@@ -880,10 +881,11 @@ void ServerSocket::loop()
             struct sockaddr_in c;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
             int size = sizeof(c);
+            if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
 #else
             socklen_t size = sizeof(c);
-#endif
             if ( ( rval = accept4(sock, (struct sockaddr *)&c, &size, SOCK_CLOEXEC ) ) < 0 )
+#endif
             {
                 msg.perror(E_ACCEPT, "Fehler beim accept - "
                         "client kann nicht verbunden werden");

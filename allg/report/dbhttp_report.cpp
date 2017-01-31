@@ -368,7 +368,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         cmd.add(std::string("bash -c 'export PATH=`pwd`:$PATH; ") + MKPDF);
         cmd.add(ToString::substitute(ToString::substitute(resultfile.get_name(), "\\", "/"), "C:", "/cygdrive/c"));
-        cmd.add(ToString::substitute(ToString::substitute(str, "\\", "/"), "C:", "/cygdrive/c"));
+        cmd.add(ToString::substitute(ToString::substitute(tmpdir.get_name(), "\\", "/"), "C:", "/cygdrive/c"));
 #else
         cmd.add(MKPDF);
         cmd.add(resultfile.get_name());
