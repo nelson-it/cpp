@@ -21,6 +21,10 @@
 #define MKHEADER "mkheader"
 #define MKPDF    "mkpdf"
 
+#if defined(Darwin)
+#include <sys/errno.h>
+#endif
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <unistd.h>
 #define DIRSEP   "\\"
