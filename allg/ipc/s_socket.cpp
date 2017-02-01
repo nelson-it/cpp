@@ -18,6 +18,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#if defined (Darwin)
+#define SOCK_CLOEXEC 0
+#endif
+
 #if defined (Darwin) || defined(LINUX)
 #include <unistd.h>
 #include <sys/stat.h>
@@ -879,7 +883,10 @@ void ServerSocket::loop()
             rsel--;
 
             struct sockaddr_in c;
-#if defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined (Darwin)
+            socklen_t size = sizeof(c);
+            if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
+#elif defined(__MINGW32__) || defined(__CYGWIN__)
             int size = sizeof(c);
             if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
 #else

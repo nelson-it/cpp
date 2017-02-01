@@ -138,8 +138,8 @@ endif
 
 ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE" 
     ifeq "$(UNAME)" "Darwin"
-              LIB_PG := -L/Library/PostgreSQL/9.3/lib -lpq
-              INC_PG := -I/Library/PostgreSQL/9.3/include 
+              LIB_PG := -L/Library/PostgreSQL/9.5/lib -lpq
+              INC_PG := -I/Library/PostgreSQL/9.5/include 
 
     else ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
