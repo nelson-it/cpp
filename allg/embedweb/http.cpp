@@ -146,6 +146,7 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
 
 	this->s = s;
 	this->analyse = analyse;
+	this->act_h = NULL;
 
 	if (register_thread)
 		analyse->add_http(this);
@@ -614,6 +615,11 @@ void Http::get(HttpHeader *h)
 
 void Http::disconnect(int client)
 {
+    Provider::iterator i;
+
+    for ( i = provider.begin(); i != provider.end(); ++i)
+        i->second->disconnect(client);
+
 }
 
 void Http::add_provider(HttpProvider *p)

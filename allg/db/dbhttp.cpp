@@ -189,6 +189,17 @@ void DbHttp::make_answer()
     if (clear) act_client = NULL;
 }
 
+void DbHttp::disconnect( int client )
+{
+    Provider::iterator i;
+
+    for ( i = dbprovider.begin(); i != dbprovider.end(); ++i)
+        i->second->disconnect(client);
+
+    Http::disconnect(client);
+
+}
+
 void DbHttp::add_provider(DbHttpProvider *p)
 {
     std::string path;

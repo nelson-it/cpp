@@ -46,6 +46,7 @@ public:
 
     void add_provider(DbHttpProvider *);
     void del_provider(DbHttpProvider *);
+    void disconnect( int client );
 
     void unlock_client()
     {
