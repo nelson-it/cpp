@@ -28,8 +28,6 @@ void *HttpAnalyseThread(void *param)
 	    _setmbcp(_MB_CP_ANSI);
 #endif
 
-	//Message msg("HttpAnalyseThread", 1);
-
 	HttpAnalyse::HttpAnalyseThreadParam *p;
 
 	p = (HttpAnalyse::HttpAnalyseThreadParam*)param;
@@ -57,6 +55,7 @@ HttpAnalyse::HttpAnalyseThreadParam::HttpAnalyseThreadParam(Http *http)
 	this->http = http;
 	this->analyse = http->p_getHttpAnalyse();
 	this->abort = 0;
+	this->act_h = NULL;
 
 	pthread_mutex_init(&this->mutex,NULL);
 	pthread_create(&(this->id), NULL, HttpAnalyseThread, (void *)this);
@@ -68,6 +67,12 @@ HttpAnalyse::HttpAnalyseThreadParam::~HttpAnalyseThreadParam()
 	pthread_mutex_lock(&mutex);
 	pthread_mutex_unlock(&mutex);
 }
+
+void HttpAnalyse::HttpAnalyseThreadParam::disconnect(int client)
+{
+    this->http->disconnect(client);
+}
+
 
 HttpHeader *HttpAnalyse::getHeader()
 {
@@ -169,6 +174,10 @@ msg("HttpAnalyse")
 	content_types["ai"]   = "application/postscript";
 	content_types["eps"]  = "application/postscript";
 	content_types["ps"]   = "application/postscript";
+
+	content_types["mp3"]   = "audio/mpeg";
+	content_types["ogg"]   = "audio/ogg";
+	content_types["flac"]  = "audio/flac";
 
 	this->act_h = NULL;
 
@@ -602,6 +611,8 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 void HttpAnalyse::disconnect( int client )
 {
 	Headers::iterator h;
+	unsigned int i;
+
 	if ( ( h = headers.find(client)) != headers.end() )
 	{
 		msg.pdebug(D_CON, "Verbindung zum Client %d wurde abgebrochen",client);
@@ -611,6 +622,11 @@ void HttpAnalyse::disconnect( int client )
 	{
 		msg.pdebug(D_CON, "Client %d existiert nicht",client);
 	}
+
+	for ( i = 0; i<https.size(); ++i)
+	    https[i]->disconnect(client);
+
+
 }
 
 void HttpAnalyse::add_http(Http *http)
@@ -624,7 +640,7 @@ void HttpAnalyse::add_http(Http *http)
 
 void HttpAnalyse::del_http(Http *http)
 {
-	msg.pwarning(W_HTTP, "Http kann nicht gelöscht werden nicht finden");
+	msg.pwarning(W_HTTP, "Http kann nicht gelöscht werden");
 	return;
 }
 

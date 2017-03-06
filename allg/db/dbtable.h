@@ -136,7 +136,11 @@ protected:
 
 public:
     DbTable() : msg("DbTable")
-{ have_usertime_columns = 0; }
+    {
+        have_usertime_columns = 0;
+        typ = ' ';
+        dbconnect = NULL;
+    }
     virtual ~DbTable() {cols.empty(); }
 
     int empty() { return cols.empty(); }
