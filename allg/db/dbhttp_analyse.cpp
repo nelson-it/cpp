@@ -50,6 +50,11 @@ void DbHttpAnalyse::read_datadir()
 
     db = this->db->getDatabase();
 
+    if ( (std::string)a["DbSystemUser"] == "" )
+    {
+        datapath.clear();
+        return;
+    }
     db->p_getConnect("", a["DbSystemUser"], a["DbSystemPasswd"]);
     tab = db->p_getTable(db->getApplschema(), "folder");
 

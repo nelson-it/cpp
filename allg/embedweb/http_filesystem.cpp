@@ -158,6 +158,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
     msg("HttpFilesystem")
 {
     Argument a;
+    qs_type = FD_NAME;
 
     this->dataroot = (std::string)a["EmbedwebHttpDataroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
