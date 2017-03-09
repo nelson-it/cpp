@@ -19,7 +19,7 @@ protected:
 	int anzahl;
 	char typ;
 
-	Alias () {};
+	Alias () {anzahl = 0; typ = '\0';};
 	Alias ( std::string name, int anzahl, char typ )
 	    { this->name = name, this->anzahl = anzahl; this->typ = typ; }
 
@@ -36,7 +36,7 @@ public:
 	std::string defaults;
 	std::string orig_defaults;
     public:
-        Liste() {};
+        Liste() { typ = '\0'; anzahl = 0;};
 	Liste(std::string a )
 	{
 	    alias = a; typ = 'l'; anzahl = 0;
