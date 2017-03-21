@@ -14,6 +14,7 @@
 #include <utils/cslist.h>
 #include <utils/gettimeofday.h>
 #include <crypt/base64.h>
+#include <crypt/sha1.h>
 #include <argument/argument.h>
 
 #include "http.h"
@@ -474,6 +475,27 @@ void HttpAnalyse::analyse_header()
 		{
 		        forward_port = arg;
 		}
+
+		else if  ( name == "sec-websocket-key")
+		{
+		    Sha1 sha;
+		    CryptBase64 base64;
+            unsigned char buffer[SHA1HashSize];
+            unsigned char out[128];
+
+		    std::string str = arg + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		    sha.set((const uint8_t*) str.c_str(), str.length());
+		    sha.get(buffer);
+
+		    out[base64.encode(buffer, out, SHA1HashSize )-1] = '\0';
+
+		    act_h->extra_header.push_back("Upgrade: websocket");
+		    act_h->extra_header.push_back("Connection: Upgrade");
+		    act_h->extra_header.push_back(std::string("Sec-WebSocket-Accept: ") + std::string((char*)out));
+		    act_h->extra_header.push_back("Sec-WebSocket-Protocol: chat");
+		    act_h->setstatus = 101;
+
+		}
 	}
 
 	h->second.clear();
@@ -518,7 +540,7 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 	act_h = NULL;
 
-	if ( ( h = headers.find(client) ) == headers.end() )
+    if ( ( h = headers.find(client) ) == headers.end() )
 	{
 		Header tmp;
 		headers[client] = tmp;

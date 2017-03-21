@@ -50,9 +50,7 @@ public:
 
     void unlock_client()
     {
-        #ifdef PTHREAD
-    	pthread_mutex_unlock(&(act_client->mutex));
-        #endif
+    	act_client->unlock();
     }
 
     DbHttpAnalyse::Client::Userprefs getUserprefs()
