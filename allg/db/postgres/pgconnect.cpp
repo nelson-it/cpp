@@ -656,11 +656,12 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
 
     msg.pdebug(D_STM, "%s", (char *) stm);
 
-    if ( connections[con].in_transaction == "" )
-    {
 #ifdef PTHREAD
         pthread_mutex_lock(&connections[con].mutex);
 #endif
+
+    if ( connections[con].in_transaction == "" )
+    {
         res = PQexec(con, "BEGIN");
         if ( res != NULL ) PQclear(res);
     }
@@ -748,6 +749,10 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     else
         r = 0;
 
+#ifdef PTHREAD
+    pthread_mutex_unlock(&connections[con].mutex);
+#endif
+
     if (ready)
         this->end();
 
@@ -787,18 +792,12 @@ void PgConnect::commit()
 {
     I_MES(execute("COMMIT", 0, 1));
     connections[con].in_transaction = "";
-#ifdef PTHREAD
-    pthread_mutex_unlock(&connections[con].mutex);
-#endif
 }
 
 void PgConnect::rollback()
 {
     I_MES(execute("ROLLBACK", 0, 1));
     connections[con].in_transaction = "";
-#ifdef PTHREAD
-    pthread_mutex_unlock(&connections[con].mutex);
-#endif
 }
 
 int PgConnect::start(int check_status)

@@ -145,10 +145,8 @@ void DbHttp::make_answer()
 
         if ( p == NULL || act_h->status == 1000 )
         {
-#ifdef PTHREAD
             if ( act_h->vars.exists("asynchron") )
-                pthread_mutex_unlock(&(act_client->mutex));
-#endif
+                unlock_client();
             Http::make_answer();
         }
 

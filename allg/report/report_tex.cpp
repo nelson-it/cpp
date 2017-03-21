@@ -18,25 +18,26 @@
 #include "report_tex.h"
 
 ReportTex::ReportTex() :
-    msg("ReportText")
-    {
+        msg("ReportText")
+{
 
     Argument a;
     std::vector<std::string>::iterator i;
     std::string projectroot(a["projectroot"]);
 
-    path.setString( a["RepRoot"],':');
+    landscape = 0;
 
-    for ( i=path.begin(); i != path.end(); ++i )
+    path.setString(a["RepRoot"], ':');
+
+    for (i = path.begin(); i != path.end(); ++i)
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         if ( (*i)[1] != ':' )
 #else
-        if ( (*i)[0] != '/' )
+        if ((*i)[0] != '/')
 #endif
             (*i) = projectroot + "/" + (*i);
     }
-
 
     df = msg.getDateformat();
     tf = msg.getTimeformat();
@@ -46,31 +47,25 @@ ReportTex::ReportTex() :
 
     dtf = df + " " + tf;
     sdtf = df + " " + stf;
-    }
+}
 
 ReportTex::~ReportTex()
 {
 }
 
-std::string ReportTex::getFile(std::string file, int is_dir )
+std::string ReportTex::getFile(std::string file, int is_dir)
 {
     unsigned int i;
     struct stat s;
 
-    for ( i=0; i<path.size(); i++ )
-    {
-        if ( (stat ((path[i] + "/" + file).c_str(), &s) == 0) && ((is_dir && S_ISDIR (s.st_mode)) || (! is_dir && S_ISREG (s.st_mode))) )
-            break;
-    }
-    if ( i != path.size() )
-        return (path[i] + "/" + file);
+    for (i = 0; i < path.size(); i++)
+        if ((stat((path[i] + "/" + file).c_str(), &s) == 0) && ((is_dir && S_ISDIR(s.st_mode)) || (!is_dir && S_ISREG(s.st_mode)))) break;
+
+    if (i != path.size()) return (path[i] + "/" + file);
     return "";
 }
 
-int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
-        FILE *out, std::string language, std::string schema, std::string queryname,
-        CsList *wcol, CsList *wval, CsList *wop, CsList *s, Macros *macros,
-        Macros *xml)
+int ReportTex::mk_report(Database *db, std::string reportname, int subreport, FILE *out, std::string language, std::string schema, std::string queryname, CsList *qcols, CsList *wcol, CsList *wval, CsList *wop, CsList *s, Macros *macros, Macros *xml)
 {
     DbQuery * query;
     DbTable *reptab;
@@ -83,7 +78,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
     Macros::iterator mi;
 
-    DbConnect::ResultMat rm,prm;
+    DbConnect::ResultMat rm, prm;
     DbConnect::ResultMat::iterator iprm;
     FILE *fp, *pre, *post;
 
@@ -102,23 +97,21 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     std::map<unsigned int, unsigned int> sortid;
     std::string langid("de");
     std::string langsave;
-    CsList      repcols;
+    CsList repcols;
     int have_query;
     unsigned int record_count;
 
     record_count = 0;
 
     langsave = msg.getLang();
-    if (language != "" && language != langsave )
-       msg.setLang(language);
+    if (language != "" && language != langsave) msg.setLang(language);
     langid = msg.getLang();
 
     fprintf(out, "\\gdef\\mnelangid{%s}%%\n", langid.c_str());
 
     reptab = db->p_getTable(db->getApplschema(), "reports");
     w["name"] = reportname;
-    cols.setString("title_" + langid
-            + ",schema,query,sort,only_with_rows,template,landscape,cols,parentcols,ops,repcols");
+    cols.setString("title_" + langid + ",schema,query,sort,only_with_rows,template,landscape,cols,parentcols,ops,repcols");
     rm = *(reptab->select(&cols, &w));
 
     if (rm.size() == 0)
@@ -130,68 +123,55 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
 
     rtemplate = (char*) (rm[0][5]);
-    if (rtemplate == "")
-        rtemplate = reportname;
+    if (rtemplate == "") rtemplate = reportname;
 
-    if (s == NULL || s->getString() == "")
-        sort.setString((char *) (rm[0][3]));
-    else
-        sort = *s;
+    if (s == NULL || s->getString() == "") sort.setString((char *) (rm[0][3]));
+    else sort = *s;
 
     landscape = (long) (rm[0][6]);
-    if ( ! subreport ) this->landscape = landscape;
+    if (!subreport) this->landscape = landscape;
 
     repcols.setString((char *) (rm[0][10]));
 
-    if ( getFile(rtemplate, 1) == "" )
+    if (getFile(rtemplate, 1) == "")
     {
-    	msg.perror(E_NOREPORTROOT, "Reportroot ist nicht vorhanden");
-    	return record_count;
+        msg.perror(E_NOREPORTROOT, "Reportroot ist nicht vorhanden");
+        return record_count;
     }
 
     have_query = 1;
     query = db->p_getQuery();
-    if ( schema != "" && queryname != "" )
-    {
-    	query->setName((char*) schema.c_str(), (char*) queryname.c_str(), NULL );
-    }
-    else if ( (std::string) (rm[0][2]) != "" )
-    {
-    	query->setName((char*) (rm[0][1]), (char*) (rm[0][2]), ( ! repcols.empty()) ? &repcols : NULL );
-    }
-    else
-    {
-        have_query = 0;
-    }
+
+    if (schema != "" && queryname != "") query->setName((char*) schema.c_str(), (char*) queryname.c_str(), (!qcols->empty()) ? qcols : NULL);
+    else if ((std::string) (rm[0][2]) != "") query->setName((char*) (rm[0][1]), (char*) (rm[0][2]), (!repcols.empty()) ? &repcols : NULL);
+    else have_query = 0;
 
     msg.stop_debug();
 
-    if ( !subreport && ((std::string)(rm[0][7])) != "" )
+    if (!subreport && ((std::string) (rm[0][7])) != "")
     {
         unsigned int i;
         CsList pwcol((char*) (rm[0][7]), ';');
         CsList pwval((char*) (rm[0][8]), ';');
-        CsList pwop ((char*) (rm[0][9]), ';');
+        CsList pwop((char*) (rm[0][9]), ';');
 
-        for ( i = 0; i<pwcol.size(); ++i )
+        for (i = 0; i < pwcol.size(); ++i)
         {
             wcol->add(pwcol[i]);
             wop->add(pwop[i]);
-            if ((pwval[i])[0] == '#')
-                wval->add(pwval[i].substr(1));
-            else
-                wval->add(pwval[i]);
+            if ((pwval[i])[0] == '#') wval->add(pwval[i].substr(1));
+            else wval->add(pwval[i]);
         }
     }
 
-    if ( have_query )
+    if (have_query)
     {
         prm = *(query->select(wcol, wval, wop, &sort));
         iprm = prm.begin();
         db->p_getConnect()->end();
     }
 
-    if ((long) (rm[0][4]) != 0  && iprm == prm.end())
+    if ((long) (rm[0][4]) != 0 && iprm == prm.end())
     {
         db->release(reptab);
         db->release(query);
@@ -199,38 +179,39 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
         return -1;
     }
 
-    if ( iprm != prm.end() && !subreport )
+    if (iprm != prm.end() && !subreport)
     {
         std::map<std::string, std::string>::iterator ui;
-        for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+        for (ui = userprefs.begin(); ui != userprefs.end(); ++ui)
         {
-            if ( query->find(ui->first) != std::string::npos  )
+            if (query->find(ui->first) != std::string::npos)
             {
                 userprefs[ui->first] = ((*iprm)[query->find(ui->first)]).format(&msg);
             }
         }
-        for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+        for (ui = userprefs.begin(); ui != userprefs.end(); ++ui)
             fprintf(out, "\\gdef\\upref%s{%s}%%\n", ui->first.c_str(), ui->second.c_str());
     }
 
-    if ( (iprm != prm.end()) && query->find("language") != std::string::npos  && !subreport )
+    if ((iprm != prm.end()) && query->find("language") != std::string::npos && !subreport)
     {
-    	std::string l = (std::string)((*iprm)[query->find("language")]);
-    	if ( l != "" && l != langid )
-    	{
-    		msg.setLang((char *)((*iprm)[query->find("language")]));
-    		langid = msg.getLang();
-    		fprintf(out, "\\gdef\\mnelangid{%s}%%\n", langid.c_str());
-    	}
+        std::string l = (std::string) ((*iprm)[query->find("language")]);
+        if (l != "" && l != langid)
+        {
+            msg.setLang((char *) ((*iprm)[query->find("language")]));
+            langid = msg.getLang();
+            fprintf(out, "\\gdef\\mnelangid{%s}%%\n", langid.c_str());
+        }
     }
 
     if (!subreport)
     {
         str = getFile(rtemplate + "/init.tex");
-        if ( str == "" ) str = getFile("/allg/default/init.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if (str == "") str = getFile("/allg/default/init.tex");
+        if (str != "") fp = fopen(str.c_str(), "r");
+        else fp = NULL;
 
-        if ( fp == NULL )
+        if (fp == NULL)
         {
             db->release(query);
             db->release(reptab);
@@ -239,35 +220,35 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             return record_count;
         }
 
-        if ( landscape )
-            fprintf(out,"\\gdef\\mnelandscape{landscape}%%\n");
+        if (landscape) fprintf(out, "\\gdef\\mnelandscape{landscape}%%\n");
 
         while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
             fwrite(buffer, size, 1, out);
 
         fclose(fp);
 
-        if ( iprm != prm.end() )
+        if (iprm != prm.end())
         {
             std::map<std::string, std::string>::iterator ui;
-            for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+            for (ui = userprefs.begin(); ui != userprefs.end(); ++ui)
             {
-                if ( query->find(ui->first) != std::string::npos  )
+                if (query->find(ui->first) != std::string::npos)
                 {
-                    userprefs[ui->first] = (std::string)((*iprm)[query->find(ui->first)]);
+                    userprefs[ui->first] = (std::string) ((*iprm)[query->find(ui->first)]);
                 }
             }
-            for ( ui = userprefs.begin(); ui != userprefs.end(); ++ui)
+            for (ui = userprefs.begin(); ui != userprefs.end(); ++ui)
                 fprintf(out, "\\gdef\\upref%s{%s}%%\n", ui->first.c_str(), ui->second.c_str());
         }
 
         fprintf(out, "\\gdef\\reptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
 
         str = getFile(rtemplate + "/docinit.tex");
-        if ( str == "" ) str = getFile("/allg/default/docinit.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if (str == "") str = getFile("/allg/default/docinit.tex");
+        if (str != "") fp = fopen(str.c_str(), "r");
+        else fp = NULL;
 
-        if ( fp == NULL )
+        if (fp == NULL)
         {
             db->release(query);
             db->release(reptab);
@@ -281,14 +262,14 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         fclose(fp);
 
-
     }
     else
     {
         fprintf(out, "\\gdef\\subreptitle{%s}%%\n", ToString::mktex((char*) (rm[0][0])).c_str());
 
         str = getFile(rtemplate + "/subinit.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if (str != "") fp = fopen(str.c_str(), "r");
+        else fp = NULL;
 
         if (fp != NULL)
         {
@@ -302,49 +283,48 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     n = 0;
     while (query->getCols(&id, &name, &typ, &format))
     {
-    	if ( id[0] != '-' )
-    	{
-    		str = "i";
-    		for (i = 0; i < sort.size(); ++i)
-    			if (sort[i] == id)
-    			{
-    				if ( repcols.empty() )
-    					sortid[i] = n;
-    				else
-    					sortid[i] = repcols.find(id);
+        if (id[0] != '-')
+        {
+            str = "i";
+            for (i = 0; i < sort.size(); ++i)
+            {
+                if (sort[i] == id)
+                {
+                    if (repcols.empty()) sortid[i] = n;
+                    else sortid[i] = repcols.find(id);
 
-    				fprintf(out, "\\gdef\\repgrouptitle%s{%s}%%\n", str.c_str(), ToString::mktex(id).c_str());
-    				str = str + "i";
-    				break;
-    			}
+                    fprintf(out, "\\gdef\\repgrouptitle%s{%s}%%\n", str.c_str(), ToString::mktex(id).c_str());
+                    str = str + "i";
+                    break;
+                }
+            }
 
-    		if ( repcols.empty() || repcols.find(id) != std::string::npos )
-    		{
-    			ids.push_back("B" + id);
-    			typs.push_back(typ);
-    			formats.push_back(format);
-    			fprintf(out, "\\gdef\\H%s{%s}%%\n", ToString::mktexmacro(id).c_str(), ToString::mktex(name).c_str());
-    		}
-    		n++;
-    	}
+            if (repcols.empty() || repcols.find(id) != std::string::npos)
+            {
+                ids.push_back("B" + id);
+                typs.push_back(typ);
+                formats.push_back(format);
+                fprintf(out, "\\gdef\\H%s{%s}%%\n", ToString::mktexmacro(id).c_str(), ToString::mktex(name).c_str());
+            }
+            n++;
+        }
     }
 
-    if (macros != NULL)
-        for (mi = macros->begin(); mi != macros->end(); ++mi)
-            fprintf(out, "\\gdef\\%s{%s}%%\n", mi->first.c_str(), mi->second.c_str());
+    if (macros != NULL) for (mi = macros->begin(); mi != macros->end(); ++mi)
+        fprintf(out, "\\gdef\\%s{%s}%%\n", mi->first.c_str(), mi->second.c_str());
 
-    if (xml != NULL)
-        for (mi = xml->begin(); mi != xml->end(); ++mi)
-        {
-            XmlTextTex xml;
-            xml.setXml(mi->second);
-            fprintf(out, "\\gdef\\%s{", mi->first.c_str());
-            xml.mk_output();
-            fprintf(out, "%s}%%\n", xml.get_string());
-        }
+    if (xml != NULL) for (mi = xml->begin(); mi != xml->end(); ++mi)
+    {
+        XmlTextTex xml;
+        xml.setXml(mi->second);
+        fprintf(out, "\\gdef\\%s{", mi->first.c_str());
+        xml.mk_output();
+        fprintf(out, "%s}%%\n", xml.get_string());
+    }
 
     str = getFile(rtemplate + "/header.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if (str != "") fp = fopen(str.c_str(), "r");
+    else fp = NULL;
 
     if (fp == NULL)
     {
@@ -361,7 +341,8 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     fclose(fp);
 
     str = getFile(rtemplate + "/record.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if (str != "") fp = fopen(str.c_str(), "r");
+    else fp = NULL;
 
     if (fp == NULL)
     {
@@ -373,15 +354,17 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
 
     str = getFile(rtemplate + "/prerecord.tex");
-    if ( str != "" ) pre = fopen(str.c_str(), "r"); else pre = NULL;
+    if (str != "") pre = fopen(str.c_str(), "r");
+    else pre = NULL;
 
     str = getFile(rtemplate + "/postrecord.tex");
-    if ( str != "" ) post = fopen(str.c_str(), "r"); else post = NULL;
+    if (str != "") post = fopen(str.c_str(), "r");
+    else post = NULL;
 
     for (i = 0; i < sort.size(); ++i)
         sortlist.push_back("###############");
 
-    for ( ; iprm != prm.end(); ++iprm, record_count++ )
+    for (; iprm != prm.end(); ++iprm, record_count++)
     {
         if (pre != NULL)
         {
@@ -410,16 +393,12 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             {
                 std::vector<std::string>::iterator f;
 
-                if ((pcols[n])[0] == '#')
-                    pvals.add(pcols[n].substr(1));
-                else if ( (f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end())
-                    pvals.add(((*iprm)[f - ids.begin()]).format());
-                else
-                    pvals.add("");
+                if ((pcols[n])[0] == '#') pvals.add(pcols[n].substr(1));
+                else if ((f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end()) pvals.add(((*iprm)[f - ids.begin()]).format());
+                else pvals.add("");
             }
 
-            mk_report(db, (char*) (rm[i][0]), 1, out, langid, "", "", &cols, &pvals, &wops,
-                    NULL);
+            mk_report(db, (char*) (rm[i][0]), 1, out, langid, "", "", NULL, &cols, &pvals, &wops, NULL);
         }
 
         for (str = "i", i = 0; i < sortlist.size(); ++i)
@@ -427,8 +406,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             if (sortlist[i] != (*iprm)[sortid[i]].format(&msg, buffer, sizeof(buffer)))
             {
                 sortlist[i] = buffer;
-                fprintf(out, "\\gdef\\repgroupname%s{%s}%%\n", str.c_str(),
-                        ToString::mktex(buffer).c_str());
+                fprintf(out, "\\gdef\\repgroupname%s{%s}%%\n", str.c_str(), ToString::mktex(buffer).c_str());
                 str = str + "i";
             }
             else
@@ -439,77 +417,68 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
 
         for (i = 0; i < ids.size(); ++i)
         {
-            if ( i < (*iprm).size() )
+            if (i < (*iprm).size())
             {
                 int t = typs[i];
                 char str[64];
                 struct tm tm;
                 time_t val;
 
-                if ( ((*iprm)[i]).isnull )
+                if (((*iprm)[i]).isnull)
                 {
-                    fprintf(out, "\\gdef\\%s{}%%\n",ToString::mktexmacro(ids[i]).c_str());
+                    fprintf(out, "\\gdef\\%s{}%%\n", ToString::mktexmacro(ids[i]).c_str());
                 }
-                else if ( t == DbConnect::DATETIME )
+                else if (t == DbConnect::DATETIME)
                 {
-                    val = (long)((*iprm)[i]);
-                    if ( formats[i] != "l" )
-                        strftime(str, sizeof(str), sdtf.c_str(), localtime_r(&val, &tm));
-                    else
-                        strftime(str, sizeof(str), dtf.c_str(), localtime_r(&val, &tm));
-                        fprintf(out, "\\gdef\\%s{%s}%%\n",ToString::mktexmacro(ids[i]).c_str(),ToString::mktex(str).c_str());
+                    val = (long) ((*iprm)[i]);
+                    if (formats[i] != "l") strftime(str, sizeof(str), sdtf.c_str(), localtime_r(&val, &tm));
+                    else strftime(str, sizeof(str), dtf.c_str(), localtime_r(&val, &tm));
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(str).c_str());
                 }
-                else if ( t == DbConnect::DATE )
+                else if (t == DbConnect::DATE)
                 {
-                    val = (long)((*iprm)[i]);
+                    val = (long) ((*iprm)[i]);
                     strftime(str, sizeof(str), df.c_str(), localtime_r(&val, &tm));
-                    fprintf(out, "\\gdef\\%s{%s}%%\n",ToString::mktexmacro(ids[i]).c_str(),ToString::mktex(str).c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(str).c_str());
                 }
-                else if ( t == DbConnect::TIME )
+                else if (t == DbConnect::TIME)
                 {
-                    val = (long)((*iprm)[i]);
-                    if ( formats[i] != "l" )
-                        strftime(str, sizeof(str), stf.c_str(), localtime_r(&val, &tm));
-                    else
-                        strftime(str, sizeof(str), tf.c_str(), localtime_r(&val, &tm));
-                    fprintf(out, "\\gdef\\%s{%s}%%\n",ToString::mktexmacro(ids[i]).c_str(),ToString::mktex(str).c_str());
+                    val = (long) ((*iprm)[i]);
+                    if (formats[i] != "l") strftime(str, sizeof(str), stf.c_str(), localtime_r(&val, &tm));
+                    else strftime(str, sizeof(str), tf.c_str(), localtime_r(&val, &tm));
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(str).c_str());
                 }
-                else if ( t == DbConnect::INTERVAL )
+                else if (t == DbConnect::INTERVAL)
                 {
-                    val = (long)((*iprm)[i]);
-                    if ( val < 0 )
+                    val = (long) ((*iprm)[i]);
+                    if (val < 0)
                     {
                         val = -val;
-                        if ( formats[i] != "l" )
-                            sprintf(str, ("-" + sintf).c_str(), val / 3600, ( val % 3600 ) / 60, ( val % 60 ));
-                        else
-                            sprintf(str, ("-" + intf).c_str(), val / 3600, ( val % 3600 ) / 60, ( val % 60 ));
+                        if (formats[i] != "l") sprintf(str, ("-" + sintf).c_str(), val / 3600, (val % 3600) / 60, (val % 60));
+                        else sprintf(str, ("-" + intf).c_str(), val / 3600, (val % 3600) / 60, (val % 60));
                     }
 
                     else
                     {
-                        if ( formats[i] != "l" )
-                            sprintf(str, sintf.c_str(), val / 3600, ( val % 3600 ) / 60, ( val % 60 ));
-                        else
-                            sprintf(str, intf.c_str(), val / 3600, ( val % 3600 ) / 60, ( val % 60 ));
+                        if (formats[i] != "l") sprintf(str, sintf.c_str(), val / 3600, (val % 3600) / 60, (val % 60));
+                        else sprintf(str, intf.c_str(), val / 3600, (val % 3600) / 60, (val % 60));
 
                     }
-                    fprintf(out, "\\gdef\\%s{%s}%%\n",ToString::mktexmacro(ids[i]).c_str(),ToString::mktex(str).c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(str).c_str());
                 }
-                else if ( t == DbConnect::DOUBLE || t == DbConnect::FLOAT )
+                else if (t == DbConnect::DOUBLE || t == DbConnect::FLOAT)
                 {
                     std::string colformat = formats[i];
                     std::string::size_type j;
 
-                    if ( ( j = colformat.find('%',0) != std::string::npos ))
-                        colformat.insert(j, 1, '\'');
+                    if ((j = colformat.find('%', 0) != std::string::npos)) colformat.insert(j, 1, '\'');
 
-                    if ( colformat == "" ) colformat = "%'f";
-                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*iprm)[i].format(&msg, NULL, 0, colformat.c_str())).c_str());
+                    if (colformat == "") colformat = "%'f";
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex((*iprm)[i].format(&msg, NULL, 0, colformat.c_str())).c_str());
                 }
-                else if ( formats[i][0] != 'x' )
+                else if (formats[i][0] != 'x')
                 {
-                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex( (*iprm)[i].format(&msg, NULL, 0, formats[i].c_str()), formats[i] == "tex").c_str());
+                    fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex((*iprm)[i].format(&msg, NULL, 0, formats[i].c_str()), formats[i] == "tex").c_str());
                 }
                 else
                 {
@@ -550,16 +519,12 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
             {
                 std::vector<std::string>::iterator f;
 
-                if ((pcols[n])[0] == '#')
-                    pvals.add(pcols[n].substr(1));
-                else if ( (f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end())
-                    pvals.add(((*iprm)[f - ids.begin()]).format());
-                else
-                    pvals.add("");
+                if ((pcols[n])[0] == '#') pvals.add(pcols[n].substr(1));
+                else if ((f = std::find(ids.begin(), ids.end(), "B" + pcols[n])) != ids.end()) pvals.add(((*iprm)[f - ids.begin()]).format());
+                else pvals.add("");
             }
 
-            mk_report(db, (char*) (rm[i][0]), 1, out, langid, "", "", &cols, &pvals, &wops,
-                    NULL);
+            mk_report(db, (char*) (rm[i][0]), 1, out, langid, "", "", NULL, &cols, &pvals, &wops, NULL);
         }
 
         if (post != NULL)
@@ -571,16 +536,15 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     }
 
     fclose(fp);
-    if (pre != NULL)
-        fclose(pre);
-    if (post != NULL)
-        fclose(post);
+    if (pre != NULL) fclose(pre);
+    if (post != NULL) fclose(post);
 
     db->release(query);
     db->release(reptab);
 
     str = getFile(rtemplate + "/trailer.tex");
-    if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+    if (str != "") fp = fopen(str.c_str(), "r");
+    else fp = NULL;
 
     if (fp == NULL)
     {
@@ -597,10 +561,11 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     if (!subreport)
     {
         str = getFile(rtemplate + "/end.tex");
-        if ( str == "" ) str = getFile("/allg/default/end.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if (str == "") str = getFile("/allg/default/end.tex");
+        if (str != "") fp = fopen(str.c_str(), "r");
+        else fp = NULL;
 
-        if ( fp == NULL )
+        if (fp == NULL)
         {
             msg.perror(E_NOEND, "kann datei %s nicht finden", (rtemplate + "/end.tex").c_str());
             msg.setLang(langsave);
@@ -615,9 +580,10 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport,
     else
     {
         str = getFile(rtemplate + "/subend.tex");
-        if ( str != "" ) fp = fopen(str.c_str(), "r"); else fp = NULL;
+        if (str != "") fp = fopen(str.c_str(), "r");
+        else fp = NULL;
 
-        if ( fp != NULL )
+        if (fp != NULL)
         {
             while ((size = fread(buffer, 1, sizeof(buffer), fp)) > 0)
                 fwrite(buffer, size, 1, out);
