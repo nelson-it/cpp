@@ -126,6 +126,7 @@ protected:
 
     static ColumnMapAll all_cols;
     static std::map<std::string, char> all_typ;
+    static pthread_mutex_t all_cols_mutex;
 
     ColumnMap cols;
 
