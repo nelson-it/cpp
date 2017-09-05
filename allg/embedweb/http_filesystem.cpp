@@ -229,7 +229,11 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     if ( m == h->datapath.end() )
     {
         if ( ( h->user == "admindb" || http->check_group(h, "adminsystem") ) && root == "admin" )
+        {
+            msg.pdebug(D_ROOTDIRS, "found %s", this->dataroot.c_str());
             return this->dataroot;
+        }
+        msg.pdebug(D_ROOTDIRS, "found <>" );
         return "";
     }
 

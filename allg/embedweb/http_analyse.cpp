@@ -558,12 +558,9 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 	h = headers.find(client);
 	str = h->second[0];
 
-	for(c = buffer; ( c - buffer ) < size ||
-	( act_h != NULL && act_h->needed_postdata == 0); c++ )
+	for(c = buffer; ( c - buffer ) < size || ( act_h != NULL && act_h->needed_postdata == 0); c++ )
 	{
-		if ( act_h != NULL &&
-				act_h->client == client &&
-				act_h->needed_postdata > 0 )
+		if ( act_h != NULL && act_h->client == client && act_h->needed_postdata > 0 )
 		{
 			int b_rest;
 
