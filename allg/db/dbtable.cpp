@@ -15,6 +15,7 @@
 
 DbTable::ColumnMapAll DbTable::all_cols;
 std::map<std::string,char> DbTable::all_typ;
+pthread_mutex_t all_cols_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 DbTable::Value::Value()
 {

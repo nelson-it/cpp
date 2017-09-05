@@ -16,16 +16,14 @@ PgJoin::PgJoin() :
     where_clause = "";
 }
 
-std::string PgJoin::add_table(std::string name, std::string pcols,
-        std::string tcols, std::string op, int typ)
+std::string PgJoin::add_table(std::string name, std::string pcols, std::string tcols, std::string op, int typ)
 {
 
     if (joins.empty())
     {
         _Join j;
 
-        if (pcols != "" || tcols != "") msg.pwarning(NOEMPTY_COLS,
-                "Erste Tabelle %s benötigt keine Spaltenangabe", name.c_str());
+        if (pcols != "" || tcols != "") msg.pwarning(NOEMPTY_COLS, "Erste Tabelle %s benötigt keine Spaltenangabe", name.c_str());
 
         j.push_back(name + " t0");
         joins.push_back(j);
@@ -40,10 +38,7 @@ std::string PgJoin::add_table(std::string name, std::string pcols,
         std::string tc, pc;
         char str[16];
 
-        if (pcols == "" && tcols == "" && op == "") msg.pwarning(EMPTY_COLS,
-                "Zum Join von Tabelle %s werden "
-                    "Spalten- und Operatorangaben "
-                    "benötigt", name.c_str());
+        if (pcols == "" && tcols == "" && op == "") msg.pwarning(EMPTY_COLS, "Zum Join von Tabelle %s werden Spalten- und Operatorangaben benötigt", name.c_str());
 
         switch (typ)
         {
@@ -120,9 +115,7 @@ std::string PgJoin::add_table(std::string name, std::string pcols,
 
             if (i != j || i != k)
             {
-                msg.perror(NUM_COLS, "Die anzahl der Spalten %s:%s zum Join "
-                    "von Tabelle %s sind ungleich", pcols.c_str(),
-                        tcols.c_str(), name.c_str());
+                msg.perror(NUM_COLS, "Die anzahl der Spalten %s:%s zum Join von Tabelle %s sind ungleich", pcols.c_str(), tcols.c_str(), name.c_str());
                 return "";
             }
 

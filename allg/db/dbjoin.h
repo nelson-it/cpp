@@ -50,9 +50,7 @@ public:
     virtual ~DbJoin() {};
 
     virtual void clear() = 0;
-    std::string add_table( DbTable *tab,
-                   std::string pcols = "", std::string tcols = "",
-           std::string op = "", int typ = LEFT )
+    std::string add_table( DbTable *tab, std::string pcols = "", std::string tcols = "", std::string op = "", int typ = LEFT )
     {
         if (tab->empty())
             msg.pwarning(EMPTY_TAB, "Tabelle %s exitiert nicht oder besitzt keine Spalten", tab->getFullname().c_str());

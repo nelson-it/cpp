@@ -243,22 +243,21 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 	Column c;
 	int error_found = 0;
 
-	if ((this->name != "" && this->name != name) || (this->schema != ""
-			&& this->schema != schema))
+	if ((this->name != "" && this->name != name) || (this->schema != "" && this->schema != schema))
 	{
-		msg.perror(TABNAME_CHANGE, "Tabellenname kann nicht "
-			"von %s.%s zu %s.%s verändert werden", this->schema.c_str(),
-				this->name.c_str(), schema.c_str(), name.c_str());
+		msg.perror(TABNAME_CHANGE, "Tabellenname kann nicht von %s.%s zu %s.%s verändert werden", this->schema.c_str(), this->name.c_str(), schema.c_str(), name.c_str());
 		return;
 	}
 
 	this->schema = schema;
 	this->name = name;
 
+	pthread_mutex_lock(&all_cols_mutex);
 	if ((a = all_cols.find(schema + "." + name)) != all_cols.end())
 	{
 		cols = a->second;
 		typ = all_typ[schema + "." + name];
+        pthread_mutex_unlock(&all_cols_mutex);
 	}
 	else
 	{
@@ -326,12 +325,16 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 			c.regexpmod  = (char*)(*r)[15].value;
 			c.dpytyp  = *(long *)(*r)[16].value;
 			cols[c.name] = c;
+			if (error_found == 0)
+			{
+			    all_cols[this->schema + "." + this->name] = cols;
+			    all_typ[this->schema + "." + this->name] = this->typ;
+			}
+            pthread_mutex_unlock(&all_cols_mutex);
 		}
 	}
 
-	if (cols.find("createuser") != cols.end() && cols.find("createdate")
-			!= cols.end() && cols.find("modifyuser") != cols.end()
-			&& cols.find("modifydate") != cols.end())
+	if (cols.find("createuser") != cols.end() && cols.find("createdate") != cols.end() && cols.find("modifyuser") != cols.end() && cols.find("modifydate") != cols.end())
 		have_usertime_columns = 1;
 	else
 		have_usertime_columns = 0;
@@ -340,16 +343,10 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 		end();
 
 	ignore_oid = 0;
-	if (error_found == 0)
-	{
-		all_cols[this->schema + "." + this->name] = cols;
-		all_typ[this->schema + "." + this->name] = this->typ;
-	}
 
 }
 
-int PgTable::create(std::string schema, std::string name, ColumnMap *c,
-		int ready)
+int PgTable::create(std::string schema, std::string name, ColumnMap *c, int ready)
 {
 	setName(schema, name);
 	return create(c, ready);
