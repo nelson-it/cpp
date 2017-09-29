@@ -330,10 +330,10 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 			    all_cols[this->schema + "." + this->name] = cols;
 			    all_typ[this->schema + "." + this->name] = this->typ;
 			}
-            pthread_mutex_unlock(&all_cols_mutex);
 		}
 	}
 
+    pthread_mutex_unlock(&all_cols_mutex);
 	if (cols.find("createuser") != cols.end() && cols.find("createdate") != cols.end() && cols.find("modifyuser") != cols.end() && cols.find("modifydate") != cols.end())
 		have_usertime_columns = 1;
 	else

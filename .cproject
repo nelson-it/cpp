@@ -23,8 +23,10 @@
 							<tool id="cdt.managedbuild.tool.gnu.cpp.compiler.base.2144683662" name="GCC C++ Compiler" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.base">
 								<option id="gnu.cpp.compiler.option.include.paths.1987085832" name="Include paths (-I)" superClass="gnu.cpp.compiler.option.include.paths" useByScannerDiscovery="false" valueType="includePath">
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/cpp/allg}&quot;"/>
+									<listOptionValue builtIn="false" value="/usr/include/postgresql"/>
+									<listOptionValue builtIn="false" value="/usr/include/postgresql/9.6/server"/>
 								</option>
-								<option id="gnu.cpp.compiler.option.preprocessor.def.521513154" superClass="gnu.cpp.compiler.option.preprocessor.def" valueType="definedSymbols">
+								<option id="gnu.cpp.compiler.option.preprocessor.def.521513154" name="Defined symbols (-D)" superClass="gnu.cpp.compiler.option.preprocessor.def" useByScannerDiscovery="false" valueType="definedSymbols">
 									<listOptionValue builtIn="false" value="PTHREAD=1"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.gnu.cpp.compiler.input.1403917718" superClass="cdt.managedbuild.tool.gnu.cpp.compiler.input"/>
@@ -53,7 +55,11 @@
 		<project id="test.null.624065141" name="test"/>
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.core.LanguageSettingsProviders"/>
-	<storageModule moduleId="refreshScope"/>
+	<storageModule moduleId="refreshScope" versionNumber="2">
+		<configuration configurationName="Ubuntu Linux">
+			<resource resourceType="PROJECT" workspacePath="/cpp"/>
+		</configuration>
+	</storageModule>
 	<storageModule moduleId="scannerConfiguration">
 		<autodiscovery enabled="true" problemReportingEnabled="true" selectedProfileId=""/>
 		<scannerConfigBuildInfo instanceId="cdt.managedbuild.toolchain.gnu.base.292824226;cdt.managedbuild.toolchain.gnu.base.292824226.24622615;cdt.managedbuild.tool.gnu.cpp.compiler.base.2144683662;cdt.managedbuild.tool.gnu.cpp.compiler.input.1403917718">
