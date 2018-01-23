@@ -140,8 +140,10 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
         {
         case 1:
             msg.perror(E_PHP, "%s", b);
+            break;
         case 2:
             msg.pwarning(W_PHP, "%s", b);
+            break;
         case 4:
             msg.pmessage(M_PHP, "%s", b);
             break;

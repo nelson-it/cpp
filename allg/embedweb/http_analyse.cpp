@@ -159,6 +159,7 @@ msg("HttpAnalyse")
 	content_types["jpe"]  = "image/jpeg";
     content_types["jpeg"] = "image/jpeg";
     content_types["ico"]  = "image/x-icon";
+    content_types["svg"]  = "image/svg+xml";
 
 	content_types["txt"]  = "text/plain";
 	content_types["html"] = "text/html";

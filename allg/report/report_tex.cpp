@@ -142,8 +142,15 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport, FI
     have_query = 1;
     query = db->p_getQuery();
 
-    if (schema != "" && queryname != "") query->setName((char*) schema.c_str(), (char*) queryname.c_str(), (!qcols->empty()) ? qcols : NULL);
-    else if ((std::string) (rm[0][2]) != "") query->setName((char*) (rm[0][1]), (char*) (rm[0][2]), (!repcols.empty()) ? &repcols : NULL);
+    if (schema != "" && queryname != "")
+    {
+        query->setName((char*) schema.c_str(), (char*) queryname.c_str(), (!qcols->empty()) ? qcols : NULL);
+        repcols = *qcols;
+    }
+    else if ((std::string) (rm[0][2]) != "")
+    {
+        query->setName((char*) (rm[0][1]), (char*) (rm[0][2]), (!repcols.empty()) ? &repcols : NULL);
+    }
     else have_query = 0;
 
     msg.stop_debug();
@@ -430,7 +437,7 @@ int ReportTex::mk_report(Database *db, std::string reportname, int subreport, FI
                 }
                 else if (t == DbConnect::DATETIME)
                 {
-                    val = (long) ((*iprm)[i]);
+                    val = (time_t)((long) ((*iprm)[i]));
                     if (formats[i] != "l") strftime(str, sizeof(str), sdtf.c_str(), localtime_r(&val, &tm));
                     else strftime(str, sizeof(str), dtf.c_str(), localtime_r(&val, &tm));
                     fprintf(out, "\\gdef\\%s{%s}%%\n", ToString::mktexmacro(ids[i]).c_str(), ToString::mktex(str).c_str());
