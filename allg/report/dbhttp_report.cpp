@@ -390,7 +390,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
    for ( i=0; i<pdfcount; i++)
    {
        sprintf(resultfile, "%sreport%d", DIRSEP, i);
-       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
+//       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
    }
 
 }
