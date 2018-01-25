@@ -16,6 +16,19 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 {
 	Argument a;
     char str[1024];
+    std::string dbuser,dbpasswd;
+    Database *dbwait;
+
+    if ( (std::string)a["DbSystemUser"] == "" )
+    {
+        dbuser = (std::string)a["DbTranslateUser"];
+        dbpasswd = (std::string)a["DbTranslatePasswd"];
+    }
+    else
+    {
+        dbuser = (std::string)a["DbSystemUser"];
+        dbpasswd = (std::string)a["DbSystemPasswd"];
+    }
 
 	this->s = s;
 	this->dbtimeout = a["DbHttpTimeout"];
@@ -24,8 +37,19 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
 
-
     this->db = db->getDatabase();
+
+    dbwait = this->db->getDatabase();
+    dbwait->p_getConnect("", dbuser, dbpasswd);
+     while ( ! dbwait->have_connection() )
+     {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+         Sleep(10000);
+#else
+         sleep(10);
+#endif
+         dbwait->p_getConnect("", dbuser, dbpasswd);
+     }
 
     read_datadir();
     user_count = 0;
