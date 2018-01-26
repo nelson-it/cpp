@@ -163,7 +163,7 @@ void HttpUtils::file(HttpHeader *h)
         co = outbuf = new char[str.size() * 4];
         outnum = ( str.size() * 4 - 1);
 
-        if ( ( iv = iconv_open("utf-8//TRANSLIT", h->vars["iconv"].c_str()) ) >= 0 )
+        if ( ( iv = iconv_open("utf-8//TRANSLIT", h->vars["iconv"].c_str()) ) != (iconv_t)(-1))
         {
             iconv (iv, &ci, &innum, &co, &outnum);
             iconv_close(iv);
