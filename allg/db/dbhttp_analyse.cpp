@@ -98,8 +98,15 @@ void DbHttpAnalyse::read_datadir()
     tab = db->p_getTable(db->getApplschema(), "server");
 
     values["serverid"] = "0";
+#ifdef Darwin
+    str = (char *)malloc(10240);
+    getcwd(str, 10240);
+    values["pwd"] = str;
+#else
     values["pwd"] = str = get_current_dir_name();
+#endif
     where["serverid"] = "0";
+
 
     r = tab->select(&values, &where);
     ( r->empty() ) ? tab->insert(&values) : tab->modify(&values, &where);

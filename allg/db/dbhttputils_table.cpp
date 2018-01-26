@@ -54,7 +54,7 @@ int DbHttpUtilsTable::request(Database *db, HttpHeader *h)
     {
         if ( h->filename == "index.html")
         {
-            unsigned int i;
+            std::string::size_type i;
             if ( (i = h->dirname.rfind('/')) != std::string::npos )
             {
                 h->filename = h->dirname.substr(i+1);
