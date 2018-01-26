@@ -101,7 +101,7 @@ protected:
     iconv_t iv;
 
 public:
-    DbConnect() : msg("DbConnect") {};
+    DbConnect() : msg("DbConnect") {iv = 0;};
     virtual ~DbConnect() {};
 
     virtual void mk_string( std::string &str, int nodelimiter = 0);

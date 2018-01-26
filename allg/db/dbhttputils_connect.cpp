@@ -272,7 +272,7 @@ void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
 
     this->read_datadir();
 
-    msg.pmessage(0, "#mne_lang#Tabellenspeicher geleert");
+    msg.pmessage(0, "ok");
     add_content(h, "<body>ok</body>");
 }
 

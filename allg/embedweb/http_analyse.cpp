@@ -14,6 +14,7 @@
 #include <utils/cslist.h>
 #include <utils/gettimeofday.h>
 #include <crypt/base64.h>
+#include <crypt/sha1.h>
 #include <argument/argument.h>
 
 #include "http.h"
@@ -27,8 +28,6 @@ void *HttpAnalyseThread(void *param)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 	    _setmbcp(_MB_CP_ANSI);
 #endif
-
-	//Message msg("HttpAnalyseThread", 1);
 
 	HttpAnalyse::HttpAnalyseThreadParam *p;
 
@@ -57,6 +56,7 @@ HttpAnalyse::HttpAnalyseThreadParam::HttpAnalyseThreadParam(Http *http)
 	this->http = http;
 	this->analyse = http->p_getHttpAnalyse();
 	this->abort = 0;
+	this->act_h = NULL;
 
 	pthread_mutex_init(&this->mutex,NULL);
 	pthread_create(&(this->id), NULL, HttpAnalyseThread, (void *)this);
@@ -68,6 +68,12 @@ HttpAnalyse::HttpAnalyseThreadParam::~HttpAnalyseThreadParam()
 	pthread_mutex_lock(&mutex);
 	pthread_mutex_unlock(&mutex);
 }
+
+void HttpAnalyse::HttpAnalyseThreadParam::disconnect(int client)
+{
+    this->http->disconnect(client);
+}
+
 
 HttpHeader *HttpAnalyse::getHeader()
 {
@@ -153,6 +159,7 @@ msg("HttpAnalyse")
 	content_types["jpe"]  = "image/jpeg";
     content_types["jpeg"] = "image/jpeg";
     content_types["ico"]  = "image/x-icon";
+    content_types["svg"]  = "image/svg+xml";
 
 	content_types["txt"]  = "text/plain";
 	content_types["html"] = "text/html";
@@ -169,6 +176,10 @@ msg("HttpAnalyse")
 	content_types["ai"]   = "application/postscript";
 	content_types["eps"]  = "application/postscript";
 	content_types["ps"]   = "application/postscript";
+
+	content_types["mp3"]   = "audio/mpeg";
+	content_types["ogg"]   = "audio/ogg";
+	content_types["flac"]  = "audio/flac";
 
 	this->act_h = NULL;
 
@@ -465,6 +476,27 @@ void HttpAnalyse::analyse_header()
 		{
 		        forward_port = arg;
 		}
+
+		else if  ( name == "sec-websocket-key")
+		{
+		    Sha1 sha;
+		    CryptBase64 base64;
+            unsigned char buffer[SHA1HashSize];
+            unsigned char out[128];
+
+		    std::string str = arg + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+		    sha.set((const uint8_t*) str.c_str(), str.length());
+		    sha.get(buffer);
+
+		    out[base64.encode(buffer, out, SHA1HashSize )-1] = '\0';
+
+		    act_h->extra_header.push_back("Upgrade: websocket");
+		    act_h->extra_header.push_back("Connection: Upgrade");
+		    act_h->extra_header.push_back(std::string("Sec-WebSocket-Accept: ") + std::string((char*)out));
+		    act_h->extra_header.push_back("Sec-WebSocket-Protocol: chat");
+		    act_h->setstatus = 101;
+
+		}
 	}
 
 	h->second.clear();
@@ -509,7 +541,7 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 	act_h = NULL;
 
-	if ( ( h = headers.find(client) ) == headers.end() )
+    if ( ( h = headers.find(client) ) == headers.end() )
 	{
 		Header tmp;
 		headers[client] = tmp;
@@ -527,12 +559,9 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 	h = headers.find(client);
 	str = h->second[0];
 
-	for(c = buffer; ( c - buffer ) < size ||
-	( act_h != NULL && act_h->needed_postdata == 0); c++ )
+	for(c = buffer; ( c - buffer ) < size || ( act_h != NULL && act_h->needed_postdata == 0); c++ )
 	{
-		if ( act_h != NULL &&
-				act_h->client == client &&
-				act_h->needed_postdata > 0 )
+		if ( act_h != NULL && act_h->client == client && act_h->needed_postdata > 0 )
 		{
 			int b_rest;
 
@@ -602,6 +631,8 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 void HttpAnalyse::disconnect( int client )
 {
 	Headers::iterator h;
+	unsigned int i;
+
 	if ( ( h = headers.find(client)) != headers.end() )
 	{
 		msg.pdebug(D_CON, "Verbindung zum Client %d wurde abgebrochen",client);
@@ -611,6 +642,11 @@ void HttpAnalyse::disconnect( int client )
 	{
 		msg.pdebug(D_CON, "Client %d existiert nicht",client);
 	}
+
+	for ( i = 0; i<https.size(); ++i)
+	    https[i]->disconnect(client);
+
+
 }
 
 void HttpAnalyse::add_http(Http *http)
@@ -624,7 +660,7 @@ void HttpAnalyse::add_http(Http *http)
 
 void HttpAnalyse::del_http(Http *http)
 {
-	msg.pwarning(W_HTTP, "Http kann nicht gelöscht werden nicht finden");
+	msg.pwarning(W_HTTP, "Http kann nicht gelöscht werden");
 	return;
 }
 

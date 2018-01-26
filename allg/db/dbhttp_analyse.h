@@ -21,6 +21,7 @@ public:
 
 #ifdef PTHREAD
 		pthread_mutex_t mutex;
+		int is_unlock;
 #endif
 
 		unsigned int host;
@@ -29,6 +30,7 @@ public:
 		std::string  user;
 		std::string  passwd;
 		std::string  base;
+		std::string  cookie;
 
 		Database     *db;
 		time_t       last_connect;
@@ -46,6 +48,7 @@ public:
 			host = 0;
 			browser = 0;
 			last_connect = 0;
+			is_unlock = 0;
 
             userprefs["language"] = "de";
             userprefs["region"] = "CH";
@@ -53,6 +56,35 @@ public:
 
 			db = NULL;
 		};
+
+		~Client()
+		{
+            #ifdef PTHREAD
+		    pthread_mutex_unlock(&mutex);
+		    pthread_mutex_destroy(&mutex);
+            #endif
+		}
+
+        void unlock()
+        {
+             #ifdef PTHREAD
+             msg.pdebug(1, "try unlock %s", cookie.c_str());
+            if ( is_unlock )
+                 return;
+             msg.pdebug(1, "unlock %s", cookie.c_str());
+             is_unlock = 1;
+             pthread_mutex_unlock(&mutex);
+             #endif
+        }
+
+        void lock()
+        {
+             #ifdef PTHREAD
+             msg.pdebug(1, "lock %s", cookie.c_str());
+             pthread_mutex_lock(&mutex);
+             is_unlock = 0;
+             #endif
+        }
 
 		std::string getUserprefs(std::string name)
 		{
@@ -75,6 +107,8 @@ private:
 
 #ifdef PTHREAD
 	pthread_mutex_t cl_mutex;
+	void lock() { pthread_mutex_lock(&cl_mutex); }
+	void unlock() { pthread_mutex_unlock(&cl_mutex); }
 #endif
 
 	typedef std::map<std::string, Client> Clients;
@@ -98,14 +132,10 @@ protected:
 #ifdef PTHREAD
 	void releaseHeader(HttpHeader *h)
 	{
-	    if ( ! h->vars.exists("asynchron") )
+	    Clients::iterator i;
+	    if ( ( i = clients.find(h->id) ) != clients.end() )
 	    {
-	        Clients::iterator i;
-	        msg.pdebug(D_MUTEX, "mutex release %s", h->id.c_str());
-	        if ( ( i = clients.find(h->id) ) != clients.end() )
-	        {
-	            pthread_mutex_unlock(&i->second.mutex);
-	        }
+	        i->second.unlock();
 	    }
 	    HttpAnalyse::releaseHeader(h);
 	}
@@ -131,11 +161,7 @@ public:
 	    }
 	    else
 	    {
-#ifdef PTHREAD
-	        msg.pdebug(D_MUTEX, "mutex lock %s", cookie.c_str());
-	        pthread_mutex_lock(&(i->second.mutex));
-#endif
-
+	        i->second.lock();
 	        return &(i->second);
 	    }
 	}

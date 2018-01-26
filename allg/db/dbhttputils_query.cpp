@@ -207,6 +207,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
     CsList wval(h->vars["wval"]);
     CsList wcol(h->vars["wcol"]);
     CsList wop(h->vars["wop"]);
+    CsList params(h->vars["params"]);
 
     h->status = 200;
     if ( exports )
@@ -272,7 +273,7 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 
 
 
-        r = query->select(&wcol, &wval, &wop, &sorts );
+        r = query->select(&wcol, &wval, &wop, &sorts, &params );
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();
 
@@ -502,6 +503,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     CsList wval(h->vars["wval"]);
     CsList wcol(h->vars["wcol"]);
     CsList wop(h->vars["wop"]);
+    CsList params(h->vars["params"]);
 
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
@@ -623,7 +625,7 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         DbConnect::ResultMat::iterator rm;
         DbConnect::ResultVec::iterator rv, re;
 
-        r = query->select(&wcol, &wval, &wop, &sorts );
+        r = query->select(&wcol, &wval, &wop, &sorts, &params );
         resultcount = r->size();
         if (h->vars["sqlend"] != "")
             db->p_getConnect()->end();

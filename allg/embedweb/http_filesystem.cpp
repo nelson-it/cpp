@@ -158,6 +158,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
     msg("HttpFilesystem")
 {
     Argument a;
+    qs_type = FD_NAME;
 
     this->dataroot = (std::string)a["EmbedwebHttpDataroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -228,7 +229,11 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     if ( m == h->datapath.end() )
     {
         if ( ( h->user == "admindb" || http->check_group(h, "adminsystem") ) && root == "admin" )
+        {
+            msg.pdebug(D_ROOTDIRS, "found %s", this->dataroot.c_str());
             return this->dataroot;
+        }
+        msg.pdebug(D_ROOTDIRS, "found <>" );
         return "";
     }
 

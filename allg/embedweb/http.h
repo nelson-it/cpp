@@ -95,6 +95,7 @@ public:
     std::string mkmap(std::string filename);
 
     virtual void disconnect( int client );
+    virtual void unlock_client() {};
 
     void add_provider(HttpProvider *);
     void del_provider(HttpProvider *);

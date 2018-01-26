@@ -126,6 +126,7 @@ protected:
 
     static ColumnMapAll all_cols;
     static std::map<std::string, char> all_typ;
+    static pthread_mutex_t all_cols_mutex;
 
     ColumnMap cols;
 
@@ -136,7 +137,11 @@ protected:
 
 public:
     DbTable() : msg("DbTable")
-{ have_usertime_columns = 0; }
+    {
+        have_usertime_columns = 0;
+        typ = ' ';
+        dbconnect = NULL;
+    }
     virtual ~DbTable() {cols.empty(); }
 
     int empty() { return cols.empty(); }

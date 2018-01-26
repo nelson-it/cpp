@@ -46,12 +46,11 @@ public:
 
     void add_provider(DbHttpProvider *);
     void del_provider(DbHttpProvider *);
+    void disconnect( int client );
 
     void unlock_client()
     {
-        #ifdef PTHREAD
-    	pthread_mutex_unlock(&(act_client->mutex));
-        #endif
+    	act_client->unlock();
     }
 
     DbHttpAnalyse::Client::Userprefs getUserprefs()

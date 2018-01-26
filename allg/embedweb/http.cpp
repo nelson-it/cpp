@@ -146,6 +146,7 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
 
 	this->s = s;
 	this->analyse = analyse;
+	this->act_h = NULL;
 
 	if (register_thread)
 		analyse->add_http(this);
@@ -411,6 +412,20 @@ void Http::write_header()
 			status_str[status].c_str());
 	s->write(act_h->client, buffer, strlen(buffer));
 
+    for ( count = 0; count < act_h->extra_header.size(); ++count )
+    {
+        sprintf(buffer, "%s\r\n", act_h->extra_header[count].c_str());
+        s->write(act_h->client, buffer, strlen(buffer));
+    }
+
+    if ( status == 101 )
+    {
+        sprintf(buffer, "\r\n");
+        s->write(act_h->client, buffer, strlen(buffer));
+        act_h->content_length = 0;
+        return;
+    }
+
 	if ( status == 401 )
 	{
 		msg.pdebug(D_HTTP, "fordere Passwort an");
@@ -479,11 +494,6 @@ void Http::write_header()
 			act_h->content_type.c_str(), act_h->charset.c_str());
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	for ( count = 0; count < act_h->extra_header.size(); ++count )
-	{
-	    sprintf(buffer, "%s\r\n", act_h->extra_header[count].c_str());
-	    s->write(act_h->client, buffer, strlen(buffer));
-	}
 
 	if (status >= 300 && status < 400 )
 	{
@@ -614,6 +624,11 @@ void Http::get(HttpHeader *h)
 
 void Http::disconnect(int client)
 {
+    Provider::iterator i;
+
+    for ( i = provider.begin(); i != provider.end(); ++i)
+        i->second->disconnect(client);
+
 }
 
 void Http::add_provider(HttpProvider *p)
