@@ -52,7 +52,7 @@ public:
 	~ReportTex();
 
 	int mk_report(Database *db, std::string reportname, int subreport,
-			      FILE *out, std::string language, std::string schema, std::string query,
+			      FILE *out, std::string language, std::string schema, std::string query, CsList *cols,
 			      CsList *wcol, CsList *wval,
 			      CsList *wop, CsList *sort, Macros *macros = NULL, Macros *xml =
 				  NULL);

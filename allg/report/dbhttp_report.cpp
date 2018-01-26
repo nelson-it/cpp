@@ -390,7 +390,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
    for ( i=0; i<pdfcount; i++)
    {
        sprintf(resultfile, "%sreport%d", DIRSEP, i);
-       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
+//       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
    }
 
 }
@@ -398,7 +398,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
 void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 {
     CsList    sort;
-    CsList    wid, wval, wop;
+    CsList    wid, wval, wop, cols;
     unsigned i;
     std::string::size_type n;
 
@@ -408,7 +408,6 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 
     DbTable *tab = NULL;
     DbTable::ValueMap where;
-    CsList cols;
     DbConnect::ResultMat *r;
 
     std::string pdfschema;
@@ -465,6 +464,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
     wop.setString(h->vars["wop"]);
     wid.setString(h->vars["wcol"]);
     wval.setString(h->vars["wval"]);
+    cols.setString(h->vars["cols"]);
 
     for (i=0; 1; ++i )
     {
@@ -510,7 +510,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
      TmpFile logfile("HttpRepLogXXXXXX");
 
     report.userprefs = this->http->getUserprefs();
-    if ( report.mk_report(db,str,0,resultfile.get_fp(), h->vars["language"], h->vars["schema"], h->vars["query"], &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
+    if ( report.mk_report(db,str,0,resultfile.get_fp(), h->vars["language"], h->vars["schema"], h->vars["query"], &cols, &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
     {
         msg.pwarning(W_NOROWS, "Der Report <%s> hat keine Zeilen", str);
     }

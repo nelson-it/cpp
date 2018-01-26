@@ -3,6 +3,7 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#include <unistd.h>
 
 #include <argument/argument.h>
 
@@ -15,6 +16,19 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 {
 	Argument a;
     char str[1024];
+    std::string dbuser,dbpasswd;
+    Database *dbwait;
+
+    if ( (std::string)a["DbSystemUser"] == "" )
+    {
+        dbuser = (std::string)a["DbTranslateUser"];
+        dbpasswd = (std::string)a["DbTranslatePasswd"];
+    }
+    else
+    {
+        dbuser = (std::string)a["DbSystemUser"];
+        dbpasswd = (std::string)a["DbSystemPasswd"];
+    }
 
 	this->s = s;
 	this->dbtimeout = a["DbHttpTimeout"];
@@ -23,8 +37,19 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
 
-
     this->db = db->getDatabase();
+
+    dbwait = this->db->getDatabase();
+    dbwait->p_getConnect("", dbuser, dbpasswd);
+     while ( ! dbwait->have_connection() )
+     {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+         Sleep(10000);
+#else
+         sleep(10);
+#endif
+         dbwait->p_getConnect("", dbuser, dbpasswd);
+     }
 
     read_datadir();
     user_count = 0;
@@ -44,12 +69,19 @@ void DbHttpAnalyse::read_datadir()
 	Database *db;
 	CsList cols;
 	DbTable *tab;
+	DbTable::ValueMap values;
 	DbTable::ValueMap where;
 	DbConnect::ResultMat *r;
     DbConnect::ResultMat::iterator ri;
+    char *str;
 
     db = this->db->getDatabase();
 
+    if ( (std::string)a["DbSystemUser"] == "" )
+    {
+        datapath.clear();
+        return;
+    }
     db->p_getConnect("", a["DbSystemUser"], a["DbSystemPasswd"]);
     tab = db->p_getTable(db->getApplschema(), "folder");
 
@@ -63,6 +95,18 @@ void DbHttpAnalyse::read_datadir()
 
     db->release(tab);
 
+    tab = db->p_getTable(db->getApplschema(), "server");
+
+    values["serverid"] = "0";
+    values["pwd"] = str = get_current_dir_name();
+    where["serverid"] = "0";
+
+    r = tab->select(&values, &where);
+    ( r->empty() ) ? tab->insert(&values) : tab->modify(&values, &where);
+    tab->end();
+    db->release(tab);
+
+    free(str);
     delete db;
 }
 
@@ -75,9 +119,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	client = h->client;
 	cookie = h->cookies[cookieid.c_str()];
 
-#ifdef PTHREAD
-	pthread_mutex_lock(&cl_mutex);
-#endif
+	lock();
 
 	msg.pdebug(D_CLIENT, "cookie %s", cookie.c_str());
 	if ( cookie != "" && (ic = clients.find(cookie) ) != clients.end()  )
@@ -104,25 +146,21 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
 			ic->second.last_connect = time(NULL);
 
-#ifdef PTHREAD
-			pthread_mutex_unlock(&cl_mutex);
-#endif
+			unlock();
 			return;
 		}
 	}
 
 	if ( h->dirname == "/main/login" )
 	{
-#ifdef PTHREAD
-	    pthread_mutex_unlock(&cl_mutex);
-#endif
+	    unlock();
 	    return;
 	}
 
 	char str[1024];
 	Client cl;
-    std::string user = h->vars["user"];
-    std::string passwd = h->vars["passwd"];
+    std::string user = h->vars["mneuserloginname"];
+    std::string passwd = h->vars["mneuserpasswd"];
     h->location = h->vars["location"];
 
     if ( user != "" && user.substr(0,6) != "mneerp")
@@ -149,6 +187,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         cl.user_agent = h->user_agent;
         cl.base = h->base;
         cl.db = db->getDatabase();
+        cl.cookie = str;
         clients[str] = cl;
         ic = clients.find(str);
 
@@ -164,9 +203,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
             setUserprefs(&ic->second);
             ic->second.db->p_getConnect()->end();
             h->status = 301;
-#ifdef PTHREAD
-    pthread_mutex_unlock(&cl_mutex);
-#endif
+            unlock();
             return;
         }
 
@@ -185,9 +222,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
     h->set_cookies[cookieid.c_str()] = "";
 
-#ifdef PTHREAD
-	pthread_mutex_unlock(&cl_mutex);
-#endif
+	unlock();
 
 }
 
@@ -255,14 +290,10 @@ void DbHttpAnalyse::del_client(unsigned int client)
 
 void DbHttpAnalyse::disconnect(int client)
 {
-#ifdef PTHREAD
-    pthread_mutex_lock(&cl_mutex);
-#endif
+    lock();
 	del_client(client);
 	HttpAnalyse::disconnect(client);
-#ifdef PTHREAD
-    pthread_mutex_unlock(&cl_mutex);
-#endif
+    unlock();
 }
 
 void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
@@ -270,9 +301,7 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 	Clients::iterator c;
 	int need_timeout = 0;
 
-#ifdef PTHREAD
-    pthread_mutex_lock(&cl_mutex);
-#endif
+    lock();
 	msg.pdebug(D_CON, "Starte aufräumen");
 	c = clients.begin();
 
@@ -286,9 +315,7 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 				{
 					msg.pdebug(D_CON, "lösche client endgültig %s",
 							c->first.c_str());
-#ifdef PTHREAD
-					pthread_mutex_lock(&c->second.mutex);
-#endif
+					c->second.lock();
 					delete c->second.db;
 					clients.erase(c);
 					break;
@@ -312,8 +339,6 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 	else
 		setWakeup(need_timeout + this->dbtimeout);
 
-#ifdef PTHREAD
-    pthread_mutex_unlock(&cl_mutex);
-#endif
+    unlock();
 }
 

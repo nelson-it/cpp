@@ -23,6 +23,14 @@ Database::Database() :
     Argument a;
     con = NULL;
     this->appl_schema = std::string(a["DbApplSchema"]);
+
+    this->last_tab = NULL;
+    this->last_query = NULL;
+    this->last_querycreator = NULL;
+    this->last_constraint = NULL;
+    this->last_cur = NULL;
+    this->last_join = NULL;
+
 }
 
 Database::Database(std::string appl_schema) :
@@ -30,6 +38,13 @@ Database::Database(std::string appl_schema) :
 {
 	con = NULL;
 	this->appl_schema = appl_schema;
+
+    this->last_tab = NULL;
+    this->last_query = NULL;
+    this->last_querycreator = NULL;
+    this->last_constraint = NULL;
+    this->last_cur = NULL;
+    this->last_join = NULL;
 }
 
 Database::~Database()

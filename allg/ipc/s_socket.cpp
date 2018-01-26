@@ -305,6 +305,9 @@ ServerSocket::ServerSocket(short socketnum )
 
     providerid = 1;
     http = NULL;
+    wr_set = NULL;
+    rd_set = NULL;
+    max_sock = 0;
 
 #ifdef PTHREAD
     pthread_mutex_init(&mutex,NULL);

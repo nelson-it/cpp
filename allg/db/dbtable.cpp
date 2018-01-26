@@ -15,6 +15,7 @@
 
 DbTable::ColumnMapAll DbTable::all_cols;
 std::map<std::string,char> DbTable::all_typ;
+pthread_mutex_t DbTable::all_cols_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 DbTable::Value::Value()
 {
@@ -124,6 +125,8 @@ DbTable::Column::Column()
     this->size = 0;
     this->can_null = 0;
     this->dpytyp = -1;
+    this->have_value = 0;
+    this->num = 0;
     int_typ = 0;
 
 }
@@ -134,6 +137,8 @@ DbTable::Column::Column(std::string name)
     this->size = 0;
     this->can_null = 0;
     this->dpytyp = -1;
+    this->have_value = 0;
+    this->num = 0;
     int_typ = 0;
 
 }
@@ -147,6 +152,8 @@ DbTable::Column::Column(std::string name,int typ, std::string value, int can_nul
     this->value = value;
     this->regexp = regexp;
     this->dpytyp = dpytyp;
+    this->have_value = 0;
+    this->num = 0;
 
     int_typ = 0;
 }
@@ -162,6 +169,8 @@ DbTable::Column::Column(std::string name, int typ, int size,
     this->regexp = regexp;
     this->dpytyp = dpytyp;
 
+    this->have_value = 0;
+    this->num = 0;
     int_typ = 0;
 }
 

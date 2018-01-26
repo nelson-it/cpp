@@ -107,8 +107,10 @@ void HttpContent::save_content(HttpHeader *h, const char* file)
 {
     FILE *f;
     if ((f = fopen(file, "wb")) != NULL )
+    {
         fwrite(h->content, h->content_length, 1, f);
+        fclose(f);
+    }
     else msg_content.perror(E_FILE, "konnte Datei <%s> nicht öffnen", file);
 
-    fclose(f);
 }

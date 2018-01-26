@@ -24,17 +24,19 @@ public:
     class HttpAnalyseThreadParam
     {
     public:
-	pthread_t id;
-	pthread_mutex_t mutex;
+        pthread_t id;
+        pthread_mutex_t mutex;
 
         Http *http;
-	HttpAnalyse *analyse;
+        HttpAnalyse *analyse;
 
-	HttpHeader *act_h;
-	int abort;
+        HttpHeader *act_h;
+        int abort;
 
         HttpAnalyseThreadParam(Http *http);
-	~HttpAnalyseThreadParam();
+        ~HttpAnalyseThreadParam();
+
+        void disconnect(int client);
     };
 
 #endif
@@ -48,7 +50,7 @@ private:
 
     typedef std::map<int, HttpHeader*> HttpHeaders;
 
-    #ifdef PTHREAD
+#ifdef PTHREAD
     friend class HttpAnalyseThreadParam;
     typedef std::vector<HttpAnalyseThreadParam *> Https;
     typedef std::deque<HttpHeader *> HttpWaitingHeaders;
@@ -64,9 +66,9 @@ public:
 
 
 private:
-    #else
+#else
     typedef std::vector<Http *> Https;
-    #endif
+#endif
 
     // Membervariablen
     // ===============
@@ -92,25 +94,25 @@ protected:
     enum ERROR_TYPE
     {
         E_CLIENT_UNKOWN,
-	E_REQUEST,
-	E_REQUEST_TO_SHORT,
-	E_AUTH_NOT_SUPPORTED,
+        E_REQUEST,
+        E_REQUEST_TO_SHORT,
+        E_AUTH_NOT_SUPPORTED,
 
-	MAX_ERROR = 100
+        MAX_ERROR = 100
     };
 
     enum WARNING_TYPE
     {
-	W_HTTP = 1,
+        W_HTTP = 1,
         MAX_WARNING = 100
     };
 
     enum DEBUG_TYPE
     {
-	D_SEND = 2,
-	D_CON  = 3,
+        D_CON  = 1,
+        D_SEND = 2,
         D_HEADER = 4,
-	D_RAWHEADER = 4,
+        D_RAWHEADER = 4,
         D_HTTP = 5,
         D_EXEC = 5
     };

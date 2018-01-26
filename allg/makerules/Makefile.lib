@@ -25,6 +25,7 @@ $(SHLIB_PRE)mnebase.$(SHLIB).SOURCES := \
         $(PROJECT_ROOT)/allg/message/message.cpp \
         $(PROJECT_ROOT)/allg/ipc/s_socket.cpp \
         $(PROJECT_ROOT)/allg/deamon/deamon.cpp \
+        $(PROJECT_ROOT)/allg/crypt/sha1.cpp \
         $(PROJECT_ROOT)/allg/crypt/base64.cpp \
         $(PROJECT_ROOT)/allg/network/wake.cpp \
         $(PROJECT_ROOT)/allg/bonjour/dnsserviceregister.cpp \
