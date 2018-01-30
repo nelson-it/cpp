@@ -67,6 +67,13 @@ void HttpSysexec::execute ( HttpHeader *h)
     host = this->http->getServersocket()->getHost(h->client);
     command = h->dirname;
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( h->content_type == "text/xml" )
+        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    else
+        add_content(h,  "ok");
+    return;
+#endif
 
     for ( i = 0; i < ips.size(); ++i )
         if (  check_ip(ips[i].c_str(), host ) ) break;
@@ -110,15 +117,6 @@ void HttpSysexec::execute ( HttpHeader *h)
         }
     }
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    std::string str = "bash -c '";
-    unsigned int j;
-    for ( j = 0; j<cmd.size(); j++)
-        str += " \"" + ToString::mascarade(cmd[j].c_str(), "\"") + "\"";
-    str += "'";
-    cmd.clear();
-    cmd.add(str);
-#endif
     Process p(http->getServersocket());
     p.start(cmd, "pipe", std::string(a["projectroot"]).c_str(), NULL, ".", 1);
 
@@ -138,7 +136,7 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     if ( p.getStatus() != 0 )
     {
-        msg.perror(E_ERRORFOUND, "Fehler gefunden");
+        msg.perror(E_ERRORFOUND, "Fehler gefunden %d", p.getStatus());
         msg.iline("%s", logtext.c_str());
         if ( h->content_type == "text/xml" )
             add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());

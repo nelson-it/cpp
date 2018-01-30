@@ -87,7 +87,6 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             else logfile = "";
         }
     }
-
     #if defined(__MINGW32__) || defined(__CYGWIN__)
 
 	SECURITY_ATTRIBUTES psa;
@@ -332,8 +331,9 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
     if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
     if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
+    {
         msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
-
+    }
 	if ( extrapath != NULL && *extrapath != '\0' )
 	    SetEnvironmentVariable("PATH", path);
 

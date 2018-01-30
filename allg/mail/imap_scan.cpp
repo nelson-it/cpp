@@ -378,7 +378,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
         if ( fullscan )
         {
             where.clear();
-            where["modifydate"] = (time(NULL) - 7 * 86400 );
+            where["modifydate"] = (long)((time(NULL) - 7 * 86400 ));
             uidtab->del(&where);
             tab->end();
         }

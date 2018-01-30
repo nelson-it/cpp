@@ -337,27 +337,13 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
                 if (!r.isnull)
                 {
                     Oid id;
-                    int fd;
 
                     id = strtol(PQgetvalue(res, k, i), NULL, 10);
-                    if (0 && ignore_oid == 0 && (fd
-                            = lo_open(con, id, INV_READ)) >= 0)
-                    {
-                        r.length = lo_lseek(con, fd, 0, SEEK_END);
-                        r.value = (void *) new char[r.length + 1];
-                        ((char *) r.value)[r.length] = '\0';
-                        lo_lseek(con, fd, 0, SEEK_SET);
-                        lo_read(con, fd, (char *) r.value, r.length);
-                        lo_close(con, fd);
-                    }
-                    else
-                    {
-                        r.length = sizeof(long);
-                        r.value =  new char[r.length];
-                        //r.value = (void *) new long;
-                        *(unsigned long*) r.value = id;
-                        r.typ = LONG;
-                    }
+                    r.length = sizeof(long);
+                    r.value =  new char[r.length];
+                    //r.value = (void *) new long;
+                    *(unsigned long*) r.value = id;
+                    r.typ = LONG;
                 }
                 else
                 {

@@ -96,6 +96,15 @@ ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
         SHARED_FLAGS := --enable-auto-import
 endif
 
+ifeq "$(UNAME)" "CYGWIN_NT-10.0"
+           MKLIBNAME  = $(1).dll
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
+              LD_STD := $(LD_STD)  -lwsock32
+                 CPP := x86_64-w64-mingw32-g++
+                  CC := x86_64-w64-mingw32-gcc
+        SHARED_FLAGS := --enable-auto-import
+endif
+
 ifdef $($(TARGET).WITH_SHARED_LIBS) 
     WITH_SHARED_LIBS := $($(TARGET).WITH_SHARED_LIBS)
 endif
@@ -171,6 +180,10 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
               INC_PG := -I/usr/i686-w64-mingw32/sys-root/mingw/include -I$(POSTGRES_ROOT)/include
 
+    else ifeq "$(UNAME)" "CYGWIN_NT-10.0"
+              LIB_PG := -llibpq
+              INC_PG := 
+
     else ifeq "$(CODENAME)" "trusty"
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.3/server
@@ -230,6 +243,9 @@ ifeq "$(WITH_ICONV)" "TRUE"
     ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
              OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
+    endif
+    ifeq "$(UNAME)" "CYGWIN_NT-10.0"
+              LD_STD := $(LD_STD)  -liconv
     endif
 endif
 

@@ -148,15 +148,17 @@ msg("HttpAnalyse")
     this->dataroot = std::string(a["EmbedwebHttpDataroot"]);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( this->dataroot[1] != ':' )
+    {
 #else
     if ( this->dataroot[0] != '/' )
+    {
 #endif
         this->dataroot = projectroot + "/" + this->dataroot;
-
-	content_types["gif"]  = "image/gif";
-	content_types["png"]  = "image/png";
-	content_types["jpg"]  = "image/jpeg";
-	content_types["jpe"]  = "image/jpeg";
+    }
+    content_types["gif"]  = "image/gif";
+    content_types["png"]  = "image/png";
+    content_types["jpg"]  = "image/jpeg";
+    content_types["jpe"]  = "image/jpeg";
     content_types["jpeg"] = "image/jpeg";
     content_types["ico"]  = "image/x-icon";
     content_types["svg"]  = "image/svg+xml";

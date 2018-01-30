@@ -249,7 +249,7 @@ int DbTable::mk_usertime_columns()
 
     #define ND  DbTable::Column::NOTNULL_NOTDEF
 
-    sprintf(now,"%ld", time(NULL));
+    sprintf(now,"%ld", (long)time(NULL));
 
     if ( cols.find("createdate") == cols.end() )
 	result  = add_column("createdate",

@@ -31,31 +31,27 @@ DWORD init_service(DWORD   argc, LPTSTR  *argv, DWORD *specificError)
 
     Argument a;
 
-    if ( *((char*)a["workdir"]) != '\0' )
-        if ( SetCurrentDirectory((char*)a["workdir"]) == 0 )
+    if ( ((std::string)a["workdir"]) != "" )
+        if ( SetCurrentDirectory(((std::string)a["workdir"]).c_str()) == 0 )
         {
-            sprintf(buffer, "kann nicht in Ordner <%s> wechseln",
-                    (char*)a["workdir"]);
+            sprintf(buffer, "kann nicht in Ordner <%s> wechseln", ((std::string)a["workdir"]).c_str());
             report_log(sn, EVENTLOG_ERROR_TYPE, buffer);
             return 1;
         }
 
-    if ( *((char*)a["extrapath"]) != '\0')
+    if ( ((std::string)a["extrapath"]) != "")
     {
         unsigned int i;
         i = GetEnvironmentVariable("PATH", buffer, sizeof(buffer));
         if ( i > sizeof(buffer) )
         {
-            sprintf(buffer, "kann $PATH <%s> nicht erweitern",
-                    (char*)a["extrapath"]);
+            sprintf(buffer, "kann $PATH <%s> nicht erweitern", ((std::string)a["extrapath"]).c_str());
             report_log(sn, EVENTLOG_ERROR_TYPE, buffer);
             return 1;
         }
 
         buffer[i] = '\0';
-        SetEnvironmentVariable("PATH",
-                ((std::string)buffer + ";" +
-                        (std::string)((char*)a["extrapath"])).c_str());
+        SetEnvironmentVariable("PATH", ((std::string)buffer + ";" + ((std::string)a["extrapath"])).c_str());
     }
 
     ZeroMemory( &service_si, sizeof(service_si) );
@@ -66,14 +62,14 @@ DWORD init_service(DWORD   argc, LPTSTR  *argv, DWORD *specificError)
 
     buffer[GetEnvironmentVariable("PATH", buffer, sizeof(buffer))] = '\0';
 
-    if ( ((char*)a["logfile"]) != '\0' )
+    if ( ((std::string)a["logfile"]) != "" )
     {
         SECURITY_ATTRIBUTES sa;
         sa.nLength = sizeof(sa);
         sa.lpSecurityDescriptor = NULL;
         sa.bInheritHandle = TRUE;
 
-        service_si.hStdOutput = CreateFile((char *)a["logfile"],
+        service_si.hStdOutput = CreateFile(((std::string)a["logfile"]).c_str(),
                 GENERIC_WRITE,
                 FILE_SHARE_READ | FILE_SHARE_WRITE,
                 &sa,
@@ -84,8 +80,7 @@ DWORD init_service(DWORD   argc, LPTSTR  *argv, DWORD *specificError)
         service_si.hStdError  = service_si.hStdOutput;
         if ( service_si.hStdOutput == INVALID_HANDLE_VALUE )
         {
-            sprintf(buffer, "konnte logfile %s nicht öffnen",
-                    (char*)a["logfile"]);
+            sprintf(buffer, "konnte logfile %s nicht öffnen", ((std::string)a["logfile"]).c_str());
             report_log( sn, EVENTLOG_ERROR_TYPE, buffer);
             *specificError = 1;
             return 1;
@@ -110,7 +105,7 @@ DWORD init_service(DWORD   argc, LPTSTR  *argv, DWORD *specificError)
     ZeroMemory( &service_pi, sizeof(service_pi) );
 
     if( !CreateProcess( NULL, // No module name (use command line).
-            (char*)a["prog"],     // Command line.
+            (char*)(((std::string)a["prog"]).c_str()),     // Command line.
             &psa,                 // Process handle inheritable.
             &tsa,                 // Thread handle inheritable.
             TRUE,                 // Set handle inheritance to FALSE.
@@ -122,8 +117,7 @@ DWORD init_service(DWORD   argc, LPTSTR  *argv, DWORD *specificError)
     )
     {
         char str[1024];
-        sprintf(str, "Kommando %s konnte nicht ausgeführt werden",
-                (char*)a["prog"]);
+        sprintf(str, "Kommando %s konnte nicht ausgeführt werden", ((std::string)a["prog"]).c_str());
         report_log( sn, EVENTLOG_ERROR_TYPE, str);
         *specificError = 1;
         return 1;
@@ -145,7 +139,7 @@ void stop_service()
     WaitForSingleObject( service_pi.hProcess, INFINITE );
     GetExitCodeProcess(service_pi.hProcess, &exitcode);
 
-    if ( *(char*)a["logfile"] != '\0' )
+    if ( (std::string)a["logfile"] != "" )
         CloseHandle(service_si.hStdOutput);
 
     // Close process and thread handles.
@@ -173,19 +167,22 @@ int main( int argc, char **argv)
     liste["workdir"]   = Argument::Liste("-wdir"  ,   'c', 1, "");
     liste["logfile"]   = Argument::Liste("-logfile" , 'c', 1, "");
     liste["extrapath"] = Argument::Liste("-epath"   , 'c', 1, "");
+    liste["umask"]       = Argument::Liste("-umask",  'l', 1, "");
+
 
     Argument a(&liste, *argv);
     a.scan(--argc, ++argv);
 
-    if ( *( sn = a["svcname"] ) == '\0' )
+    if ( (std::string)a["svcname"] == "" )
         sn = a.getName().c_str();
-
+    else
+        sn = ((std::string)a["svcname"]).c_str();
     if ( a["restart"] )
     {
-        if ( (char *)a["svcname"] != '\0' )
+        if ( (std::string)a["svcname"] != "" )
         {
-            stop_service((char *)a["svcname"]);
-            start_service((char *)a["svcname"]);
+            stop_service(((std::string)a["svcname"]).c_str());
+            start_service(((std::string)a["svcname"]).c_str());
         }
         else
             report_log(sn, EVENTLOG_ERROR_TYPE, "kein servicename angegeben");
@@ -193,38 +190,38 @@ int main( int argc, char **argv)
     }
     if ( a["stop"] )
     {
-        if ( (char *)a["svcname"] != '\0' )
-            stop_service((char *)a["svcname"]);
+        if ( (std::string)a["svcname"] != ""  )
+            stop_service(((std::string)a["svcname"]).c_str());
         else
             report_log(sn, EVENTLOG_ERROR_TYPE, "kein servicename angegeben");
         exit(0);
     }
     if ( a["start"] )
     {
-        if ( (char *)a["svcname"] != '\0' )
-            start_service((char *)a["svcname"]);
+        if ( (std::string)a["svcname"] != ""  )
+            start_service(((std::string)a["svcname"]).c_str());
         else
             report_log(sn, EVENTLOG_ERROR_TYPE, "kein servicename angegeben");
         exit(0);
     }
     if ( a["rmservice"] )
     {
-        if ( (char *)a["svcname"] != '\0' )
-            remove_service((char *)a["svcname"]);
+        if ((std::string)a["svcname"] != ""  )
+            remove_service(((std::string)a["svcname"]).c_str());
         else
             report_log(sn, EVENTLOG_ERROR_TYPE, "kein servicename angegeben");
         exit(0);
     }
     if ( a["mkservice"] )
     {
-        if ( (char *)a["svcname"] != '\0' )
+        if ((std::string)a["svcname"] != ""  )
         {
-            exit(create_service((char *)a["svcname"],
+            exit(create_service(((std::string)a["svcname"]).c_str(),
                     a.getFullname().c_str(),
                     a["auto"],
-                    a["user"],
-                    a["passwd"],
-                    a["rootdir"]));
+                    ((std::string)a["user"]).c_str(),
+                    ((std::string)a["passwd"]).c_str(),
+                    ((std::string)a["rootdir"]).c_str() ));
         }
         else
         {

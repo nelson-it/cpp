@@ -795,7 +795,7 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 	char mdate[32];
 	char cdate[32];
 
-    sprintf(cdate, "%ld", time(NULL));
+    sprintf(cdate, "%ld", (long)time(NULL));
     memcpy(mdate, cdate, 32);
 
 	if (this->name == "")
@@ -1032,7 +1032,7 @@ int PgTable::modify(ValueMap *c, ValueMap *w, int ready)
 	if (have_usertime_columns)
 	{
 		char now[32];
-		sprintf(now, "%ld", time(NULL));
+		sprintf(now, "%ld", (long)time(NULL));
 
 		stm += std::string(", modifyuser = session_user, modifydate = ") + now;
 	}
