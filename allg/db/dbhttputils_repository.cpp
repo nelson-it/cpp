@@ -743,7 +743,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
     where["hash"] = vals["hash"] = "";
 
     vals["repauthor"] = "";
-    vals["repdate"] = time(NULL);
+    vals["repdate"] = (long)time(NULL);
     vals["repnote"] = "";
     vals["shortrev"] = h->vars["shortrevInput"];
 

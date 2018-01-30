@@ -543,8 +543,8 @@ void DbHttpAdminTable::pkey_mod_xml( Database *db, HttpHeader *h)
     if ( h->vars["sqlend"] != "")
         db->p_getConnect()->end();
 
-	db->release(con);
-	return;
+    db->release(con);
+    return;
 }
 
 void DbHttpAdminTable::pkey_del_xml( Database *db, HttpHeader *h)

@@ -270,8 +270,10 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
         if (format != NULL && *format == 't')
         {
             char buf[32];
+            time_t t;
+            t = *((long*)value);
             memset(buf, 0, sizeof(buf));
-            ctime_r((long*) value, buf);
+            ctime_r((time_t*) &t, buf);
             snprintf(val, l, "%s", buf);
         }
         else if (format != NULL && *format != '\0' && *format != 'l' )
@@ -508,7 +510,7 @@ std::string DbConnect::mk_index()
     else
         indexcount++;
 
-    snprintf(str, 32, "%08lx%04x", time(NULL), indexcount);
+    snprintf(str, 32, "%08lx%04x", (long)t, indexcount);
     str[32] = '\0';
     return str;
 }

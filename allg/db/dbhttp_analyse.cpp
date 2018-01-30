@@ -3,6 +3,9 @@
 #endif
 #include <stdlib.h>
 #include <stdio.h>
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <sys/unistd.h>
+#endif
 #include <unistd.h>
 
 #include <argument/argument.h>
@@ -31,7 +34,7 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
     }
 
 	this->s = s;
-	this->dbtimeout = a["DbHttpTimeout"];
+	this->dbtimeout = (long)a["DbHttpTimeout"];
 	this->realm = std::string(a["DbHttpRealm"]);
     snprintf(str, sizeof(str), "MneHttpSessionId%d", (int)a["port"]);
     str[sizeof(str) - 1] = '\0';
@@ -98,7 +101,7 @@ void DbHttpAnalyse::read_datadir()
     tab = db->p_getTable(db->getApplschema(), "server");
 
     values["serverid"] = "0";
-#ifdef Darwin
+#if defined(Darwin) || defined(__MINGW32__) || defined(__CYGWIN__)
     str = (char *)malloc(10240);
     getcwd(str, 10240);
     values["pwd"] = str;
@@ -276,13 +279,16 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 	}
 
     if ( cl->userprefs.find("fullname") == cl->userprefs.end() || cl->userprefs["fullname"] == "" )
-        cl->userprefs["fullname"] = cl->db->p_getConnect()->getUser();
+    {
+	    cl->userprefs["fullname"] = cl->db->p_getConnect()->getUser();
+    }
 
     if ( cl->userprefs.find("email") == cl->userprefs.end() || cl->userprefs["email"] == "" )
-        cl->userprefs["email"] = cl->db->p_getConnect()->getUser() + "@local";
-
-	cl->db->release(q);
-	cl->db->p_getConnect()->end();
+    {
+	    cl->userprefs["email"] = cl->db->p_getConnect()->getUser() + "@local";
+    }
+    cl->db->release(q);
+    cl->db->p_getConnect()->end();
 }
 
 

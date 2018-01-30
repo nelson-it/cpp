@@ -514,7 +514,7 @@ int DbQueryCreator::save(std::string schema, std::string name, int unionnum, std
 
 		for (sl = s_lines.begin(); sl != s_lines.end(); ++sl)
 		{
-			value["colnum"] = sl - s_lines.begin();
+			value["colnum"] = (long)(sl - s_lines.begin());
 			value["tabnum"] = sl->tabnum;
 			value["field"] = sl->field.c_str();
 			value["fieldtyp"] = sl->typ;
@@ -544,7 +544,7 @@ int DbQueryCreator::save(std::string schema, std::string name, int unionnum, std
 
 		for (wl = w_lines.begin(); wl != w_lines.end(); ++wl)
 		{
-			value["wherecol"] = wl - w_lines.begin();
+			value["wherecol"] = (long)(wl - w_lines.begin());
 			wl->notop ? value["notoperator"] = 1 : value["notoperator"] = 0;
 			wl->leftbrace ? value["leftbrace"] = 1 : value["leftbrace"] = 0;
 			value["lefttab"] = wl->lefttab;

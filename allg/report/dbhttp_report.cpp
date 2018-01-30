@@ -292,7 +292,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
 
     TmpDir tmpdir("HttpAutoreportXXXXXX");
 
-    values["status"] = time(NULL);
+    values["status"] = (long)time(NULL);
     tab->modify(&values, &where);
 
     cols.setString(repwval);
