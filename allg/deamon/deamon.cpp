@@ -59,7 +59,10 @@ Deamon::Deamon()
     mask       = (long)a["umask"];
 
     if ( runningdir != "" )
-        chdir(runningdir.c_str());
+    {
+        if ( chdir(runningdir.c_str()) != 0 )
+            msg.perror(1, "kann nicht in Verzeichnis <%s> wechseln", runningdir.c_str() );
+    }
 
     if ( mask != 0 )
         umask(mask);

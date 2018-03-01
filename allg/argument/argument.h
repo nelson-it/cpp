@@ -108,7 +108,8 @@ protected:
 	DUP_ALIAS,
 	SAVE_WRONG_COUNT,
 	SAVE_NOCOPY,
-	SAVE_NOOPEN
+	SAVE_NOOPEN,
+	NO_CONF
     };
 
     Message msg;
