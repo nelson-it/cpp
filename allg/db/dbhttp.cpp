@@ -252,11 +252,15 @@ int  DbHttp::check_sysaccess(HttpHeader *h)
         return false;
 
     DbConnect *con = this->act_client->db->p_getConnect();
-    std::string stm = "SELECT DISTiNCT t3.command "
-            "FROM pg_roles t0 "
-              "JOIN pg_auth_members t1 ON t0.oid = t1.roleid "
-              "JOIN pg_roles t2 ON t1.member = t2.oid AND t2.rolname = '" + h->user + "'"
-              "JOIN mne_system.access t3 ON (( t0.rolname = t3.access OR t2.rolname = t3.access OR t3.access = 'user' ) AND t3.command = '" + h->dirname + "' )";
+    std::string stm = "SELECT DISTiNCT t0.rolname "
+                "FROM pg_roles t0 "
+                  "LEFT JOIN  pg_auth_members t1 ON ( t0.oid = t1.member ) "
+                  "LEFT JOIN pg_roles t2 ON ( t1.roleid = t2.oid ) "
+                  "JOIN mne_system.access t3 ON ( ( t0.rolname = t3.access OR t2.rolname = t3.access OR t3.access = 'user' ) "
+                                               "AND t0.rolcanlogin = true "
+                                               "AND NOT t0.rolname like 'mneerp%' "
+                                               "AND  t0.rolname = '" + h->user + "' "
+                                               "AND  t3.command = '" + h->dirname + "') ";
 
     con->execute(stm, 1);
     return con->have_result();
