@@ -19,6 +19,9 @@ int PgConstraint::create_check( std::string schema, std::string table,
 			        std::string text_de, std::string text_en, int custom,
 			        int ready)
 {
+    char acttime[64];
+    sprintf(acttime, "%ld", time(NULL) );
+
     if ( schema == "" || table == "" )
     {
         msg.perror(NO_TABLENAME, "Kein Tabellenname definiert");
@@ -37,9 +40,9 @@ int PgConstraint::create_check( std::string schema, std::string table,
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
         cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
-                   "( tableconstraintmessagesid, text_de, text_en, custom )"
+                   "( tableconstraintmessagesid, text_de, text_en, custom, createdate, createuser, modifydate, modifyuser )"
                  "VALUES "
-                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
+                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + "," + acttime + ", session_user, " + acttime + ", session_user);";
 
     return execute(cmd.c_str(), ready);
 }
@@ -49,6 +52,9 @@ int PgConstraint::create_primary( std::string schema, std::string table,
 			          std::string text_de, std::string text_en, int custom,
 			          int ready)
 {
+    char acttime[64];
+    sprintf(acttime, "%ld", time(NULL) );
+
     if ( schema == "" || table == "" )
     {
         msg.perror(NO_TABLENAME, "Kein Tabellenname definiert");
@@ -67,9 +73,9 @@ int PgConstraint::create_primary( std::string schema, std::string table,
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
         cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
-                   "( tableconstraintmessagesid, text_de, text_en, custom )"
+                   "( tableconstraintmessagesid, text_de, text_en, custom, createdate, createuser, modifydate, modifyuser )"
                  "VALUES "
-                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
+                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + "," + acttime + ", session_user, " + acttime + ", session_user);";
 
     return execute(cmd.c_str(), ready);
 }
@@ -80,6 +86,9 @@ int PgConstraint::create_foreign( std::string schema, std::string table,
 				  std::string text_de, std::string text_en, int custom,
 				  int ready)
 {
+    char acttime[64];
+    sprintf(acttime, "%ld", time(NULL) );
+
     if ( schema == "" || table == "" )
     {
         msg.perror(NO_TABLENAME, "Kein Tabellenname definiert");
@@ -99,9 +108,9 @@ int PgConstraint::create_foreign( std::string schema, std::string table,
 
     if ( name != "" && ( text_de != "" || text_en != "" ) )
         cmd += " INSERT INTO " + this->getApplschema() + ".tableconstraintmessages "
-                   "( tableconstraintmessagesid, text_de, text_en, custom )"
+                   "( tableconstraintmessagesid, text_de, text_en, custom, createdate, createuser, modifydate, modifyuser  )"
                  "VALUES "
-                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + " );";
+                   " ( '" + name + "','" + text_de + "','" + text_en + "'," + (( custom ) ? "true" : "false") + "," + acttime + ", session_user, " + acttime + ", session_user );";
 
     return execute(cmd.c_str(), ready);
 }
@@ -109,6 +118,7 @@ int PgConstraint::create_foreign( std::string schema, std::string table,
 int PgConstraint::remove( std::string schema, std::string table,
                           std::string name, int ready)
 {
+
     if ( schema == "" || table == "" )
     {
         msg.perror(NO_TABLENAME, "Kein Tabellenname definiert");
