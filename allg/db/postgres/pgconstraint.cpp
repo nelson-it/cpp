@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include <time.h>
+
 #include "pgconstraint.h"
 
 PgConstraint::PgConstraint(PgConnect *con)
