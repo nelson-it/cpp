@@ -165,8 +165,7 @@ void PgConnect::open_connection(const char *dbname, const char *user, const char
         {
             coninfo[last] = '\0';
             con = last_con = NULL;
-            msg.perror(E_CONNECTION_NOT_OK,
-                    "Konnte mich nicht zur Datenbank %s verbinden", coninfo);
+            msg.perror(E_CONNECTION_NOT_OK, "Konnte mich nicht zur Datenbank %s verbinden", coninfo);
             msg.line("Grund: %s", mk_error());
 
             char *str;
@@ -380,9 +379,7 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
                 r.typ = CHAR;
                 if (!r.isnull)
                 {
-                    msg.perror(E_TYPE_UNKNOWN,
-                            "Der Typ %d von Spalte %s ist unbekannt", typ,
-                            PQfname(res, i));
+                    msg.perror(E_TYPE_UNKNOWN, "Der Typ %d von Spalte %s ist unbekannt", typ, PQfname(res, i));
                     msg.line("für Sql-Befehl");
                     msg.ignore_lang = 1;
                     msg.line("%s", stm);
@@ -570,8 +567,7 @@ int PgConnect::setCurschema(std::string schema, int ready)
                 + "'").c_str());
         if (result.empty())
         {
-            msg.perror(E_UNKNOWN_SCHEMA, "Schema %s existiert nicht\n",
-                    schema.c_str());
+            msg.perror(E_UNKNOWN_SCHEMA, "Schema %s existiert nicht\n", schema.c_str());
             if (ready)
                 end();
             return -1;

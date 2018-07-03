@@ -45,8 +45,7 @@ Argument::DoubleWerte Argument::Element::getDoubleWerte()
     if ((i = a->dval.find(name)) != a->dval.end()) return i->second;
     else
     {
-        a->msg.perror(Argument::NO_DOUBLEARG,
-                "%s ist keinen Gleitkommazahlenargument", name);
+        a->msg.perror(Argument::NO_DOUBLEARG, "%s ist keinen Gleitkommazahlenargument", name);
         return DoubleWerte();
     }
 }
@@ -58,8 +57,7 @@ Argument::LongWerte Argument::Element::getLongWerte()
     if ((i = a->lval.find(name)) != a->lval.end()) return i->second;
     else
     {
-        a->msg.perror(Argument::NO_LONGARG,
-                "%s ist keinen ganzzahliges Argument", name);
+        a->msg.perror(Argument::NO_LONGARG, "%s ist keinen ganzzahliges Argument", name);
         return LongWerte();
     }
 }
@@ -76,8 +74,7 @@ Argument::Element::operator std::string()
     }
     else
     {
-        a->msg.perror(Argument::NO_STRINGARG,
-                "%s ist keinen Zeichenkettenargument", name);
+        a->msg.perror(Argument::NO_STRINGARG, "%s ist keinen Zeichenkettenargument", name);
         return "";
     }
 }
@@ -94,8 +91,7 @@ Argument::Element::operator double()
     }
     else
     {
-        a->msg.perror(Argument::NO_DOUBLEARG,
-                "%s ist keinen Gleitkommazahlenargument", name);
+        a->msg.perror(Argument::NO_DOUBLEARG, "%s ist keinen Gleitkommazahlenargument", name);
         return 0.0;
     }
 }
@@ -112,8 +108,7 @@ Argument::Element::operator long()
     }
     else
     {
-        a->msg.perror(Argument::NO_LONGARG,
-                "%s ist keinen ganzzahliges Argument", name);
+        a->msg.perror(Argument::NO_LONGARG, "%s ist keinen ganzzahliges Argument", name);
         return 0;
     }
 }
@@ -393,8 +388,7 @@ int Argument::scan(int &argc, char **&argv)
             case 'c':
                 if ((si = sval.find(name)) == sval.end())
                 {
-                    msg.perror(NO_ALIAS, "Argument %s ist kein "
-                        "Zeichenkettenargument", *argv);
+                    msg.perror(NO_ALIAS, "Argument %s ist kein Zeichenkettenargument", *argv);
                     error_found = -1;
                 }
 
@@ -416,8 +410,8 @@ int Argument::scan(int &argc, char **&argv)
             case 'f':
                 if ((di = dval.find(name)) == dval.end())
                 {
-                    msg.perror(NO_ALIAS, "Argument %s ist kein "
-                        "Gleitkommazahlenargument", *argv);
+                    msg.perror(NO_ALIAS, "Argument %s ist kein Gleitkommazahlenargument", *argv);
+
                     error_found = -1;
                 }
 
@@ -429,9 +423,7 @@ int Argument::scan(int &argc, char **&argv)
                     if (alias.find(*argv) != alias.end()) break;
 
                     v = 0.0;
-                    if (sscanf(*argv, "%lf", &v) == 0) msg.perror(NO_FLOAT,
-                            "%s ist keine "
-                                "Gleitkommazahl", *argv);
+                    if (sscanf(*argv, "%lf", &v) == 0) msg.perror(NO_FLOAT, "%s ist keine Gleitkommazahl", *argv);
                     di->second.push_back(v);
 
                 }
@@ -444,8 +436,7 @@ int Argument::scan(int &argc, char **&argv)
             case 'i':
                 if ((li = lval.find(name)) == lval.end())
                 {
-                    msg.perror(NO_ALIAS, "Argument %s ist kein "
-                        "Ganzzahlenargument", *argv);
+                    msg.perror(NO_ALIAS, "Argument %s ist kein Ganzzahlenargument", *argv);
                     error_found = -1;
                 }
 
@@ -460,9 +451,7 @@ int Argument::scan(int &argc, char **&argv)
                     if (alias.find(*argv) != alias.end()) break;
 
                     v = 0;
-                    if (sscanf(*argv, "%li", &v) == 0) msg.perror(NO_INT,
-                            "%s ist keine "
-                                "Ganze Zahl", *argv);
+                    if (sscanf(*argv, "%li", &v) == 0) msg.perror(NO_INT, "%s ist keine Ganze Zahl", *argv);
                     sscanf(*argv, "%li", &v);
                     li->second.push_back(v);
 
@@ -476,8 +465,7 @@ int Argument::scan(int &argc, char **&argv)
 
             if (anzahl != 0 && a->second.anzahl > 0)
             {
-                msg.perror(LESS_ARG, "%d Argumente für %s erwartet",
-                        a->second.anzahl, a->first.c_str());
+                msg.perror(LESS_ARG, "%d Argumente für %s erwartet", a->second.anzahl, a->first.c_str());
                 error_found = -1;
             }
 

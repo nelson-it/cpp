@@ -178,8 +178,7 @@ void ServerSocket::Client::write(char *b, int l)
 void ServerSocket::Client::write(FILE *f, int l)
 {
 
-    s->msg.pdebug(ServerSocket::D_CON, "sende zu client %d: %d bytes",
-            fd, l);
+    s->msg.pdebug(ServerSocket::D_CON, "sende zu client %d: %d bytes", fd, l);
 
     if ( buffer != NULL )
     {
@@ -333,8 +332,7 @@ void ServerSocket::add_provider( SocketProvider *p)
 
     if ( pnum.find(name) == pnum.end() )
     {
-        msg.pdebug(D_PROV, "SocketProvider \"%s\" wird hinzugefügt",
-                name.c_str());
+        msg.pdebug(D_PROV, "SocketProvider \"%s\" wird hinzugefügt", name.c_str());
         pnum[p->getProvidername()] = providerid;
         provider[providerid] = p;
         if ( name == "Http" )
@@ -342,8 +340,7 @@ void ServerSocket::add_provider( SocketProvider *p)
     }
     else
     {
-        msg.perror(E_PRO_EXISTS, "SocketProvider \"%s\" ist schon registriert",
-                name.c_str());
+        msg.perror(E_PRO_EXISTS, "SocketProvider \"%s\" ist schon registriert", name.c_str());
     }
 
 #ifdef PTHREAD
@@ -371,9 +368,7 @@ void ServerSocket::del_provider( SocketProvider *p)
     }
     else
     {
-        msg.perror(E_PRO_NOT_EXISTS,
-                "SocketProvider \"%s\" ist nicht registriert",
-                name.c_str());
+        msg.perror(E_PRO_NOT_EXISTS, "SocketProvider \"%s\" ist nicht registriert", name.c_str());
     }
 
 #ifdef PTHREAD
@@ -445,8 +440,7 @@ void ServerSocket::write(int client, char *buffer, int size)
     }
     else
     {
-        msg.pdebug(D_CON, "Client %d hat die Verbindung während "
-                "des Schreibens beendet", client);
+        msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
 
 #ifdef PTHREAD
@@ -480,8 +474,7 @@ void ServerSocket::write(int client, FILE *fp, int size)
     }
     else
     {
-        msg.pdebug(D_CON, "Client %d hat die Verbindung während "
-                "des Schreibens beendet", client);
+        msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
 
 #ifdef PTHREAD
@@ -509,8 +502,7 @@ void ServerSocket::flush( int client )
     }
     else
     {
-        msg.pdebug(D_CON, "Client %d hat die Verbindung während "
-                "des Schreibens beendet", client);
+        msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
 
 #ifdef PTHREAD
@@ -553,8 +545,7 @@ int ServerSocket::read(int client, char *buffer, int size)
             Pthread_mutex_unlock("mutex", &mutex);
 #endif
 
-            msg.pdebug(D_CON, "Client %d hat die Verbindung während "
-                    "des Lesens beendet", client );
+            msg.pdebug(D_CON, "Client %d hat die Verbindung während des Lesens beendet", client );
             return -1;
         }
         else
@@ -565,8 +556,7 @@ int ServerSocket::read(int client, char *buffer, int size)
                 Pthread_mutex_unlock("mutex", &mutex);
 #endif
 
-                msg.pdebug(D_CON, "Client %d hat einen Fehler während "
-                        "des Lesens", client );
+                msg.pdebug(D_CON, "Client %d hat einen Fehler während des Lesens", client );
                 msg.line("Grund %s", strerror(errno));
                 return -1;
             }
@@ -592,8 +582,7 @@ void ServerSocket::close(int client)
     {
         if ( ! i->second.empty() )
         {
-            msg.pdebug(D_CON, "Anforderung zum Verbindungende zu Client %d",
-                    client);
+            msg.pdebug(D_CON, "Anforderung zum Verbindungende zu Client %d", client);
             i->second.need_close = 1;
 
 #ifdef PTHREAD
@@ -690,9 +679,7 @@ void ServerSocket::loop()
 
         if ( ! timeout_clients.empty() )
         {
-            msg.pdebug(D_TIME, "next time %d:%d",
-                    timeout_clients.begin()->first.tv_sec,
-                    timeout_clients.begin()->first.tv_usec);
+            msg.pdebug(D_TIME, "next time %d:%d", timeout_clients.begin()->first.tv_sec, timeout_clients.begin()->first.tv_usec);
 
             to.tv_sec  = timeout_clients.begin()->first.tv_sec - act.tv_sec;
             to.tv_usec = timeout_clients.begin()->first.tv_usec - act.tv_usec;
@@ -760,8 +747,6 @@ void ServerSocket::loop()
         }
         else if ( rsel < 0 )
         {
-            //msg.perror(E_SELECT, "Fehler beim select - wird ignoriert");
-            //msg.line("%s", strerror(errno));
             FD_ZERO(rd_set);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
             FD_SET((unsigned)sock, rd_set);
@@ -799,8 +784,7 @@ void ServerSocket::loop()
                 i->second.write();
                 if ( i->second.empty() )
                 {
-                    msg.pdebug(D_CON, "Client %d need_close: %d",
-                            i->first, i->second.need_close);
+                    msg.pdebug(D_CON, "Client %d need_close: %d", i->first, i->second.need_close);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
                     FD_CLR((unsigned)i->first, wr_set );
 #else
@@ -830,14 +814,12 @@ void ServerSocket::loop()
                     buffer[rval] = '\0';
                     if ( 1 || *buffer != '\0' )
                     {
-                        msg.pdebug(D_PROV, "request für SocketProvider http "
-                                "client %d", i->first);
+                        msg.pdebug(D_PROV, "request für SocketProvider http client %d", i->first);
 
                         if ( http != NULL )
                             http->request(i->first, buffer, rval);
                         else
-                            msg.perror(E_HTTP_NULL,
-                                    "Besitze keinen HttpSocketProvider");
+                            msg.perror(E_HTTP_NULL, "Besitze keinen HttpSocketProvider");
                     }
                     else
                     {
@@ -897,16 +879,13 @@ void ServerSocket::loop()
             if ( ( rval = accept4(sock, (struct sockaddr *)&c, &size, SOCK_CLOEXEC ) ) < 0 )
 #endif
             {
-                msg.perror(E_ACCEPT, "Fehler beim accept - "
-                        "client kann nicht verbunden werden");
+                msg.perror(E_ACCEPT, "Fehler beim accept - client kann nicht verbunden werden");
                 msg.line("%s", strerror(errno));
             }
             else
             {
                 clients[rval] = Client(this, rval, &c);
-                msg.pdebug(D_CON, "client %d connected: addr %s, port %d",
-                        rval, clients[rval].getHostString().c_str(),
-                        clients[rval].getPort());
+                msg.pdebug(D_CON, "client %d connected: addr %s, port %d", rval, clients[rval].getHostString().c_str(), clients[rval].getPort());
             }
 
             FD_ZERO(rd_set);
