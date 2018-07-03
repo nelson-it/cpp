@@ -146,7 +146,7 @@ void HttpSysexec::execute ( HttpHeader *h)
     else
     {
         if ( havelog )
-            msg.pwarning(E_ERRORFOUND, logtext.c_str());
+            msg.pwarning(E_ERRORFOUND, "%s", logtext.c_str());
 
         if ( h->content_type == "text/xml" )
             add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());

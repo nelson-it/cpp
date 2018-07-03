@@ -224,8 +224,7 @@ void XmlText::mk_output(OUTPUT_TYP typ )
 
 	if ( error_found )
 	{
-		msg.perror(E_PARSE,
-				"Ausgabe konnte wegen Fehlern im XML nicht erzeugt werden");
+		msg.perror(E_PARSE, "Ausgabe konnte wegen Fehlern im XML nicht erzeugt werden");
 		return;
 	}
 
