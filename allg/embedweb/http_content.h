@@ -23,6 +23,7 @@ public:
     virtual void del_content(HttpHeader *h );
 
     virtual void add_content(HttpHeader *h, const char *format, ... );
+    virtual void add_content(HttpHeader *h, std::string str ) { add_contentb(h, str.c_str(), str.length()); }
     virtual void add_contentb(HttpHeader *h, const char *buffer, int anzahl );
 
     virtual void contentf(HttpHeader *h, FILE *fp );

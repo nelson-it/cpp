@@ -37,12 +37,15 @@ class DbHttp : public Http
     Provider dbprovider;
 
     DbHttpAnalyse::Client *act_client;
+    void setLocale();
     void make_answer();
 public:
-    DbHttp(ServerSocket *s, DbHttpAnalyse *a, Database *db);
+    DbHttp(ServerSocket *s, DbHttpAnalyse *a, Database *db, int register_it = 1);
     ~DbHttp();
 
     void init_thread();
+
+    void make_content(HttpHeader *h);
 
     void add_provider(DbHttpProvider *);
     void del_provider(DbHttpProvider *);
@@ -50,7 +53,8 @@ public:
 
     void unlock_client()
     {
-    	act_client->unlock();
+    	if ( act_client != NULL ) act_client->unlock();
+    	act_client = NULL;
     }
 
     DbHttpAnalyse::Client::Userprefs getUserprefs()
@@ -65,15 +69,6 @@ public:
     int check_group(HttpHeader *h, const char *group);
     int check_sysaccess(HttpHeader *h);
 
-    void clear_cache()
-	{
-		trans->clear_cache();
-	}
-
-    void read_datadir()
-    {
-        this->analyse->read_datadir();
-    }
 };
 
 #endif /* dbhttp_mne */

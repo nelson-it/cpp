@@ -2,10 +2,7 @@
 #include <winsock2.h>
 #endif
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,9 +92,7 @@ ImapScan::ImapScan(Database *db)
      this->db = db->getDatabase();
      this->db->p_getConnect("", a["MailscanUser"], a["MailscanPasswd"]);
 
-     #ifdef PTHREAD
      if ( this->mutex_init == 0 ) pthread_mutex_init(&this->mutex,NULL);
-     #endif
 }
 
 ImapScan::~ImapScan()
@@ -135,13 +130,11 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
    if ( this->db->have_connection() != true )
        return;
 
-#ifdef PTHREAD
    if ( pthread_mutex_trylock(&this->mutex) != 0 )
    {
        msg.pwarning(W_SCAN, "Es läuft noch ein Scan");
        return;
    }
-#endif
 
      tab = db->p_getTable("mne_mail", "imapmailbox_secret");
 
@@ -161,9 +154,7 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
         if ( mailboxid != "" )
             msg.perror(E_MAILBOX, "Die Mailbox <%s> wurde nicht gefunden",mailboxid.c_str());
         db->release(tab);
-#ifdef PTHREAD
         pthread_mutex_unlock(&this->mutex);
-#endif
         return;
     }
 
@@ -386,7 +377,6 @@ void ImapScan::scan(std::string mailboxid, int fullscan )
         db->release(uidtab);
         db->release(tab);
     }
-#ifdef PTHREAD
         pthread_mutex_unlock(&this->mutex);
-#endif
 }
+

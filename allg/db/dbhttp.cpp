@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 
@@ -17,8 +14,8 @@
 #include "dbhttp_application.h"
 
 
-DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
-        Http(s, analyse, 0), msg("DbHttp")
+DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db, int register_it) :
+        Http(s, NULL ), msg("DbHttp")
 {
     Argument a;
     char str[1024];
@@ -34,8 +31,9 @@ DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db) :
     str[sizeof(str) - 1] = '\0';
     this->cookieid = str;
 
-    application = new DbHttpApplication(this, this->trans->p_getDb());
-    analyse->add_http(this);
+    application = new DbHttpApplication(this, db);
+    if ( register_it)
+        analyse->add_http(this);
 }
 
 DbHttp::~DbHttp()
@@ -55,52 +53,50 @@ DbHttp::~DbHttp()
 
 void DbHttp::init_thread()
 {
-#ifdef PTHREAD
     msg.setMsgtranslator(this->trans);
+}
+
+void DbHttp::setLocale()
+{
+    Argument a;
+    std::string lstr;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    setlocale(LC_ALL,( act_client == NULL ) ? ((std::string)a["locale"]).c_str() :  act_client->getUserprefs("mslanguage").c_str());
+#else
+    std::map<std::string, locale_t>::iterator l;
+    lstr = ( act_client == NULL ) ?  a["locale"] : act_client->getUserprefs("language") + "_" + act_client->getUserprefs("region") + ".UTF-8";
+    if ( ( l = this->loc.find(lstr)) == this->loc.end() )
+    {
+        this->loc[lstr] = newlocale(LC_ALL_MASK, lstr.c_str(), NULL);
+        l = this->loc.find(lstr);
+    }
+    uselocale(this->stdloc);
 #endif
+}
+
+void DbHttp::make_content(HttpHeader *h)
+{
+    if ( h != NULL ) act_h = h;
+    if ( act_h == NULL ) return;
+
+    make_answer();
+    make_error();
+    make_translate();
 }
 
 void DbHttp::make_answer()
 {
-    int clear = 0;
-
-    if (act_client == NULL)
-    {
-        act_client = analyse->getClient(act_h->cookies[cookieid.c_str()]);
-        clear = 1;
-    }
-
+    act_client = analyse->getClient(act_h->cookies[cookieid.c_str()]);
     if ( act_client == NULL )
     {
-        HttpProvider *p;
-        if ( (p = find_provider(&dbprovider)) != NULL )
+        DbHttpProvider *p;
+        if ( (p = (DbHttpProvider *)find_provider(&dbprovider)) != NULL )
         {
-            int result = 1;
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-            Argument a;
-            setlocale(LC_ALL, ((std::string)a["locale"]).c_str());
-#else
-            uselocale(this->stdloc);
-#endif
-            if ( ((DbHttpProvider *) p)->check_request(this->trans->p_getDb(), act_h) )
+            setLocale();
+            if ( p->check_request(this->trans->p_getDb(), act_h) )
             {
-                result = ((DbHttpProvider *) p)->request(this->trans->p_getDb(), act_h, 1);
-                if (!result)
-                {
-                    std::string str;
-                    std::string::size_type pos;
-
-                    act_h->status = 404;
-                    str = meldungen[act_h->status];
-                    if ((pos = str.find("#request#")) != std::string::npos)
-                        str.replace(pos, 9, act_h->dirname + " " + act_h->filename);
-
-                    add_contentb(act_h, str.c_str(), str.size() );
-                }
-                else if (act_h->translate)
-                {
-                    http_translate.make_answer(act_h, NULL);
-                }
+                if ( ! p->request(this->trans->p_getDb(), act_h, 1)  )
+                    make_meldung();
                 return;
             }
         }
@@ -108,64 +104,30 @@ void DbHttp::make_answer()
 
     if (act_client != NULL)
     {
-        HttpProvider *p = NULL;
-        int result = 1;
-        std::map<std::string, std::string>::iterator i;
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-#else
-        std::map<std::string, locale_t>::iterator l;
-#endif
-        std::string lstr;
+        DbHttpProvider *p;
 
-        act_h->id = act_h->cookies[cookieid.c_str()];
         act_h->user = act_client->user;
         act_h->passwd = act_client->passwd;
 
         msg.setLang(act_client->getUserprefs("language"));
         msg.setRegion(act_client->getUserprefs("region"));
 
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        lstr = act_client->getUserprefs("mslanguage");
-        setlocale(LC_ALL, lstr.c_str());
-#else
-        lstr = act_client->getUserprefs("language") + "_" + act_client->getUserprefs("region") + ".UTF-8";
-        if ( ( l = this->loc.find(lstr)) == this->loc.end() )
-        {
-            this->loc[lstr] = newlocale(LC_ALL_MASK, lstr.c_str(), NULL);
-            l = this->loc.find(lstr);
-        }
-        uselocale(l->second);
-#endif
-
+        setLocale();
         if (act_h->status == 404 )
         {
-            if ( (p = find_provider(&dbprovider)) != NULL )
-                result = ((DbHttpProvider *) p)->request(act_client->db, act_h);
+            if ( (p = (DbHttpProvider *)find_provider(&dbprovider)) != NULL )
+            {
+                if ( ! p->request(act_client->db, act_h) )
+                    make_meldung();
+            }
+            else
+            {
+                if ( act_h->vars.exists("asynchron") )
+                    unlock_client();
+                Http::make_answer();
+            }
         }
-
-        if ( p == NULL || act_h->status == 1000 )
-        {
-            if ( act_h->vars.exists("asynchron") )
-                unlock_client();
-            Http::make_answer();
-        }
-
-        if (!result)
-        {
-            std::string str;
-            std::string::size_type pos;
-
-            act_h->status = 404;
-            str = meldungen[act_h->status];
-            if ((pos = str.find("#request#")) != std::string::npos) str.replace(
-                    pos, 9, act_h->dirname + " " + act_h->filename);
-
-            add_contentb(act_h, str.c_str(), str.size() );
-        }
-        else if (act_h->translate)
-        {
-            http_translate.make_answer(act_h, NULL);
-        }
+        unlock_client();
     }
     else
     {
@@ -183,8 +145,6 @@ void DbHttp::make_answer()
             Http::make_answer();
         }
     }
-
-    if (clear) act_client = NULL;
 }
 
 void DbHttp::disconnect( int client )

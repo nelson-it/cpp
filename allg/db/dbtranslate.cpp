@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -23,7 +20,6 @@ DbTranslate::FormatMap DbTranslate::time;
 DbTranslate::FormatMap DbTranslate::interval;
 DbTranslate::FormatMap DbTranslate::times;
 DbTranslate::FormatMap DbTranslate::intervals;
-int DbTranslate::init = 0;
 
 Database *DbTranslate::db = NULL;
 pthread_mutex_t DbTranslate::mutex;
@@ -35,22 +31,10 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
         Argument a;
         this->db = db->getDatabase();
         this->db->p_getConnect("", a["DbTranslateUser"], a["DbTranslatePasswd"]);
-        while ( ! this->db->have_connection() )
-        {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-            Sleep(10000);
-#else
-            sleep(10);
-#endif
-            this->db->p_getConnect("", a["DbTranslateUser"], a["DbTranslatePasswd"]);
-        }
 
         DbConstraintError e;
         e.read(db);
-    }
 
-    if ( ! init )
-    {
         DbConnect::ResultMat *r;
         DbConnect::ResultMat::iterator rm;
         CsList cols("language,region,typ,style");
@@ -92,9 +76,7 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
     this->lang = lang;
     this->setRegion(region);
 
-#ifdef PTHREAD
     pthread_mutex_init(&mutex,NULL);
-#endif
 }
 
 DbTranslate::~DbTranslate()
@@ -199,10 +181,7 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
 
     in_get = 1;
 
-#ifdef PTHREAD
     pthread_mutex_lock(&mutex);
-#endif
-
     std::string stm, s;
     char *c;
     int result;
@@ -213,10 +192,7 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
     {
         if ((is = il->second.find(str)) != il->second.end())
         {
-#ifdef PTHREAD
             pthread_mutex_unlock(&mutex);
-#endif
-
             return is->second;
         }
     }
@@ -240,20 +216,13 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
         in_get = 0;
         if (*c == '\0')
         {
-#ifdef PTHREAD
             pthread_mutex_unlock(&mutex);
-#endif
-
             return str;
         }
         else
         {
             il->second[str] = c;
-
-#ifdef PTHREAD
             pthread_mutex_unlock(&mutex);
-#endif
-
             return c;
         }
     }
@@ -274,24 +243,15 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
 
     in_get = 0;
 
-#ifdef PTHREAD
     pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
 void DbTranslate::clear_cache()
 {
-#ifdef PTHREAD
     pthread_mutex_lock(&mutex);
-#endif
-
     CacheMap c;
     cache = c;
-
-#ifdef PTHREAD
     pthread_mutex_unlock(&mutex);
-#endif
 }
 

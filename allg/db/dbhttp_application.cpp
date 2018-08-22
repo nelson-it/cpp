@@ -1,9 +1,7 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
+#include <sys/stat.h>
 
 #include <argument/argument.h>
 
@@ -35,10 +33,23 @@ public:
     }
     virtual int request(Database *db, HttpHeader *h)
     {
-       h->dirname = "/";
-       h->filename = this->path + ".html";
-       h->status = 1000;
-       return 1;
+        std::string str;
+        unsigned int i;
+        struct stat s;
+
+        h->dirname = "/";
+        h->filename = this->path + ".html";
+        for (i=0; i<h->serverpath.size(); i++)
+        {
+            str = h->serverpath[i] + "/" + h->dirname + "/" + h->filename;
+            if (stat(str.c_str(), &s) == 0 )
+            {
+                contentf(h, str.c_str());
+                return 1;
+            }
+        }
+
+        return 0;
     }
 
 };
@@ -46,14 +57,22 @@ public:
 
 DbHttpApplication::DbHttpApplication( DbHttp *h, Database *db )
 {
-    DbConnect *c = db->p_getConnect();
+    Argument a;
+    Database *dbapp = db->getDatabase();
+    DbConnect *c = dbapp->p_getConnect("", a["DbTranslateUser"], a["DbTranslatePasswd"]);
+
     DbConnect::ResultMat *r;
     DbConnect::ResultMat::iterator i;
 
-    c->execute("SELECT DISTINCT menuname FROM mne_application.menu", 1 );
-    r = c->p_get_result();
-    for ( i = r->begin(); i != r->end(); ++i )
-        this->appls.push_back( new DbHttpApplicationSingle(h, (std::string)((*i)[0])) );
+    if ( c != NULL )
+    {
+        c->execute("SELECT DISTINCT menuname FROM mne_application.menu", 1 );
+        r = c->p_get_result();
+        for ( i = r->begin(); i != r->end(); ++i )
+            this->appls.push_back( new DbHttpApplicationSingle(h, (std::string)((*i)[0])) );
+    }
+
+    delete dbapp;
 }
 
 DbHttpApplication::~DbHttpApplication()

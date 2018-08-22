@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -57,14 +54,12 @@ void HttpSysexec::execute ( HttpHeader *h)
     char buffer[1024];
     int anzahl;
     unsigned int i;
-    int host;
     std::string logtext;
     HttpVars::Vars::iterator vi;
 
     Argument::StringWerte ips;
     ips = (a["HttpSysexecUserip"]).getStringWerte();
 
-    host = this->http->getServersocket()->getHost(h->client);
     command = h->dirname;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -76,7 +71,7 @@ void HttpSysexec::execute ( HttpHeader *h)
 #endif
 
     for ( i = 0; i < ips.size(); ++i )
-        if (  check_ip(ips[i].c_str(), host ) ) break;
+        if (  this->http->check_ip(ips[i].c_str()) ) break;
 
     if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 && this->http->check_sysaccess(h) == 0 ))
     {
@@ -117,7 +112,7 @@ void HttpSysexec::execute ( HttpHeader *h)
         }
     }
 
-    Process p(http->getServersocket());
+    Process p;
     p.start(cmd, "pipe", std::string(a["projectroot"]).c_str(), NULL, ".", 1);
 
     Message log("HttpSysexec Kommando", 1);

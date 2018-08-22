@@ -36,13 +36,10 @@ class HttpUtils : public HttpProvider
 
     void mk_window(HttpHeader *h, char *str);
 
-    void count       ( HttpHeader *h);
-    void uhr         ( HttpHeader *h);
     void time        ( HttpHeader *h);
     void logout      ( HttpHeader *h);
     void file        ( HttpHeader *h);
     void locale      ( HttpHeader *h);
-    void proxy       ( HttpHeader *h);
 
 public:
     HttpUtils( Http *h );

@@ -19,12 +19,9 @@ public:
 	    Message msg;
 public:
 
-#ifdef PTHREAD
 		pthread_mutex_t mutex;
 		int is_unlock;
-#endif
-
-		unsigned int host;
+		std::string  host;
 		int          browser;
 		std::string  user_agent;
 		std::string  user;
@@ -41,11 +38,7 @@ public:
 		Client()
             :msg("DbHttpAnalyse::Client")
 		{
-#ifdef PTHREAD
 			pthread_mutex_init(&mutex,NULL);
-#endif
-
-			host = 0;
 			browser = 0;
 			last_connect = 0;
 			is_unlock = 0;
@@ -59,31 +52,22 @@ public:
 
 		~Client()
 		{
-            #ifdef PTHREAD
 		    pthread_mutex_unlock(&mutex);
 		    pthread_mutex_destroy(&mutex);
-            #endif
 		}
 
         void unlock()
         {
-             #ifdef PTHREAD
-             msg.pdebug(1, "try unlock %s", cookie.c_str());
             if ( is_unlock )
                  return;
-             msg.pdebug(1, "unlock %s", cookie.c_str());
              is_unlock = 1;
              pthread_mutex_unlock(&mutex);
-             #endif
         }
 
         void lock()
         {
-             #ifdef PTHREAD
-             msg.pdebug(1, "lock %s", cookie.c_str());
              pthread_mutex_lock(&mutex);
              is_unlock = 0;
-             #endif
         }
 
 		std::string getUserprefs(std::string name)
@@ -105,11 +89,9 @@ private:
 		D_MUTEX = 6
 	};
 
-#ifdef PTHREAD
 	pthread_mutex_t cl_mutex;
 	void lock() { pthread_mutex_lock(&cl_mutex); }
 	void unlock() { pthread_mutex_unlock(&cl_mutex); }
-#endif
 
 	typedef std::map<std::string, Client> Clients;
 
@@ -129,17 +111,13 @@ private:
 
 
 protected:
-#ifdef PTHREAD
 	void releaseHeader(HttpHeader *h)
 	{
 	    Clients::iterator i;
-	    if ( ( i = clients.find(h->id) ) != clients.end() )
-	    {
+	    if ( ( i = clients.find(h->cookies[cookieid.c_str()]) ) != clients.end() )
 	        i->second.unlock();
-	    }
 	    HttpAnalyse::releaseHeader(h);
 	}
-#endif
 
 
     void setUserprefs(Client *cl);

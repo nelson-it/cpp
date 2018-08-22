@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -91,7 +88,7 @@ int DbHttpUtilsRepository::exec(const CsList *cmd, const char *workdir)
     CsList cc = *cmd;
 
     execlog = "";
-    Process p(DbHttpProvider::http->getServersocket(), 0);
+    Process p(0);
     p.start(*cmd, "pipe", workdir);
     while( ( anzahl = p.read(buffer, sizeof(buffer) - 1)) != 0 )
     {
@@ -187,7 +184,7 @@ void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
         cmd.add("--shared=group");
         cmd.add(h->vars["nameInput"]);
 
-        Process p(DbHttpProvider::http->getServersocket());
+        Process p;
         p.start(cmd, NULL, root.c_str());
         result = p.wait();
 
@@ -298,7 +295,7 @@ void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
         cmd.add(name);
         cmd.add(h->vars["nameInput"]);
 
-        Process p(DbHttpProvider::http->getServersocket());
+        Process p;
         p.start(cmd, NULL, HttpFilesystem::getRoot(h).c_str());
         result = p.wait();
 
@@ -448,7 +445,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
              cmd.add("--shared=group");
              cmd.add((*is).name);
 
-             Process p(DbHttpProvider::http->getServersocket());
+             Process p;
              p.start(cmd, NULL, root.c_str());
              result = p.wait();
 
@@ -858,7 +855,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     int file;
     std::string name;
 
-    Process p(DbHttpProvider::http->getServersocket());
+    Process p;
 
     name = h->vars["filenameInput.old"];
     if ( name.rfind("/") != std::string::npos )
@@ -926,7 +923,7 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
     std::string personid;
     std::map<std::string,std::string>::iterator m;
 
-    Process p(DbHttpProvider::http->getServersocket());
+    Process p;
 
     personid = h->vars["personidInput.old"];
 

@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -9,9 +6,6 @@
 #include <utils/tostring.h>
 #include <db/dbquery_creator.h>
 #include "dbhttpadmin_query.h"
-
-#ifdef PTHREAD
-#endif
 
 DbHttpAdminQuery::DbHttpAdminQuery(DbHttp *h) :
 	DbHttpProvider(h), msg("DbHttpAdminQuery")

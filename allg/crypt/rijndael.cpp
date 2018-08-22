@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 //
 // File : rijndael.cpp
 // Creation date : Sun Nov 5 2000 03:22:10 CEST

@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
@@ -637,11 +634,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     }
 
     msg.pdebug(D_STM, "%s", (char *) stm);
-
-#ifdef PTHREAD
-        pthread_mutex_lock(&connections[con].mutex);
-#endif
-
+    pthread_mutex_lock(&connections[con].mutex);
     if ( connections[con].in_transaction == "" )
     {
         res = PQexec(con, "BEGIN");
@@ -731,9 +724,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     else
         r = 0;
 
-#ifdef PTHREAD
     pthread_mutex_unlock(&connections[con].mutex);
-#endif
 
     if (ready)
         this->end();

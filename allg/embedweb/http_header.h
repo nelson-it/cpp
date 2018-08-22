@@ -40,15 +40,13 @@ public:
     std::map<std::string,std::string> datapath;
     std::string dataroot;
 
-    typedef std::vector<std::string> Header;
-    Header rawheader;
+    //typedef std::map<std::string, std::string> Header;
+    //Header rawheader;
 
     // Wird gesendet
     // =============
     HttpCookie  cookies;
     HttpVars    vars;
-
-    std::string id;
 
     std::string typ;
     std::string providerpath;
@@ -60,10 +58,6 @@ public:
     std::string port;
     std::string referer;
     std::string base;
-
-    Browser     browser;
-    Os          os;
-    std::string user_agent;
 
     std::string user;
     std::string passwd;
@@ -82,7 +76,6 @@ public:
     int translate;
     int age;
     int connection;
-    int proxy;
 
     std::string location;
     std::string realm;
@@ -113,7 +106,7 @@ public:
         clear();
     }
 
-    ~HttpHeader()
+    virtual ~HttpHeader()
     {
         if ( content != NULL )   delete[] content;
         if ( post_data != NULL ) delete[] post_data;
@@ -127,9 +120,8 @@ private:
     {
         client = -1;
 
-        rawheader.clear();
+        //rawheader.clear();
 
-        id = "";
         serverpath.clear();
         datapath.clear();
         typ       = "";
@@ -143,9 +135,6 @@ private:
         referer  = "";
         base     = "";
 
-        browser = B_UNKNWON;
-        user_agent = "";
-        os = OS_UNKNWON;
 
         user   = "";
         passwd = "";
@@ -164,7 +153,6 @@ private:
         translate = 0;
         age = 0;
         connection = 1;
-        proxy = 0;
 
         realm = "";
         location = "";

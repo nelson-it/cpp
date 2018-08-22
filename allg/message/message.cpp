@@ -2,10 +2,7 @@
 #include <winsock2.h>
 #endif
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -35,18 +32,8 @@
 
 Message::MessageClients Message::msg_clients;
 
-#ifdef PTHREAD
 std::map<void*, Message::Param> Message::params;
 pthread_mutex_t Message::mutex = PTHREAD_MUTEX_INITIALIZER;
-#else
-MessageTranslator *Message::prg_trans = NULL;
-MessageTranslator *Message::msg_trans = NULL;
-
-int Message::errorfound = 0;
-int Message::warningfound = 0;
-int Message::argdebug = -1000000;
-int Message::debug = -1000000;
-#endif
 
 FILE *Message::out = stderr;
 std::string Message::logfile;
@@ -78,7 +65,6 @@ std::string Message::timestamp(time_t t)
 
 Message::Param *Message::p_getParam()
 {
-#ifdef PTHREAD
 	Pthread_mutex_lock("getParam", &mutex);
 	std::map<void *, Param>::iterator i;
 	void *tid =  PTHREADID;
@@ -96,85 +82,57 @@ Message::Param *Message::p_getParam()
 	}
 
 	return &i->second;
-
-#endif
 	return NULL;
 }
 
 void Message::setMsgtranslator(MessageTranslator *msg_trans)
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	p->msg_trans = msg_trans;
 	Pthread_mutex_unlock(&mutex);
-#else
-	this->msg_trans = msg_trans;
-#endif
 }
 
 void Message::setPrgtranslator(MessageTranslator *prg_trans)
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	p->prg_trans = prg_trans;
 	Pthread_mutex_unlock(&mutex);
-#else
-	this->prg_trans = prg_trans;
-#endif
 }
 
 int Message::getErrorfound()
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	int result = p->errorfound;
 	Pthread_mutex_unlock(&mutex);
 	return result;
-#else
-	return this->errorfound;
-#endif
 }
 
 int Message::getWarningfound()
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	int result = p->warningfound;
 	Pthread_mutex_unlock(&mutex);
 	return result;
-#else
-	return this->warningfound;
-#endif
 }
 
 void Message::clear()
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	p->warningfound = p->errorfound = 0;
 	Pthread_mutex_unlock(&mutex);
-#else
-	this->warningfound = this->errorfound = 0;
-#endif
 }
 
 std::string Message::getLang()
 {
     std::string lang;
-
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
 
     if ( msg_trans != NULL )
         lang = msg_trans->getLang();
     else
         lang = "de";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return lang;
 }
 
@@ -182,67 +140,45 @@ std::string Message::getRegion()
 {
     std::string region;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         region = msg_trans->getRegion();
     else
         region = "CH";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return region;
 }
 
 void Message::setLang(std::string lang)
 {
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         msg_trans->setLang(lang);
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
 }
 
 void Message::setRegion(std::string region)
 {
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         msg_trans->setRegion(region);
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
 }
 
 std::string Message::getDateformat()
 {
     std::string str;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         str = msg_trans->getDateformat();
     else
         str = "%d.%m.%Y";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
@@ -250,19 +186,13 @@ std::string Message::getTimeformat()
 {
     std::string str;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         str = msg_trans->getTimeformat();
     else
         str = "%H:%M:%S";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
@@ -270,19 +200,13 @@ std::string Message::getIntervalformat()
 {
     std::string str;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         str = msg_trans->getIntervalformat();
     else
         str = "%02d:%02d:%02d";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
@@ -290,19 +214,13 @@ std::string Message::getTimesformat()
 {
     std::string str;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         str = msg_trans->getTimesformat();
     else
         str = "%H:%M";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
@@ -310,19 +228,13 @@ std::string Message::getIntervalsformat()
 {
     std::string str;
 
-#ifdef PTHREAD
     MessageTranslator *msg_trans = p_getParam()->msg_trans;
-#endif
-
     if ( msg_trans != NULL )
         str = msg_trans->getIntervalsformat();
     else
         str = "%02d:%02d";
 
-#ifdef PTHREAD
     Pthread_mutex_unlock(&mutex);
-#endif
-
     return str;
 }
 
@@ -330,7 +242,6 @@ std::string Message::getIntervalsformat()
 
 void Message::perror(int errorno, const char *str, ... )
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	void *tid = PTHREADID;
 
@@ -339,9 +250,6 @@ void Message::perror(int errorno, const char *str, ... )
 
 	p->errorfound++;
 	Pthread_mutex_unlock(&mutex);
-#else
-	errorfound++;
-#endif
 
 	va_list ap;
 	va_start(ap, str);
@@ -388,7 +296,6 @@ void Message::perror(int errorno, const char *str, ... )
 
 void Message::pwarning(int errorno, const char *str, ... )
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	void *tid = PTHREADID;
 
@@ -397,9 +304,6 @@ void Message::pwarning(int errorno, const char *str, ... )
 
 	p->warningfound++;
 	Pthread_mutex_unlock(&mutex);
-#else
-	warningfound++;
-#endif
 
 	va_list ap;
 	va_start(ap,str);
@@ -447,14 +351,12 @@ void Message::pwarning(int errorno, const char *str, ... )
 
 void Message::pmessage(int errorno, const char *str, ... )
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	void *tid = PTHREADID;
 
 	MessageTranslator *prg_trans = p->prg_trans;
 	MessageTranslator *msg_trans = p->msg_trans;
 	Pthread_mutex_unlock(&mutex);
-#endif
 
 	va_list ap;
 	va_start(ap,str);
@@ -498,11 +400,9 @@ void Message::pmessage(int errorno, const char *str, ... )
 
 void Message::pdebug(int debuglevel, const char *str, ... )
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	int debug = p->debug;
 	Pthread_mutex_unlock(&mutex);
-#endif
 	va_list ap;
 
 	this->msg_typ = M_DEBUG;
@@ -511,14 +411,10 @@ void Message::pdebug(int debuglevel, const char *str, ... )
 	if ( debug == -1000000 )
 	{
 		Argument a;
-#ifdef PTHREAD
 		debug = a["debug"];
 		Pthread_mutex_lock("pdebug", &mutex);
 		p->debug = p->argdebug = debug;
 		Pthread_mutex_unlock(&mutex);
-#else
-		argdebug = debug = a["debug"];
-#endif
 	}
 
 	if (    ( debug >= 0 && debug < debuglevel )
@@ -527,10 +423,7 @@ void Message::pdebug(int debuglevel, const char *str, ... )
 		return;
 	}
 
-#ifdef PTHREAD
 	Pthread_mutex_lock("pdebug", &mutex);
-#endif
-
 	va_start(ap,str);
 	fprintf(out, "%s D%04d: %6s ", timestamp().c_str(), debuglevel, id);
 	vfprintf(out, str, ap);
@@ -538,21 +431,15 @@ void Message::pdebug(int debuglevel, const char *str, ... )
 	fprintf(out,"\n");
 	fflush(out);
 	ignore_lang = 0;
-
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
 
 }
 
 void Message::wdebug(int debuglevel, const char *str, int length)
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	int debug = p->debug;
 	Pthread_mutex_unlock(&mutex);
-#endif
-
 	char *c;
 
 	this->msg_typ = M_DEBUG;
@@ -561,14 +448,10 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 	if ( debug == -1000000 )
 	{
 		Argument a;
-#ifdef PTHREAD
 		debug = a["debug"];
 		Pthread_mutex_lock("pdebug", &mutex);
 		p->debug = p->argdebug = debug;
 		Pthread_mutex_unlock(&mutex);
-#else
-		argdebug = debug = a["debug"];
-#endif
 	}
 
 	if (    ( debug >= 0 && debug < debuglevel )
@@ -581,37 +464,26 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 	memcpy(c, str, length);
 	c[length] = '\0';
 
-#ifdef PTHREAD
 	Pthread_mutex_lock("wdebug", &mutex);
-#endif
-
 	fprintf(out, "%s D%04d: %s ", timestamp().c_str(), debuglevel, c);
 	fflush(out);
 	delete c;
 	ignore_lang = 0;
-
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
-
 }
 
 void Message::iline(const char *str, ... )
 {
-#ifdef PTHREAD
     Param *p = p_getParam();
     void *tid = PTHREADID;
 
     int debug = p->debug;
     Pthread_mutex_unlock(&mutex);
-#endif
     va_list ap;
 
     if ( this->msg_typ == M_DEBUG && debug < last_debuglevel )
     {
-#ifdef PTHREAD
         Pthread_mutex_unlock(&mutex);
-#endif
         return;
     }
 
@@ -649,7 +521,6 @@ void Message::iline(const char *str, ... )
 }
 void Message::line(const char *str, ... )
 {
-#ifdef PTHREAD
     Param *p = p_getParam();
     void *tid = PTHREADID;
 
@@ -657,14 +528,11 @@ void Message::line(const char *str, ... )
     MessageTranslator *prg_trans = p->prg_trans;
     MessageTranslator *msg_trans = p->msg_trans;
     Pthread_mutex_unlock(&mutex);
-#endif
     va_list ap;
 
     if ( this->msg_typ == M_DEBUG && debug < last_debuglevel )
     {
-#ifdef PTHREAD
         Pthread_mutex_unlock(&mutex);
-#endif
         return;
     }
 
@@ -718,12 +586,10 @@ void Message::ptext(const char *buffer, int length)
 
 std::string Message::get( std::string str, int prog )
 {
-#ifdef PTHREAD
 	Param *p = p_getParam();
 	MessageTranslator *prg_trans = p->prg_trans;
 	MessageTranslator *msg_trans = p->msg_trans;
 	Pthread_mutex_unlock(&mutex);
-#endif
 
 	if ( prog == 0 && msg_trans != NULL )
 	{
@@ -742,10 +608,7 @@ std::string Message::get( std::string str, int prog )
 
 std::string Message::getSystemerror(int errornumber )
 {
-#ifdef PTHREAD
 	Pthread_mutex_lock("system",&mutex);
-#endif
-
 	std::string ret;
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
@@ -779,20 +642,12 @@ std::string Message::getSystemerror(int errornumber )
 	LocalFree(inbuf);
 	delete outbuf;
 
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
-
 	return ret;
-
 #else
 
 	ret = strerror(errno);
-
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
-
 	return ret;
 #endif
 
@@ -800,10 +655,7 @@ std::string Message::getSystemerror(int errornumber )
 
 void Message::mklog(std::string filename)
 {
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
-
 	logfile = filename;
 	if ( out != stderr )
 		fclose(out);
@@ -813,17 +665,12 @@ void Message::mklog(std::string filename)
 	{
 		out = stderr;
 
-#ifdef PTHREAD
 		Pthread_mutex_unlock(&mutex);
-#endif
-
 		perror(1, "Datei %s konnte nicht geöffnet werden", filename.c_str());
 		return;
 	}
 
-#ifdef PTHREAD
 	Pthread_mutex_unlock(&mutex);
-#endif
 }
 
 void Message::trunclog()

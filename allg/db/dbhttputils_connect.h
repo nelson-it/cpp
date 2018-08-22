@@ -6,11 +6,13 @@
 
 #include <embedweb/http_provider.h>
 
+#include "dbhttp_analyse.h"
 #include "dbhttp_provider.h"
 
 class DbHttpUtilsConnect : public DbHttpProvider
 {
     Message msg;
+    DbHttpAnalyse *analyse;
 
     enum ERROR_TYPE
     {
@@ -35,7 +37,7 @@ class DbHttpUtilsConnect : public DbHttpProvider
     void reload               (Database *db, HttpHeader *h);
 
 public:
-    DbHttpUtilsConnect( DbHttp *h );
+    DbHttpUtilsConnect( DbHttp *h, DbHttpAnalyse *a );
     virtual ~DbHttpUtilsConnect();
 
     virtual std::string getPath() { return "db/utils/connect"; }

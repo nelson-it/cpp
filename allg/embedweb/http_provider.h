@@ -31,8 +31,6 @@ public:
      virtual std::string getPath() = 0;
      virtual int request (HttpHeader *h) = 0;
      virtual void disconnect (int client) {};
-
-     virtual int check_ip(const char *ip, int host);
 };
 
 #endif /* http_provider_mne */

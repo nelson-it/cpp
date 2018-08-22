@@ -1,6 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 

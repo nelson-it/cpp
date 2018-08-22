@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <windows.h>
 #include <strings.h>
 #include <stdio.h>

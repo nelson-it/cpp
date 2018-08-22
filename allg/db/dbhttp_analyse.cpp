@@ -1,6 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -56,10 +54,7 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
 
     read_datadir();
     user_count = 0;
-
-#ifdef PTHREAD
-	pthread_mutex_init(&cl_mutex, NULL);
-#endif
+    pthread_mutex_init(&cl_mutex, NULL);
 }
 
 DbHttpAnalyse::~DbHttpAnalyse()
@@ -134,24 +129,17 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	msg.pdebug(D_CLIENT, "cookie %s", cookie.c_str());
 	if ( cookie != "" && (ic = clients.find(cookie) ) != clients.end()  )
 	{
-	    struct in_addr in;
 	    std::string a1,a2;
 
-	    in.s_addr = ic->second.host; a1 = inet_ntoa(in);
-	    in.s_addr = s->getHost(client); a2 = inet_ntoa(in);
+	    a1 = ic->second.host;
+	    a2 = s->getHost(client);
 
 	    msg.pdebug(D_CLIENT, "prüfe auf Gleichheit %d", client);
 		msg.pdebug(D_CLIENT, "host %s:%s", a1.c_str(), a2.c_str());
 		msg.pdebug(D_CLIENT, "base %s:%s", ic->second.base.c_str(), h->base.c_str());
-		msg.pdebug(D_CLIENT, "browser %d:%d", ic->second.browser, h->browser);
-		msg.pdebug(D_CLIENT, "user-agent %s:%s", ic->second.user_agent.c_str(), h->user_agent.c_str());
 		msg.pdebug(D_CLIENT, "connection %d", ic->second.db->have_connection());
 
-		if (   ic->second.host == s->getHost(client)
-			&& ic->second.base == h->base
-			&& ic->second.browser == h->browser
-            && ( ic->second.user_agent == h->user_agent || h->browser == HttpHeader::B_IE )
-			&& ( ic->second.db->have_connection() ) )
+		if (   ic->second.host == s->getHost(client) && ic->second.base == h->base && ( ic->second.db->have_connection() ) )
 		{
 		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
 			ic->second.last_connect = time(NULL);
@@ -175,16 +163,13 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
     if ( user != "" && user.substr(0,6) != "mneerp")
     {
-        struct in_addr in;
         std::string a;
 
-        in.s_addr = s->getHost(client); a = inet_ntoa(in);
+        a = s->getHost(client);
 
         msg.pdebug(D_CLIENT, "ist ein neuer client %d", client);
         msg.pdebug(D_CLIENT, "host %s", a.c_str());
         msg.pdebug(D_CLIENT, "base %s", h->base.c_str());
-        msg.pdebug(D_CLIENT, "browser %d", h->browser);
-        msg.pdebug(D_CLIENT, "user-agent %s", h->user_agent.c_str());
         msg.pdebug(D_CLIENT, "user %s", user.c_str());
         msg.pdebug(D_CLIENT, "passwd %s", passwd.c_str() );
 
@@ -193,8 +178,6 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
         h->realm = realm;
 
         cl.host = s->getHost(client);
-        cl.browser = h->browser;
-        cl.user_agent = h->user_agent;
         cl.base = h->base;
         cl.db = db->getDatabase();
         cl.cookie = str;

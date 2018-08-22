@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <fcntl.h>
@@ -14,7 +11,6 @@
 #include "php_exec.h"
 
 PhpExec::PhpExec(std::string cmd, HttpHeader *h )
-        :Process(NULL, 0)
 {
     Argument a;
     int anzahl;

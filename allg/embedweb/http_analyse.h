@@ -1,10 +1,7 @@
 #ifndef http_analyse_mne
 #define http_analyse_mne
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <string>
 #include <vector>
 #include <deque>
@@ -13,13 +10,12 @@
 #include <message/message.h>
 #include <ipc/s_provider.h>
 
-#include "http_header.h"
+#include "http_request.h"
 
 class Http;
 
-class HttpAnalyse : public SocketProvider
+class HttpAnalyse : public HttpRequest, public SocketProvider
 {
-#ifdef PTHREAD
 public:
     class HttpAnalyseThreadParam
     {
@@ -33,29 +29,23 @@ public:
         HttpHeader *act_h;
         int abort;
 
-        HttpAnalyseThreadParam(Http *http);
+        HttpAnalyseThreadParam(Http *http, HttpAnalyse *analyse);
         ~HttpAnalyseThreadParam();
 
         void disconnect(int client);
     };
 
-#endif
-
 private:
 
-    typedef std::map<std::string, std::string> ContentTypes;
-
-    typedef std::vector<std::string> Header;
     typedef std::map<int, Header> Headers;
-
     typedef std::map<int, HttpHeader*> HttpHeaders;
 
-#ifdef PTHREAD
     friend class HttpAnalyseThreadParam;
     typedef std::vector<HttpAnalyseThreadParam *> Https;
     typedef std::deque<HttpHeader *> HttpWaitingHeaders;
 
 protected:
+
     pthread_mutex_t header_mutex;
     pthread_cond_t  header_cond;
 
@@ -66,9 +56,6 @@ public:
 
 
 private:
-#else
-    typedef std::vector<Http *> Https;
-#endif
 
     // Membervariablen
     // ===============
@@ -76,14 +63,6 @@ private:
 
 protected:
     Message msg;
-
-    std::vector<std::string>  serverpath;
-    std::map<std::string,std::string>  datapath;
-    std::string dataroot;
-    std::string port;
-    std::string sport;
-
-    ContentTypes content_types;
 
     Headers headers;
     HttpHeaders http_headers;
@@ -118,6 +97,7 @@ protected:
     };
 
     virtual void analyse_header();
+
     virtual void read_postvalues();
     virtual void check_user(HttpHeader *h) {};
     virtual int  check_group(HttpHeader *h, const char *group) { return false; }
@@ -129,8 +109,6 @@ public:
     std::string getProvidername() { return "Http";  }
     std::vector<std::string> getServerpath() { return serverpath; }
     void request( int client, char *buffer, long size );
-
-    virtual void analyse_requestline(std::string request, HttpHeader *h);
 
     virtual void disconnect( int client );
 

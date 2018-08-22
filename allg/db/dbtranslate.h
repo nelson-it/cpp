@@ -9,9 +9,7 @@
 class Database;
 class DbTranslate : public MessageTranslator
 {
-    #ifdef PTHREAD
     static pthread_mutex_t mutex;
-    #endif
 
     static Database *db;
     std::string lang;
@@ -25,8 +23,6 @@ class DbTranslate : public MessageTranslator
     static FormatMap interval;
     static FormatMap times;
     static FormatMap intervals;
-
-    static int init;
 
     std::string act_date;
     std::string act_time;
