@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -77,14 +74,12 @@ void DbHttpUtilsTrust::check_user(Database *db, HttpHeader *h)
     Argument a;
     Database *d = db->getDatabase();
     unsigned int i;
-    int host;
 
     Argument::StringWerte ips;
     ips = (a["DbTrustCheckUserip"]).getStringWerte();
 
-    host = this->http->getServersocket()->getHost(h->client);
     for ( i = 0; i < ips.size(); ++i )
-        if (  check_ip(ips[i].c_str(), host ) ) break;
+        if (  this->http->check_ip(ips[i].c_str() ) ) break;
 
     d->p_getConnect("", h->user, h->passwd);
 
@@ -105,7 +100,6 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     DbTable::ValueMap where;
     DbConnect::ResultMat* result;
     DbConnect::ResultMat::iterator ri;
-    int host;
 
     DbTable *tab = db->p_getTable(db->getApplschema(), "trustrequest");
 
@@ -121,9 +115,8 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
 
     if ( nologin )
     {
-        host = this->http->getServersocket()->getHost(h->client);
         for ( ri = result->begin(); ri != result->end(); ++ri )
-            if (  check_ip(((std::string) (*ri)[1]).c_str(), host ) ) break;
+            if (  this->http->check_ip(((std::string) (*ri)[1]).c_str()) ) break;
     }
     else
     {
@@ -161,7 +154,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     }
     else if ( (std::string) (*ri)[2] == "shell" )
     {
-        Process p(DbHttpProvider::http->getServersocket());
+        Process p;
         CsList cmd;
         CsList validpar((char *)((*ri)[3]));
         int anzahl;

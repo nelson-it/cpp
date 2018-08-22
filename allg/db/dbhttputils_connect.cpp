@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -12,7 +9,7 @@
 #include "dbconnect.h"
 #include "dbhttputils_connect.h"
 
-DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h)
+DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *a)
           :DbHttpProvider(h),
 	   msg("DbHttpUtilsConnect")
 {
@@ -26,6 +23,7 @@ DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h)
 
 	subprovider["/sql/execute.xml"]    = &DbHttpUtilsConnect::sql_execute_xml;
 
+	this->analyse = analyse;
 	h->add_provider(this);
 }
 
@@ -270,7 +268,7 @@ void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
     tab->del_allcolumns();
     db->release(tab);
 
-    this->read_datadir();
+    this->analyse->read_datadir();
 
     msg.pmessage(0, "ok");
     add_content(h, "<body>ok</body>");

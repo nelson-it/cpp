@@ -6,7 +6,6 @@
 
 #include <message/message.h>
 
-#include "http_search.h"
 #include "http_provider.h"
 
 class HttpFilesystem : public HttpProvider
@@ -14,7 +13,6 @@ class HttpFilesystem : public HttpProvider
     typedef void ( HttpFilesystem::*SubProvider)(HttpHeader *h);
     typedef std::map<std::string, SubProvider> SubProviderMap;
 
-    HttpSearchPath search;
     SubProviderMap subprovider;
 
     Message msg;
@@ -30,6 +28,7 @@ protected:
         E_CREATELINK,
 
         E_FILEEXISTS,
+        E_FILE_OPEN,
 
         E_MAX = 1000
     };
@@ -49,6 +48,8 @@ protected:
 
     virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1, std::string *result = NULL );
     virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1 , std::string *result = NULL );
+
+    virtual int findfile(HttpHeader *h);
 
     std::string dataroot;
     std::string root;

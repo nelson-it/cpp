@@ -32,11 +32,6 @@ public:
      virtual int request (Database *db, HttpHeader *h ) = 0;
      virtual int request (HttpHeader *h)
          { exit(999); }
-
-     void read_datadir()
-     {
-         this->http->read_datadir();
-     }
 };
 
 #endif /* dbhttp_provider_mne */

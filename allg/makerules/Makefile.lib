@@ -79,18 +79,21 @@ $(SHLIB_PRE)mnehttp.$(SHLIB).LIBMAJOR := 1
 $(SHLIB_PRE)mnehttp.$(SHLIB).LIBMINOR := 0
 $(SHLIB_PRE)mnehttp.$(SHLIB).LIBS := mnebase
 $(SHLIB_PRE)mnehttp.$(SHLIB).SOURCES := \
-                $(PROJECT_ROOT)/allg/embedweb/http_provider.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/http_request.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_analyse.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_translate.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_content.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_cookie.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_vars.cpp \
-                $(PROJECT_ROOT)/allg/embedweb/http_map.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_utils.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_filesystem.cpp \
-                $(PROJECT_ROOT)/allg/embedweb/http_search.cpp \
                 $(PROJECT_ROOT)/allg/embedweb/http_sysexec.cpp \
+                \
+                $(PROJECT_ROOT)/allg/embedweb/ws_analyse.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/ws.cpp \
+                $(PROJECT_ROOT)/allg/embedweb/ws_http.cpp \
+                \
         		$(PROJECT_ROOT)/allg/utils/php_exec.cpp \
 
 $(SHLIB_PRE)mnehttpxml.$(SHLIB).ISDLL := TRUE
@@ -124,6 +127,8 @@ $(SHLIB_PRE)mnedb.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/db/postgres/pgtable.cpp \
                 $(PROJECT_ROOT)/allg/db/postgres/pgconstraint.cpp \
                 $(PROJECT_ROOT)/allg/db/postgres/pgjoin.cpp \
+                \
+                $(PROJECT_ROOT)/allg/db/dbws_http.cpp \
                 \
                 $(PROJECT_ROOT)/allg/report/report_tex.cpp \
 

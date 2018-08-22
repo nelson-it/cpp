@@ -6,19 +6,17 @@
 
 #include <message/message.h>
 #include <ipc/s_provider.h>
+#include <argument/argument.h>
 
 #include "http_header.h"
 #include "http_translate.h"
 #include "http_content.h"
 
 class HttpProvider;
-class HttpMap;
 class HttpAnalyse;
 
 class Http : protected HttpContent, public Message::MessageClient
 {
-    friend class HttpSsi;
-
     // Membervariablen
     // ===============
     int no_cache;
@@ -60,9 +58,6 @@ protected:
         D_EXEC = 5
     };
 
-    typedef std::vector<HttpMap *> Maps;
-    Maps maps;
-
     typedef std::map<std::string, HttpProvider *> Provider;
     Provider provider;
 
@@ -73,34 +68,30 @@ protected:
 
     HttpProvider *find_provider(Provider *p);
 
-    virtual std::string get_meldungtext(int status);
-
+    virtual void make_meldung();
     virtual void make_answer();
+    virtual void make_error();
+    virtual void make_translate();
+
     virtual void write_header();
+    virtual void write_content() {  s->write(act_h->client, act_h->content, act_h->content_length); };
     virtual void write_trailer();
 
-    virtual void send();
-
     virtual void mk_error(const char *typ, char *str);
+
 public:
 
-    Http( ServerSocket *s, HttpAnalyse *a, int register_thread = 1);
+    Http( ServerSocket *s, HttpAnalyse *a );
     virtual ~Http();
-
     virtual void init_thread() {};
 
     virtual void get(HttpHeader *h);
-    HttpAnalyse *p_getHttpAnalyse() { return analyse; }
-
-    std::string mkmap(std::string filename);
+    virtual void make_content(HttpHeader *h = NULL);
 
     virtual void disconnect( int client );
-    virtual void unlock_client() {};
 
     void add_provider(HttpProvider *);
     void del_provider(HttpProvider *);
-
-    ServerSocket *getServersocket() { return this->s; }
 
     void perror( char *str);
     void pwarning( char *str);
@@ -109,6 +100,7 @@ public:
 
     virtual int  check_group(HttpHeader *h, const char *group) { return false; }
     virtual int  check_sysaccess(HttpHeader *h )               { return false; }
+    virtual int  check_ip(const char *ip);
 
 };
 

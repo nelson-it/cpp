@@ -1,8 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
-
 #include <stdlib.h>
 #include <stdio.h>
 

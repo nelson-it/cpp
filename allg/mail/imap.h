@@ -1,10 +1,7 @@
 #ifndef imap_mne
 #define imap_mne
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <string>
 #include <vector>
 

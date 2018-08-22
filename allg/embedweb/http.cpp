@@ -1,6 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 #include <stdlib.h>
 #include <stdio.h>
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -21,9 +19,8 @@
 #include "http.h"
 #include "http_analyse.h"
 #include "http_provider.h"
-#include "http_map.h"
 
-Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
+Http::Http(ServerSocket *s, HttpAnalyse *analyse ) :
 	msg("Http")
 {
 
@@ -31,16 +28,8 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
 	std::string mstr;
 	CsList mlist;
 	CsList mele;
-	unsigned int i;
 
 	no_cache = a["EmbedwebHttpNocache"];
-
-	mlist.setString(a["EmbedwebHttpMaps"], ':');
-	for (i=0; i<mlist.size(); i++)
-	{
-		mele.setString(mlist[i], '!');
-		maps.push_back(new HttpMap(this, mele[0], mele[1], mele[2]));
-	}
 
 	status_str[100] = "Continue";
 	status_str[101] = "Switching Protocols";
@@ -148,94 +137,70 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse, int register_thread) :
 	this->analyse = analyse;
 	this->act_h = NULL;
 
-	if (register_thread)
+	if (analyse != NULL )
 		analyse->add_http(this);
 }
 
 Http::~Http()
 {
-	unsigned int i;
-	analyse->del_http(this);
-
-	for (i=0; i<maps.size(); i++)
-		delete maps[i];
+    if ( analyse != NULL )
+	    analyse->del_http(this);
 }
-std::string Http::get_meldungtext(int status)
+
+void Http::make_meldung()
 {
     FILE *fp;
-    std::string str;
     char buffer[102400];
-    int num;
-	struct stat s;
+    std::string str;
 	unsigned int i;
-	std::vector<std::string> serverpath;
 
-    sprintf(buffer, "%d", status);
-
-    serverpath = analyse->getServerpath();
-    for (i=0; i<serverpath.size(); i++)
-	{
-		str = serverpath[i] + "/" + act_h->dirname + "/" + act_h->filename;
-		if (stat(str.c_str(), &s) == 0 ) break;
-	}
-
-    if ( (fp = fopen(str.c_str(), "rb") ) == NULL)
+    if (act_h->filename.find(".xml") == (act_h->filename.size() - 4))
     {
-        if ( meldungen.find(status) != meldungen.end())
-            return meldungen[status];
+        act_h->content_type = "text/xml";
+        add_content(act_h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", act_h->charset.c_str());
+        add_content(act_h,  "<body>error</body>");
+        return;
+    }
+
+    act_h->error_messages.clear();
+    act_h->error_types.clear();
+
+    sprintf(buffer, "%d", act_h->status);
+
+    act_h->content_type = "text/html";
+    for (i=0; i<act_h->serverpath.size(); i++)
+    {
+    	struct stat s;
+        str = act_h->serverpath[i] + "/state/" + buffer + ".html";
+        if (stat(str.c_str(), &s) == 0 ) break;
+    }
+
+    if ( (fp = fopen(str.c_str(), "rb") ) == NULL )
+    {
+        if ( meldungen.find(act_h->status) != meldungen.end())
+        {
+           str = meldungen[act_h->status].c_str();
+        }
         else
-            return (std::string)("Status: ") + buffer;
+        {
+            act_h->content_type = "text/plain";
+            sprintf(buffer, "Status: %d", act_h->status);
+            str = buffer;
+        }
     }
     else
     {
-        num = fread(buffer, 1, sizeof(buffer) - 1, fp);
+        int num = fread(buffer, 1, sizeof(buffer) - 1, fp);
         buffer[num] = '\0';
-        return buffer;
+        str = buffer;
     }
-}
 
-HttpProvider *Http::find_provider(Provider *p)
-{
-	Provider::iterator act_p;
+    std::string::size_type pos = str.find("#request#");
+    if (pos != std::string::npos)
+        str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
 
-	for (act_p = p->begin(); act_p != p->end(); ++act_p)
-		if ( act_h->dirname.find(act_p->first) == 1 && ( act_h->dirname[act_p->first.length() + 1] == '\0' || act_h->dirname[act_p->first.length() + 1] == '/'))
-			break;
-
-	if (act_p != p->end() )
-	{
-		act_h->providerpath = act_p->first;
-		if (act_h->dirname.size() == (act_p->first.size() + 1 ))
-			act_h->dirname = "/";
-		else
-			act_h->dirname = act_h->dirname.substr(act_p->first.size() + 1);
-
-		msg.pdebug(D_HTTP, "Provider: %s dirname: %s filename: %s",
-				act_p->first.c_str(), act_h->dirname.c_str(),
-				act_h->filename.c_str());
-		return act_p->second;
-	}
-	else
-	{
-		return NULL;
-	}
-}
-
-std::string Http::mkmap(std::string filename)
-{
-	Maps::iterator act_m;
-    unsigned int i;
-	struct stat s;
-
-	for (act_m = maps.begin(); act_m != maps.end(); ++act_m)
-		if (filename.find((*act_m)->getPath()) == 1)
-			return (*act_m)->mkfilename(act_h, filename);
-
-	for (i=0; i<act_h->serverpath.size(); i++)
-		if (stat((act_h->serverpath[i] + filename).c_str(), &s) == 0)
-			return act_h->serverpath[i] + filename;
-
-	return "";
+    add_content(act_h, str);
+    act_h->translate = 1;
 }
 
 void Http::make_answer()
@@ -250,30 +215,14 @@ void Http::make_answer()
 	{
 		act_h->status = 404;
 		act_h->age = 0;
-		str = this->get_meldungtext(act_h->status);
-		std::string::size_type pos = str.find("#request#");
-		if (pos != std::string::npos)
-			str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
-
-		add_contentb(act_h, str.c_str(), str.size() );
+		make_meldung();
 		return;
 	}
 
-	if (act_h->status != 404 && act_h->status != 1000 )
+	if (act_h->status != 404 )
 	{
 		act_h->age = 0;
-	    str = this->get_meldungtext(act_h->status);
-
-		std::string::size_type pos = str.find("#request#");
-		if (pos != std::string::npos)
-			str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
-
-		add_contentb(act_h, str.c_str(), str.size() );
-		if ( act_h->content_type.find("text") == 0 )
-		{
-		    http_translate.make_answer(act_h, NULL);
-		    act_h->translate = 0;
-		}
+		make_meldung();
 		return;
 	}
 
@@ -283,33 +232,10 @@ void Http::make_answer()
 		{
 			act_h->status = 404;
 			act_h->age = 0;
-			if (act_h->filename.find(".xml") == (act_h->filename.size() - 4))
-			{
-				msg.perror(E_NOTFOUND, "Provider %s unterstützt %s/%s nicht",
-						act_h->providerpath.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
-				act_h->content_type = "text/xml";
-				add_content(act_h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", act_h->charset.c_str());
-				add_content(act_h,  "<body>error</body>");
-			}
-			else
-			{
-		        str = this->get_meldungtext(act_h->status);
-				std::string::size_type pos = str.find("#request#");
-				if (pos != std::string::npos)
-					str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
-
-				add_contentb(act_h, str.c_str(), str.size() );
-			}
+			msg.perror(E_NOTFOUND, "Provider %s unterstützt %s/%s nicht", act_h->providerpath.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
+		    make_meldung();
 		}
-
-		if ( act_h->status == 200 && act_h->content_type.find("text") == 0 && act_h->translate != 0 )
-		{
-			http_translate.make_answer(act_h, NULL);
-			act_h->translate = 0;
-		}
-
-		if (act_h->status != 1000)
-			return;
+		return;
 	}
 
 	for (i=0; i<act_h->serverpath.size(); i++)
@@ -320,33 +246,15 @@ void Http::make_answer()
 
 	if ( (file = fopen(str.c_str(), "rb") ) == NULL)
 	{
-	    if ( act_h->vars["ignore_notfound"] == "" )
-            msg.perror(E_NOTFOUND, "Kann Datei %s/%s nicht finden", act_h->dirname.c_str(), act_h->filename.c_str());
 		act_h->status = 404;
 		act_h->age = 0;
-		if (act_h->filename.find(".xml") == (act_h->filename.size() - 4))
-		{
-			act_h->content_type = "text/xml";
-			add_content(act_h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", act_h->charset.c_str());
-			add_content(act_h,  "<body>error</body>");
-		}
-		else
-		{
-		    act_h->content_type = "text/html";
-            str = this->get_meldungtext(act_h->status);
-		    std::string::size_type pos = str.find("#request#");
-		    if (pos != std::string::npos)
-			    str.replace(pos, 9, act_h->dirname + "/" + act_h->filename);
+	    if ( act_h->vars["ignore_notfound"] == "" )
+            msg.perror(E_NOTFOUND, "Kann Datei %s/%s nicht finden", act_h->dirname.c_str(), act_h->filename.c_str());
 
-		    add_contentb(act_h, str.c_str(), str.size() );
-		    act_h->error_messages.clear();
-		    act_h->error_types.clear();
-	    }
+		 make_meldung();
 	}
 	else
 	{
-		if (act_h->status != 1000)
-			act_h->age = 3600;
 		act_h->status = 200;
 
 		act_h->translate = 1;
@@ -358,20 +266,82 @@ void Http::make_answer()
             act_h->age = 0;
             PhpExec(str, act_h);
         }
-
-		if (act_h->content_type.find("text") == 0 && act_h->translate )
+		else
 		{
-			http_translate.make_answer(act_h, file);
-			act_h->translate = 0;
-		}
-		else if (file != NULL)
-		{
+     		act_h->age = 3600;
 		    contentf(act_h, file);
 		}
 
-		if (file != NULL)
-			fclose(file);
+		fclose(file);
 	}
+}
+
+void Http::make_translate()
+{
+    if ( act_h->content_type.find("text") == 0 && act_h->translate )
+    {
+        http_translate.make_answer(act_h, NULL);
+        act_h->translate = 0;
+    }
+}
+
+void Http::make_error()
+{
+    if ( !act_h->error_messages.empty() )
+    {
+        unsigned int i,j;
+
+        if (act_h->content_type == "text/xml")
+        {
+            add_content(act_h,  "<error>\n");
+            for (i = 0; i< act_h->error_messages.size(); ++i)
+                add_content(act_h,  "<v class=\"%s\">%s</v>\n", act_h->error_types[i].c_str(), ToString::mkxml(act_h->error_messages[i]).c_str());
+            add_content(act_h,  "\n</error>");
+        }
+        else
+        {
+            for (i = 0; i< act_h->error_messages.size(); ++i)
+            {
+                std::string str = act_h->error_messages[i];
+                std::string e;
+
+                for (j=0; str[j] != '\0'; j++)
+                {
+                    if (str[j] == '\\')
+                        e.push_back('\\');
+                    if (str[j] == '\'')
+                        e.push_back('\\');
+                    if (str[j] != '\n' && str[j] != '\r')
+                        e.push_back(str[j]);
+                    else
+                    {
+                        if ( act_h->content_type == "text/html" )
+                            add_content(act_h,  "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
+                        else
+                            add_content(act_h,  "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
+
+                        while (str[j] == '\n' || str[j] == '\r')
+                            j++;
+                        j--;
+                        e = "";
+                    }
+                }
+
+                if (e != "")
+                {
+                    if ( act_h->content_type == "text/html" )
+                        add_content(act_h,  "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
+                    else
+                        add_content(act_h,  "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
+                }
+            }
+
+        }
+    }
+
+    if ( act_h->content_type == "text/xml" )
+        add_content(act_h, "</result>");
+
 }
 
 void Http::write_header()
@@ -380,9 +350,6 @@ void Http::write_header()
     int status;
     unsigned int count;
 	char buffer[10240];
-
-	if ( act_h->proxy )
-	    return;
 
 	status = act_h->status;
 	if (act_h->status < 0)
@@ -395,8 +362,6 @@ void Http::write_header()
 		msg.line("%s: %s", msg.get("Filename").c_str(), act_h->filename.c_str());
 		msg.line("%s: %s", msg.get("Protokoll").c_str(), act_h->protokoll.c_str());
 		msg.line("%s: %s", msg.get("Hostname").c_str(), act_h->hostname.c_str());
-		msg.line("%s: %d", msg.get("Browser").c_str(), act_h->browser);
-		//msg.line("%s: %s", msg.get("Version").c_str(), act_h->version.c_str());
 		msg.line("%s: %s", msg.get("User").c_str(), act_h->user.c_str());
 
 		v = act_h->vars.p_getVars()->begin();
@@ -404,12 +369,9 @@ void Http::write_header()
 			msg.line("%s: %s", v->first.c_str(), v->second.c_str());
 
 	}
-	msg.pdebug(D_HTTP, "schreibe header - status \"%d\",\"%s\" \"%s\" %d",
-			status, status_str[status].c_str(),
-			act_h->content_type.c_str(), act_h->content_length);
+	msg.pdebug(D_HTTP, "schreibe header - status \"%d\",\"%s\" \"%s\" %d", status, status_str[status].c_str(), act_h->content_type.c_str(), act_h->content_length);
 
-	sprintf(buffer, "HTTP/1.1 %d %s\r\n", status,
-			status_str[status].c_str());
+	sprintf(buffer, "HTTP/1.1 %d %s\r\n", status, status_str[status].c_str());
 	s->write(act_h->client, buffer, strlen(buffer));
 
     for ( count = 0; count < act_h->extra_header.size(); ++count )
@@ -430,11 +392,9 @@ void Http::write_header()
 	{
 		msg.pdebug(D_HTTP, "fordere Passwort an");
 		if ( act_h->realm.empty() )
-			sprintf(buffer, "WWW-Authenticate: Basic realm=\"%d\"\r\n",
-					((int)time(0)));
+			sprintf(buffer, "WWW-Authenticate: Basic realm=\"%d\"\r\n", ((int)time(0)));
 		else
-			sprintf(buffer, "WWW-Authenticate: Basic realm=\"%s\"\r\n",
-					act_h->realm.c_str());
+			sprintf(buffer, "WWW-Authenticate: Basic realm=\"%s\"\r\n", act_h->realm.c_str());
 		s->write(act_h->client, buffer, strlen(buffer));
 		buffer[strlen(buffer) - 2 ] = '\0';
 		msg.pdebug(D_CON, "fordere Passwort an %s", buffer);
@@ -443,18 +403,10 @@ void Http::write_header()
 	sprintf(buffer, "Server: M Nelson Embedded Http Server 0.9\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	if (act_h->browser != HttpHeader::B_IE && (no_cache || act_h->age == 0))
+	if ( no_cache || act_h->age == 0 )
 	{
 		msg.pdebug(D_HTTP, "Cache_Control: no-store");
 		sprintf(buffer, "Cache-Control: no-store\r\n");
-	}
-	else
-	{
-		if (no_cache)
-			act_h->age = -1;
-        msg.pdebug(D_HTTP, "Cache_Control: no-store");
-        sprintf(buffer, "Cache-Control: no-store\r\n");
-
 	}
 
 	s->write(act_h->client, buffer, strlen(buffer));
@@ -463,9 +415,6 @@ void Http::write_header()
 	{
 		sprintf(buffer, "Connection: Keep-Alive\r\n");
 		s->write(act_h->client, buffer, strlen(buffer));
-
-		//sprintf(buffer, "Keep-Alive: timeout=300, max=100000\r\n");
-		//s->write(act_h->client, buffer, strlen(buffer));
 	}
 	else
 	{
@@ -476,24 +425,18 @@ void Http::write_header()
 
 	for (i = act_h->set_cookies.begin(); i != act_h->set_cookies.end(); ++i)
 	{
-		sprintf(buffer, "Set-Cookie: %s=%s; path=/\r\n", i->first.c_str(),
-				i->second.c_str());
+		sprintf(buffer, "Set-Cookie: %s=%s; path=/\r\n", i->first.c_str(), i->second.c_str());
 		s->write(act_h->client, buffer, strlen(buffer));
 	}
 
 	sprintf(buffer, "Accpet-Ranges: bytes\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	//sprintf(buffer, "Accpet-Charset=\"utf-8\"\r\n");
-	//s->write(act_h->client, buffer, strlen(buffer));
-
 	sprintf(buffer, "Content-Length: %ld\r\n", act_h->content_length);
 	s->write(act_h->client, buffer, strlen(buffer));
 
-	sprintf(buffer, "Content-Type: %s; charset=%s\r\n",
-			act_h->content_type.c_str(), act_h->charset.c_str());
+	sprintf(buffer, "Content-Type: %s; charset=%s\r\n", act_h->content_type.c_str(), act_h->charset.c_str());
 	s->write(act_h->client, buffer, strlen(buffer));
-
 
 	if (status >= 300 && status < 400 )
 	{
@@ -524,77 +467,20 @@ void Http::write_header()
 
 void Http::write_trailer()
 {
-	msg.pdebug(D_HTTP, "write trailer - status \"%d\",\"%s\"",
-			act_h->connection, act_h->connection ? "behalten" : "schliessen");
+	msg.pdebug(D_HTTP, "write trailer - status \"%d\",\"%s\"", act_h->connection, act_h->connection ? "behalten" : "schliessen");
 
 	if ( !act_h->connection)
 		s->close(act_h->client);
 }
 
-void Http::send()
+void Http::make_content(HttpHeader *h)
 {
-	make_answer();
-	if ( !act_h->error_messages.empty() && act_h->content != NULL && act_h->proxy == 0 )
-	{
-		unsigned int i,j;
+    if ( h != NULL ) act_h = h;
+    if ( act_h == NULL ) return;
 
-		if (act_h->content_type == "text/xml")
-		{
-		    add_content(act_h,  "<error>\n");
-		    for (i = 0; i< act_h->error_messages.size(); ++i)
-		        add_content(act_h,  "<v class=\"%s\">%s</v>\n", act_h->error_types[i].c_str(), ToString::mkxml(act_h->error_messages[i]).c_str());
-		    add_content(act_h,  "\n</error>");
-		}
-		else
-		{
-		    for (i = 0; i< act_h->error_messages.size(); ++i)
-		    {
-		        std::string str = act_h->error_messages[i];
-		        std::string e;
-
-		        for (j=0; str[j] != '\0'; j++)
-		        {
-		            if (str[j] == '\\')
-		                e.push_back('\\');
-		            if (str[j] == '\'')
-		                e.push_back('\\');
-		            if (str[j] != '\n' && str[j] != '\r')
-		                e.push_back(str[j]);
-		            else
-		            {
-		                if ( act_h->content_type == "text/html" )
-		                    add_content(act_h,  "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
-		                else
-		                    add_content(act_h,  "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
-
-		                while (str[j] == '\n' || str[j] == '\r')
-		                    j++;
-		                j--;
-		                e = "";
-		            }
-		        }
-
-		        if (e != "")
-		        {
-		            if ( act_h->content_type == "text/html" )
-		                add_content(act_h,  "<div class='print_%s'>%s</div>\n", act_h->error_types[i].c_str(), e.c_str());
-		            else
-		                add_content(act_h,  "%s: %s\n", act_h->error_types[i].c_str(), e.c_str());;
-		        }
-		    }
-
-		}
-	}
-
-	if ( act_h->content_type == "text/xml" && act_h->proxy == 0 )
-		add_content(act_h, "</result>");
-
-    write_header();
-	if (act_h->content != NULL && act_h->content_length > 0 )
-		s->write(act_h->client, act_h->content, act_h->content_length);
-	write_trailer();
-
-	s->flush(act_h->client);
+    make_answer();
+    make_error();
+    make_translate();
 }
 
 void Http::get(HttpHeader *h)
@@ -611,7 +497,13 @@ void Http::get(HttpHeader *h)
 	msg.add_msgclient(this);
 	setThreadonly();
 
-	send();
+    make_content();
+
+    write_header();
+    write_content();
+    write_trailer();
+
+    s->flush(act_h->client);
 
 	msg.del_msgclient(this);
 	act_h = NULL;
@@ -643,8 +535,7 @@ void Http::add_provider(HttpProvider *p)
 	}
 	else
 	{
-		msg.perror(E_PRO_EXISTS, "HttpProvider \"%s\" ist schon registriert",
-				path.c_str());
+		msg.perror(E_PRO_EXISTS, "HttpProvider \"%s\" ist schon registriert", path.c_str());
 	}
 }
 
@@ -666,6 +557,30 @@ void Http::del_provider(HttpProvider *p)
 	}
 }
 
+HttpProvider *Http::find_provider(Provider *p)
+{
+    Provider::iterator act_p;
+
+    for (act_p = p->begin(); act_p != p->end(); ++act_p)
+        if ( act_h->dirname.find(act_p->first) == 1 && ( act_h->dirname[act_p->first.length() + 1] == '\0' || act_h->dirname[act_p->first.length() + 1] == '/'))
+            break;
+
+    if (act_p != p->end() )
+    {
+        act_h->providerpath = act_p->first;
+        if (act_h->dirname.size() == (act_p->first.size() + 1 ))
+            act_h->dirname = "/";
+        else
+            act_h->dirname = act_h->dirname.substr(act_p->first.size() + 1);
+
+        msg.pdebug(D_HTTP, "Provider: %s dirname: %s filename: %s", act_p->first.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
+        return act_p->second;
+    }
+    else
+    {
+        return NULL;
+    }
+}
 
 void Http::mk_error(const char *typ, char *str)
 {
@@ -703,4 +618,160 @@ void Http::pline(char *str)
 	mk_error("line", str);
 	act_h->message_found++;
 }
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+int inet_aton(const char *cp_arg, struct in_addr *addr)
+{
+    register const u_char *cp = (u_char*)cp_arg;
+    register u_long val;
+    register int base;
+#ifdef WIN32
+    register ULONG_PTR n;
+#else
+    register unsigned long n;
+#endif
+    register u_char c;
+    u_int parts[4];
+    register u_int *pp = parts;
+
+    for (;;) {
+        /*
+         * Collect number up to ``.''.
+         * Values are specified as for C:
+         * 0x=hex, 0=octal, other=decimal.
+         */
+        val = 0; base = 10;
+        if (*cp == '0') {
+            if (*++cp == 'x' || *cp == 'X')
+                base = 16, cp++;
+            else
+                base = 8;
+        }
+        while ((c = *cp) != '\0') {
+            if (isascii(c) && isdigit(c)) {
+                val = (val * base) + (c - '0');
+                cp++;
+                continue;
+            }
+            if (base == 16 && isascii(c) && isxdigit(c)) {
+                val = (val << 4) +
+                        (c + 10 - (islower(c) ? 'a' : 'A'));
+                cp++;
+                continue;
+            }
+            break;
+        }
+        if (*cp == '.') {
+            /*
+             * Internet format:
+             * a.b.c.d
+             * a.b.c (with c treated as 16-bits)
+             * a.b (with b treated as 24 bits)
+             */
+            if (pp >= parts + 3 || val > 0xff)
+                return (0);
+            *pp++ = val, cp++;
+        } else
+            break;
+    }
+    /*
+     * Check for trailing characters.
+     */
+    if (*cp && (!isascii(*cp) || !isspace(*cp)))
+        return (0);
+    /*
+     * Concoct the address according to
+     * the number of parts specified.
+     */
+    n = pp - parts + 1;
+    switch (n) {
+
+    case 1: /* a -- 32 bits */
+        break;
+
+    case 2: /* a.b -- 8.24 bits */
+        if (val > 0xffffff)
+            return (0);
+        val |= parts[0] << 24;
+        break;
+
+    case 3: /* a.b.c -- 8.8.16 bits */
+        if (val > 0xffff)
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16);
+        break;
+
+    case 4: /* a.b.c.d -- 8.8.8.8 bits */
+        if (val > 0xff)
+            return (0);
+        val |= (parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8);
+        break;
+    }
+    if (addr)
+        addr->s_addr = htonl(val);
+    return (1);
+}
+#endif
+
+int Http::check_ip(const char *ip)
+{
+    unsigned long mask = -1;
+    CsList ipaddr (ip, '/');
+    sockaddr_storage *checkaddr = this->s->getAddr(act_h->client);
+
+    if ( ipaddr.size() == 0 ) return 1;
+
+    if ( checkaddr->ss_family == AF_INET )
+    {
+        CsList addr(ipaddr[0],'.');
+        struct in_addr taddr, caddr;
+
+        if ( addr.size() != 4 )
+            return 0;
+
+        if ( ipaddr.size() == 2 )
+            mask = htonl(mask << ( 32 - atoi(ipaddr[1].c_str()) ));
+
+        caddr.s_addr = ((struct sockaddr_in *)checkaddr)->sin_addr.s_addr;
+        caddr.s_addr &= mask;
+
+        inet_aton(ipaddr[0].c_str(), &taddr );
+        taddr.s_addr &= mask;
+
+        if ( caddr.s_addr == taddr.s_addr )
+            return 1;
+    }
+    else if ( checkaddr->ss_family == AF_INET6 )
+    {
+        struct in6_addr netmask;
+        struct in6_addr taddr, caddr;
+        long i,j;
+
+        if ( ipaddr[0].find('.') != std::string::npos )
+            inet_pton(AF_INET6, ("::ffff:" + ipaddr[0]).c_str(), &taddr);
+        else
+            inet_pton(AF_INET6, ipaddr[0].c_str(), &taddr);
+
+        memcpy(caddr.s6_addr, ((struct sockaddr_in6 *)checkaddr)->sin6_addr.s6_addr, sizeof(caddr.s6_addr));
+
+
+        if ( ipaddr.size() == 2 )
+        {
+            memset(netmask.s6_addr, 0, sizeof(netmask.s6_addr));
+            for ( i = atoi(ipaddr[1].c_str()), j = 0; i > 0; i -= 8, ++j)
+                netmask.s6_addr[ j ] = i >= 8 ? 0xff : (unsigned long)(( 0xffU << ( 8 - i ) ) & 0xffU );
+            for ( i = 0; i < 16; i++)
+                caddr.s6_addr[i] = caddr.s6_addr[i] & netmask.s6_addr[i];
+        }
+
+        for ( i =0; i< 16; i++)
+            if ( taddr.s6_addr[i] != caddr.s6_addr[i] )
+                return 0;
+
+        return 1;
+    }
+    return 0;
+}
+
+
 

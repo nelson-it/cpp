@@ -32,9 +32,7 @@ class PgConnect : public DbConnect
             error_found = 0;
             warning_found = 0;
 
-            #ifdef PTHREAD
             pthread_mutex_init(&mutex, NULL);
-            #endif
         }
 
     };

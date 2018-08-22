@@ -1,10 +1,7 @@
 #ifndef imap_scan_mne
 #define imap_scan_mne
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <string>
 #include <vector>
 
@@ -26,10 +23,8 @@ class ImapScan
         W_SCAN = 1
     };
 
-#ifdef PTHREAD
     static pthread_mutex_t mutex;
     static int mutex_init;
-#endif
 
     Message msg;
     Database *db;
@@ -64,7 +59,6 @@ public:
     void clearHeader()        { headers.clear(); }
 };
 
-#ifdef PTHREAD
 class ImapScanThread
 {
 public:
@@ -75,6 +69,5 @@ public:
     ImapScanThread(Database *db);
     ~ImapScanThread();
 };
-#endif
 
 #endif /* imap_scan_mne */

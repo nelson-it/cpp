@@ -5,14 +5,8 @@ liste["EmbedwebHttpDataroot"]   = Argument::Liste("-httpdataroot", 'c', 1, "data
 liste["EmbedwebHttpDatapath"]   = Argument::Liste("-httpdatapath", 'c', 1, "data@data");
 liste["EmbedwebHttpNocache"]    = Argument::Liste("-httpnocache", 'l', 0, "0" );
 
-// Welche Ordner werden gemapt
-// +++++++++++++++++++++++++++++++++++++++++++++++++++++
-liste["EmbedwebHttpMapsRoot"] = Argument::Liste("-httpmapsroot", 'c', 1, "");
-liste["EmbedwebHttpMaps"]     = Argument::Liste("-httpmaps", 'c', 1, "");
-
 // Filesystem Optionen
 // +++++++++++++++++++++++++++++++++++++++++++++++++++++
-liste["EmbedwebHttpSearchPathfile"]  = Argument::Liste("-httpfilepath",  'c', 1, "/allg/static/file");
 liste["EmbedwebHttpFileCacheroot"]   = Argument::Liste("-httpfilecacheroot", 'c', 1, "cache");
 
 // Sysexec Zugriff IPs

@@ -16,93 +16,94 @@
 
 #include <message/message.h>
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 
 class SocketProvider;
 class TimeoutClient;
 
 class ServerSocket
 {
-    #ifdef PTHREAD
     pthread_mutex_t mutex;
     pthread_mutex_t timeout_mutex;
-    #endif
 
     friend class TimeoutClient;
 
     enum ERROR_TYPES
     {
-	OK = 0,
-	E_SOCK_OPEN,
-	E_SOCK_BIND,
-	E_SELECT,
-	E_ACCEPT,
-	E_CLIENT_READ,
-	E_PRO_EXISTS,
-	E_PRO_NOT_EXISTS,
-	E_PRO_UNKNOWN,
-	E_HTTP_NULL,
-	E_NO_CLIENT,
-	E_WRITE,
+        OK = 0,
+        E_SOCK_OPEN,
+        E_SOCK_BIND,
+        E_SELECT,
+        E_ACCEPT,
+        E_CLIENT_READ,
+        E_PRO_EXISTS,
+        E_PRO_NOT_EXISTS,
+        E_PRO_UNKNOWN,
+        E_HTTP_NULL,
+        E_NO_CLIENT,
+        E_WRITE,
 
-	E_MAXERROR = 100
+        E_MAXERROR = 100
 
     };
 
     enum DEBUG_TYPES
     {
-	D_CON   = 3,
+        D_CON   = 3,
         D_PROV  = 5,
-	D_TIME  = 7,
-	D_RD    = 10
+        D_TIME  = 7,
+        D_RD    = 10
     };
 
     // class Client zum Verwalten eines Clients in einer Map
     // =====================================================
     class Client
     {
-	friend class ServerSocket;
+        friend class ServerSocket;
 
-	ServerSocket *s;
-	int fd;
+        ServerSocket *s;
+        SocketProvider *p;
+
+        int fd;
 
         char *buffer;
-	int index;
-	int length;
-        
-        unsigned int host;
-	unsigned short int port;
+        int index;
+        int length;
 
-	int need_close;
+        std::string host;
+        std::string port;
+        struct sockaddr_storage sin;
 
-	void write(char *buffer, int lenght);
-	void write(FILE *fp, int lenght);
-	void write();
-	void write_all();
-        
-	int empty() { return buffer == NULL; }
+
+        int need_close;
+
+        void write(char *buffer, int lenght);
+        void write(FILE *fp, int lenght);
+        void write();
+        void write_all();
+
+        int empty() { return buffer == NULL; }
 
     public:
 
         Client();
-        Client( ServerSocket *s, int fd, struct sockaddr_in *sin);
-	Client( const Client &in);
-	Client &operator=( const Client &in);
+        Client( ServerSocket *s, SocketProvider *p, int fd, struct sockaddr_storage *sin, int addrlen );
+        Client( const Client &in);
+        Client &operator=( const Client &in);
 
-	~Client();
+        ~Client();
 
-	unsigned int getHost()       { return host; }
-	unsigned short int getPort() { return port; }
+        std::string getHost() { return host; }
+        std::string getPort() { return port; }
 
-	std::string getHostString()
-	{
-	    struct in_addr in;
-	    in.s_addr = host;
-	    return inet_ntoa(in);
-	}
+        struct sockaddr_storage *getAddr() { return &sin; }
 
+        void setAddr(std::string host, std::string port);
+        void setProvider(std::string name)
+        {
+            this->p = this->s->get_provider(name);
+            if ( p == NULL) need_close = 1;
+        }
 
     };
 
@@ -112,7 +113,7 @@ class ServerSocket
     {
     public:
         bool operator()
-	    ( timeval const &t1, timeval const &t2 ) const;
+        ( timeval const &t1, timeval const &t2 ) const;
     };
 
     friend class Client;
@@ -129,9 +130,7 @@ class ServerSocket
 
     // Verwalten der Provider
     // ++++++++++++++++++++++
-    std::map<std::string, int> pnum;
-    std::map<int, SocketProvider*> provider;
-    int providerid;
+    std::map<std::string, SocketProvider*> provider;
 
     // Verwalten der Clients
     // +++++++++++++++++++++
@@ -149,6 +148,13 @@ public:
 
     void add_provider( SocketProvider *p);
     void del_provider( SocketProvider *p);
+    SocketProvider *get_provider( std::string name)
+    {
+        std::map<std::string, SocketProvider*>::iterator i;
+        if ( ( i = provider.find(name)) != provider.end() ) return i->second;
+        msg.perror(E_PRO_NOT_EXISTS, "Provider <%s> nicht gefunden", name.c_str());
+        return NULL;
+    }
 
     void add_timeout( TimeoutClient *t);
     void del_timeout( TimeoutClient *t);
@@ -158,11 +164,13 @@ public:
     void flush( int client );
     int  read ( int client, char *buffer, int size);
     void close( int client);
-    
-    unsigned int getHost(int client )
-        { return clients[client].getHost(); }
-    unsigned short int getPort(int client)
-        { return clients[client].getPort(); }
+
+    std::string getHost(int client ) { return clients[client].getHost(); }
+    std::string getPort(int client)  { return clients[client].getPort(); }
+
+    struct sockaddr_storage *getAddr(int client) { return clients[client].getAddr(); }
+    void setAddr(int client, std::string host, std::string port) { clients[client].setAddr(host, port); }
+    void setProvider(int client, std::string name ) { clients[client].setProvider(name); }
 
     void loop();
 };

@@ -5,11 +5,9 @@
 #include <vector>
 #include <algorithm>
 
-#ifdef PTHREAD
 #include <map>
 #include <pthread.h>
 #define PTHREADID (void*)pthread_self()
-#endif
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define DEF_LOCALE  "German"
@@ -71,7 +69,6 @@ private:
 		M_UNDEF, M_ERROR, M_WARNING, M_MESSAGE, M_DEBUG, M_LINE
 	};
 
-#ifdef PTHREAD
 public:
 	class Param
 	{
@@ -95,18 +92,6 @@ private:
 	static std::map<void *, Param> params;
 	static pthread_mutex_t mutex;
 	Param *p_getParam();
-
-#else
-
-	static int argdebug;
-	static int debug;
-	static int errorfound;
-	static int warningfound;
-
-	static MessageTranslator *prg_trans;
-	static MessageTranslator *msg_trans;
-
-#endif
 
        static std::string logfile;
        static FILE *out;
@@ -158,21 +143,11 @@ public:
 
 	void start_debug(int i)
 	{
-#ifdef PTHREAD
 		params[PTHREADID].debug = i;
-#else
-		debug = i;
-#endif
 	}
 	void stop_debug()
 	{
-#ifdef PTHREAD
-
 		params[PTHREADID].debug = params[PTHREADID].argdebug;
-#else
-                debug = argdebug;
-
-#endif
 	}
 
 	std::string getSystemerror(int errornumber);
@@ -180,41 +155,28 @@ public:
 	void mklog(std::string filename);
 	void trunclog();
 
-#ifdef PTHREAD
 	void clear_tread()
 	{
 		std::map<void *, Param>::iterator i;
 		if ((i = params.find(PTHREADID)) != params.end())
 			params.erase(i);
 	}
-#endif
 
 	void add_msgclient(MessageClient *msg_client)
 	{
-#ifdef PTHREAD
 		pthread_mutex_lock(&mutex);
-#endif
 		msg_clients.push_back(msg_client);
 		msg_client->tid = NULL;
-#ifdef PTHREAD
 		pthread_mutex_unlock(&mutex);
-#endif
-
 	}
 	void del_msgclient(MessageClient *msg_client)
 	{
-#ifdef PTHREAD
 		pthread_mutex_lock(&mutex);
-#endif
-
 		MessageClients::iterator i;
 		while ((i = find(msg_clients.begin(), msg_clients.end(), msg_client))
 				!= msg_clients.end())
 			msg_clients.erase(i);
-
-#ifdef PTHREAD
 		pthread_mutex_unlock(&mutex);
-#endif
 	}
 
 };

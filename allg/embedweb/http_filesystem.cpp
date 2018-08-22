@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
@@ -13,6 +10,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
+#include <utils/php_exec.h>
+
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <windows.h>
@@ -154,7 +154,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 
     HttpProvider(h),
-    search(h, "file", 1),
     msg("HttpFilesystem")
 {
     Argument a;
@@ -194,6 +193,57 @@ HttpFilesystem::~HttpFilesystem()
 {
 }
 
+int HttpFilesystem::findfile(HttpHeader *h)
+{
+    struct stat s;
+    std::string file;
+    std::string name;
+    unsigned int j;
+
+    if ( h->dirname != "/" )
+      name = h->dirname + "/" + h->filename;
+    else
+      name = "/" + h->filename;
+
+        for (j=0; j<h->serverpath.size(); j++)
+        {
+            file = h->serverpath[j] + "/static/file" + name;
+            msg.pdebug(3, "check %s", file.c_str());
+            if (stat(file.c_str(), &s) == 0)
+            {
+                h->status = 200;
+                if (file.find(".php") == (file.size() - 4 ))
+                {
+                    h->age = 0;
+                    PhpExec(file, h);
+                    return 1;
+                }
+                else
+                {
+                    FILE *c = fopen(file.c_str(), "rb");
+                    if ( c != NULL )
+                    {
+                        h->status = 200;
+                        contentf(h, c);
+                        fclose(c);
+                        h->translate = 1;
+                        return 1;
+                    }
+                    else
+                    {
+                        if ( h->vars["ignore_notfound"] == "" )
+                            msg.perror(E_FILE_OPEN, "kann datei <%s> nicht öffnen", name.c_str());
+                        return 0;
+                    }
+                }
+            }
+        }
+    if ( h->vars["ignore_notfound"] == "" )
+        msg.perror(E_FILENOTFOUND, "kann datei <%s> nicht finden", name.c_str());
+    return 0;
+
+}
+
 int HttpFilesystem::request(HttpHeader *h)
 {
 
@@ -211,7 +261,7 @@ int HttpFilesystem::request(HttpHeader *h)
     (*(h->vars.p_getExtraVars()))["root"] = this->getRoot(h);
     (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
 
-    return search.request(h);
+    return findfile(h);
 
 }
 
@@ -870,7 +920,7 @@ void HttpFilesystem::mkicon(HttpHeader *h)
     (*(h->vars.p_getExtraVars()))["cpath"] = cname;
     (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
     (*(h->vars.p_getExtraVars()))["filesize"] = std::to_string(this->statbuf.st_size);
-    search.request(h);
+    findfile(h);
 
 }
 

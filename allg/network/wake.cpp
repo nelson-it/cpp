@@ -1,6 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <winsock2.h>

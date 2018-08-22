@@ -5,10 +5,7 @@
 #define SOCK_CLOEXEC 0
 #endif
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <errno.h>
@@ -57,30 +54,48 @@
 ServerSocket::Client::Client()
 {
     s = NULL;
+    p = NULL;
     fd = -1;
 
     buffer = NULL;
     length = 0;
     index = 0;
-
-    host = 0;
-    port = 0;
+    s = NULL;
 
     need_close = 0;
 }
 
-ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
+ServerSocket::Client::Client( ServerSocket *s, SocketProvider *p, int fd, struct sockaddr_storage *sin, int addrlen )
 {
+    char host[NI_MAXHOST];
+    char port[NI_MAXSERV];
 
     this->s = s;
     this->fd = fd;
+    this->p = p;
 
     buffer = NULL;
     length = 0;
     index = 0;
 
-    host = sin->sin_addr.s_addr;
-    port = sin->sin_port;
+    *port = '\0';
+
+    getnameinfo((struct sockaddr *)sin, addrlen, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST | NI_NUMERICSERV);
+
+    if ( strncmp(host, "::ffff:", 7 ) == 0 )
+    {
+        struct sockaddr_in s;
+        memset(&s, 0, sizeof(s));
+        s.sin_family = AF_INET;
+        s.sin_port = atoi(port);
+        s.sin_addr.s_addr = *((unsigned long*)(((struct sockaddr_in6 *)sin)->sin6_addr.s6_addr + 12));
+        sin = (struct sockaddr_storage *)&s;
+        getnameinfo((struct sockaddr *)sin, addrlen, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST);
+    }
+
+    this->host = host;
+    this->port = port;
+    memcpy(&this->sin, sin, addrlen);
 
     need_close = 0;
 #if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
@@ -98,6 +113,8 @@ ServerSocket::Client::Client( ServerSocket *s, int fd, struct sockaddr_in *sin)
 ServerSocket::Client::Client( const Client &in)
 {
     s = in.s;
+    p = in.p;
+
     fd = in.fd;
 
     length = in.length;
@@ -114,6 +131,7 @@ ServerSocket::Client::Client( const Client &in)
 
     host = in.host;
     port = in.port;
+    memcpy(&sin, &in.sin, sizeof(in.sin));
 
     need_close = in.need_close;
 }
@@ -122,6 +140,7 @@ ServerSocket::Client &ServerSocket::Client::operator=( const Client &in)
 {
 
     s = in.s;
+    p = in.p;
     fd = in.fd;
 
     length = in.length;
@@ -138,6 +157,7 @@ ServerSocket::Client &ServerSocket::Client::operator=( const Client &in)
 
     host = in.host;
     port = in.port;
+    memcpy(&sin, &in.sin, sizeof(in.sin));
 
     need_close = in.need_close;
 
@@ -247,6 +267,37 @@ void ServerSocket::Client::write_all()
         this->write();
 }
 
+void ServerSocket::Client::setAddr(std::string host, std::string port)
+{
+    int found = 0;
+
+    if ( host != "-" && host != "" ) { this->host = host; found = 1; }
+    if ( port != "-" && port != "" ) { this->port = port; found = 1; }
+
+    if ( !found ) return;
+
+    if ( this->host.find(':') != std::string::npos )
+    {
+        struct sockaddr_in6 s;
+        memset(&s, 0, sizeof(s));
+        s.sin6_family = AF_INET6;
+        s.sin6_port = atoi(this->port.c_str());
+        inet_pton(AF_INET6, this->host.c_str(), &(s.sin6_addr));
+        memcpy(&this->sin, &s, sizeof(s));
+    }
+    else
+    {
+        struct sockaddr_in s;
+        memset(&s, 0, sizeof(s));
+        s.sin_family = AF_INET;
+        s.sin_port = atoi(port.c_str());
+        inet_aton(host.c_str(), &(s.sin_addr));
+        memcpy(&this->sin, &s, sizeof(s));
+    }
+
+
+}
+
 bool ServerSocket::TimeSort::operator()
              ( timeval const &tt1, timeval const &tt2 ) const
 {
@@ -268,9 +319,9 @@ ServerSocket::ServerSocket(short socketnum )
 {
     int length;
     int rval;
-    struct sockaddr_in server;
+    struct sockaddr_in6 server;
 
-    if ( ( sock = socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0 ) ) < 0 )
+    if ( ( sock = socket(AF_INET6, SOCK_STREAM | SOCK_CLOEXEC, 0 ) ) < 0 )
     {
         msg.perror(E_SOCK_OPEN, "konnte keinen socket für den Service öffnen");
         msg.line("%s", strerror(errno));
@@ -289,9 +340,10 @@ ServerSocket::ServerSocket(short socketnum )
 
     memset(&server, 0, sizeof(server));
 
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons(socketnum);
+    server.sin6_family = AF_INET6;
+    server.sin6_flowinfo = 0;
+    server.sin6_addr = in6addr_any;
+    server.sin6_port = htons(socketnum);
 
     length = sizeof(server);
 
@@ -302,16 +354,13 @@ ServerSocket::ServerSocket(short socketnum )
         exit(1);
     }
 
-    providerid = 1;
     http = NULL;
     wr_set = NULL;
     rd_set = NULL;
     max_sock = 0;
 
-#ifdef PTHREAD
     pthread_mutex_init(&mutex,NULL);
     pthread_mutex_init(&timeout_mutex,NULL);
-#endif
 
 }
 
@@ -324,69 +373,49 @@ void ServerSocket::add_provider( SocketProvider *p)
 {
     std::string name;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("add provider", &mutex);
-#endif
 
     name = p->getProvidername();
 
-    if ( pnum.find(name) == pnum.end() )
+    if ( provider.find(name) == provider.end() )
     {
         msg.pdebug(D_PROV, "SocketProvider \"%s\" wird hinzugefügt", name.c_str());
-        pnum[p->getProvidername()] = providerid;
-        provider[providerid] = p;
-        if ( name == "Http" )
-            http = p;
+        provider[name] = p;
     }
     else
     {
         msg.perror(E_PRO_EXISTS, "SocketProvider \"%s\" ist schon registriert", name.c_str());
     }
 
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
 }
 
 void ServerSocket::del_provider( SocketProvider *p)
 {
     std::string name;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("del provider", &mutex);
-#endif
 
     name = p->getProvidername();
 
     msg.pdebug(D_PROV, "SocketProvider \"%s\" wird entfernt", name.c_str());
-    if ( pnum.find(name) != pnum.end() )
+    if ( provider.find(name) != provider.end() )
     {
-        provider.erase(pnum[name]);
-        pnum.erase(name);
-        if ( name == "Http" )
-            http = NULL;
+        provider.erase(name);
     }
     else
     {
         msg.perror(E_PRO_NOT_EXISTS, "SocketProvider \"%s\" ist nicht registriert", name.c_str());
     }
 
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
 }
 
 void ServerSocket::add_timeout( TimeoutClient *t)
 {
-#ifdef PTHREAD
     Pthread_mutex_lock("add_timeout", &timeout_mutex);
-#endif
-
     timeout_clients.insert(std::pair<timeval, TimeoutClient *>(*t,t));
-
-#ifdef PTHREAD
     Pthread_mutex_unlock("timeout", &timeout_mutex);
-#endif
 }
 
 void ServerSocket::del_timeout( TimeoutClient *t)
@@ -394,10 +423,7 @@ void ServerSocket::del_timeout( TimeoutClient *t)
     Timeouts::iterator i;
     int n;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("del timeout", &timeout_mutex);
-#endif
-
     i = timeout_clients.find(*(timeval *)t);
     for ( n = timeout_clients.count(*(timeval *)t); n > 0; ++i, --n )
     {
@@ -407,107 +433,64 @@ void ServerSocket::del_timeout( TimeoutClient *t)
             break;
         }
     }
-
-#ifdef PTHREAD
     Pthread_mutex_unlock("timeout",&timeout_mutex);
-#endif
 }
 
 void ServerSocket::write(int client, char *buffer, int size)
 {
     Clients::iterator i;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("write char", &mutex);
-#endif
-
     if ( ( i = clients.find(client)) != clients.end() )
     {
         msg.pdebug(D_RD, "Schreibe zu Client %d %d bytes", client, size);
 
         i->second.write(buffer, size);
-
-#ifndef PTHREAD
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        FD_SET((unsigned)client, wr_set);
-#else
-        FD_SET(client, wr_set);
-#endif
-
-#endif
-
     }
     else
     {
         msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
 
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
 }
 
 void ServerSocket::write(int client, FILE *fp, int size)
 {
     Clients::iterator i;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("write fp", &mutex);
-#endif
 
     if ( ( i = clients.find(client)) != clients.end() )
     {
         msg.pdebug(D_RD, "Schreibe zu Client %d %d bytes", client, size);
-
         i->second.write(fp, size);
-#ifndef PTHREAD
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        FD_SET((unsigned)client, wr_set);
-#else
-        FD_SET(client, wr_set);
-#endif
-
-#endif
-
     }
     else
     {
         msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
-
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
 }
 
 void ServerSocket::flush( int client )
 {
     Clients::iterator i;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("write fp", &mutex);
-#endif
-
     if ( ( i = clients.find(client)) != clients.end() )
     {
         msg.pdebug(D_RD, "Flush Client %d", client);
-
-#ifdef PTHREAD
         i->second.write_all();
         if ( i->second.need_close )
             ::close(i->first);
-#endif
     }
     else
     {
         msg.pdebug(D_CON, "Client %d hat die Verbindung während des Schreibens beendet", client);
     }
 
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
 }
 
 
@@ -518,10 +501,7 @@ int ServerSocket::read(int client, char *buffer, int size)
 
     msg.pdebug(D_CON, "Client %d liest noch %d werte", client, size );
 
-#ifdef PTHREAD
     Pthread_mutex_lock("read", &mutex);
-#endif
-
     FD_ZERO(&rd);
     for ( len = 0; len != size; )
     {
@@ -541,10 +521,7 @@ int ServerSocket::read(int client, char *buffer, int size)
             len += l;
         else if ( l == 0 )
         {
-#ifdef PTHREAD
             Pthread_mutex_unlock("mutex", &mutex);
-#endif
-
             msg.pdebug(D_CON, "Client %d hat die Verbindung während des Lesens beendet", client );
             return -1;
         }
@@ -552,31 +529,21 @@ int ServerSocket::read(int client, char *buffer, int size)
         {
             if ( errno != EINTR )
             {
-#ifdef PTHREAD
                 Pthread_mutex_unlock("mutex", &mutex);
-#endif
-
                 msg.pdebug(D_CON, "Client %d hat einen Fehler während des Lesens", client );
                 msg.line("Grund %s", strerror(errno));
                 return -1;
             }
         }
     }
-
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex", &mutex);
-#endif
-
     return size;
 }
 
 void ServerSocket::close(int client)
 {
     Clients::iterator i;
-
-#ifdef PTHREAD
     Pthread_mutex_lock("close", &mutex);
-#endif
 
     if ( ( i = clients.find(client)) != clients.end() )
     {
@@ -584,17 +551,13 @@ void ServerSocket::close(int client)
         {
             msg.pdebug(D_CON, "Anforderung zum Verbindungende zu Client %d", client);
             i->second.need_close = 1;
-
-#ifdef PTHREAD
             Pthread_mutex_unlock("mutex",&mutex);
-#endif
-
             return;
         }
 
         msg.pdebug(D_CON, "Verbindung zum Client %d wird beendet", client);
 
-        std::map<int, SocketProvider*>::iterator ii;
+        std::map<std::string, SocketProvider*>::iterator ii;
 
         ::close(i->first);
         clients.erase(i);
@@ -623,11 +586,7 @@ void ServerSocket::close(int client)
     {
         msg.pdebug(D_CON, "Client %d existiert nicht", client);
     }
-
-#ifdef PTHREAD
     Pthread_mutex_unlock("mutex",&mutex);
-#endif
-
 }
 
 void ServerSocket::loop()
@@ -639,9 +598,7 @@ void ServerSocket::loop()
     fd_set rd_ready;
     fd_set wr_ready;
 
-#ifdef PTHREAD
     Pthread_mutex_lock("loop", &mutex);
-#endif
 
     // Umständliches Konstrukt um die Grösse verbergen zu können
     // =========================================================
@@ -673,10 +630,7 @@ void ServerSocket::loop()
 
         gettimeofday(&act, NULL);
 
-#ifdef PTHREAD
         Pthread_mutex_lock("loop timeout", &timeout_mutex);
-#endif
-
         if ( ! timeout_clients.empty() )
         {
             msg.pdebug(D_TIME, "next time %d:%d", timeout_clients.begin()->first.tv_sec, timeout_clients.begin()->first.tv_usec);
@@ -704,20 +658,15 @@ void ServerSocket::loop()
             to.tv_usec = 0;
         }
 
-#ifdef PTHREAD
         Pthread_mutex_unlock("timeout", &timeout_mutex);
         Pthread_mutex_unlock("mutex",&mutex);
-#endif
 
         if ( to.tv_sec < 0 )
             rsel = select( max_sock+1, &rd_ready, &wr_ready, (fd_set *)0, NULL);
         else
             rsel = select( max_sock+1, &rd_ready, &wr_ready, (fd_set *)0, &to );
 
-#ifdef PTHREAD
         Pthread_mutex_lock("after loop", &mutex);
-#endif
-
         if ( rsel == 0 )
         {
             Timeouts::iterator i;
@@ -756,8 +705,8 @@ void ServerSocket::loop()
             max_sock = sock;
             for ( i=clients.begin(); i != clients.end(); ++i )
             {
-                struct stat s;
-                if ( fstat(i->first, &s) == 0 )
+                 struct stat s;
+                if ( fstat(i->first, &s) == 0 ) // @suppress("Invalid arguments")
                 {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
                     FD_SET((unsigned)i->first, rd_set);
@@ -812,19 +761,8 @@ void ServerSocket::loop()
                 if ( rval > 0 )
                 {
                     buffer[rval] = '\0';
-                    if ( 1 || *buffer != '\0' )
-                    {
-                        msg.pdebug(D_PROV, "request für SocketProvider http client %d", i->first);
-
-                        if ( http != NULL )
-                            http->request(i->first, buffer, rval);
-                        else
-                            msg.perror(E_HTTP_NULL, "Besitze keinen HttpSocketProvider");
-                    }
-                    else
-                    {
-                        msg.perror(E_PRO_UNKNOWN, "SocketProvider ist unbekannt");
-                    }
+                    msg.pdebug(D_PROV, "request für SocketProvider %s client %d", i->second.p->getProvidername().c_str(), i->first);
+                    i->second.p->request(i->first, buffer, rval);
                 }
                 else if ( rval == 0 )
                 {
@@ -867,7 +805,7 @@ void ServerSocket::loop()
         {
             rsel--;
 
-            struct sockaddr_in c;
+            struct sockaddr_storage c;
 #if defined (Darwin)
             socklen_t size = sizeof(c);
             if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
@@ -884,8 +822,17 @@ void ServerSocket::loop()
             }
             else
             {
-                clients[rval] = Client(this, rval, &c);
-                msg.pdebug(D_CON, "client %d connected: addr %s, port %d", rval, clients[rval].getHostString().c_str(), clients[rval].getPort());
+                SocketProvider *p;
+                if ( ( p = get_provider("Http")) != NULL )
+                {
+                    clients[rval] = Client(this, p, rval, &c, size);
+                    msg.pdebug(D_CON, "client %d connected: addr %s, port %s", rval, clients[rval].getHost().c_str(), clients[rval].getPort().c_str());
+                }
+                else
+                {
+                    ::close(rval);
+                }
+
             }
 
             FD_ZERO(rd_set);
@@ -917,7 +864,7 @@ void ServerSocket::loop()
             std::vector<int>::iterator ii;
             for ( ii = del_clients.begin(); ii != del_clients.end() ; ++ii )
             {
-                std::map<int, SocketProvider*>::iterator p;
+                std::map<std::string, SocketProvider*>::iterator p;
                 for ( p = provider.begin(); p != provider.end(); ++p )
                     p->second->disconnect(*ii);
 

@@ -2,10 +2,7 @@
 #include <winsock2.h>
 #endif
 
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

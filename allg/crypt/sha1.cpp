@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include "sha1.h"
 
 #define SHA1CircularShift(bits,word)  (((word) << (bits)) | ((word) >> (32-(bits))))

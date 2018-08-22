@@ -31,9 +31,7 @@ class Process
     pid_t pid;
     int status;
 
-#ifdef PTHREAD
     pthread_mutex_t mutex;
-#endif
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
@@ -75,17 +73,17 @@ protected:
     int file;
 
 public:
-    Process(ServerSocket *s = NULL, int noerror = 1) : msg("PROCESS", noerror)
+    Process(int noerror = 1) : msg("PROCESS", noerror)
     {
         pid = -1;
+        file = -1;
+        status = -1;
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         have_pipe = 0;
         have_logfile = 0;
         waitidvalid = 0;
 #endif
-#ifdef PTHREAD
         pthread_mutex_init(&mutex,NULL);
-#endif
     };
 
     ~Process();

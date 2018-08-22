@@ -1,7 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -201,7 +198,7 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     cmd.add(h->vars.getFile("data").c_str());
 #endif
 
-    Process p(this->http->getServersocket());
+    Process p;
     p.start( cmd, "pipe", NULL, NULL, NULL, 1);
     while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
     {
@@ -379,7 +376,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         cmd.add(tmpdir.get_name());
 #endif
 
-        Process p(this->http->getServersocket());
+        Process p;
         p.start(cmd, NULL, NULL, NULL, NULL, 1);
         if ( ( status = p.wait()) != 0 )
             msg.perror(E_AUTO_STATUS, "Status des Kindprozesses ist <%d>", status);
@@ -551,7 +548,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
 #else
         cmd.add(resultfile.get_name());
 #endif
-        Process p(this->http->getServersocket());
+        Process p;
         p.start(cmd, logfile.get_name(), NULL, NULL, NULL, 1);
         p.wait();
 

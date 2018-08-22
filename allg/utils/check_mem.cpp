@@ -1,6 +1,4 @@
-#ifdef PTHREAD
 #include <pthread.h>
-#endif
 
 #if 0
 dummy zum checken
