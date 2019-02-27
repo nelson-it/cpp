@@ -117,6 +117,9 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
         (this->*(i->second))(db, h);
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
+
         return 1;
     }
 
@@ -146,6 +149,9 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
         else
             h->content_type = "mneprint/pdf";
     }
+
+    if (h->vars["sqlend"] != "")
+        db->p_getConnect()->end();
 
     return 1;
 }
@@ -219,6 +225,8 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
     {
 
     Database *db;
+    DbHttpAnalyse::Client::Userprefs userprefs = this->http->getUserprefs();
+
     db = dbin->getDatabase();
     db->p_getConnect("", h->user, h->passwd);
     if ( db->p_getConnect() == NULL ) return;
@@ -340,7 +348,7 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
         if ( h->error_messages.size() == 0 )
         {
             del_content(h);
-            index(db,h,report.c_str());
+            index(db,h,report.c_str(), &userprefs);
             save_content(h, (std::string(tmpdir.get_name()) + resultfile).c_str());
         }
 
@@ -387,12 +395,12 @@ void DbHttpReport::mk_auto( Database *dbin, HttpHeader *h)
    for ( i=0; i<pdfcount; i++)
    {
        sprintf(resultfile, "%sreport%d", DIRSEP, i);
-//       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
+       unlink((std::string(tmpdir.get_name()) + resultfile).c_str());
    }
 
 }
 
-void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
+void DbHttpReport::index( Database *db, HttpHeader *h, const char *str, DbHttpAnalyse::Client::Userprefs *userprefs)
 {
     CsList    sort;
     CsList    wid, wval, wop, cols;
@@ -450,9 +458,6 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
             db->release(tab);
             delete str;
 
-            if ( h->vars["sqlend"] == "1" )
-                db->p_getConnect()->end();
-
             return;
         }
     }
@@ -506,7 +511,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
      TmpFile resultfile("HttpReportXXXXXX", 1);
      TmpFile logfile("HttpRepLogXXXXXX");
 
-    report.userprefs = this->http->getUserprefs();
+    report.userprefs = ( userprefs == NULL ) ? this->http->getUserprefs() : (*userprefs);
     if ( report.mk_report(db,str,0,resultfile.get_fp(), h->vars["language"], h->vars["schema"], h->vars["query"], &cols, &wid, &wval, &wop, &sort, &macros, &xml ) < 0 )
     {
         msg.pwarning(W_NOROWS, "Der Report <%s> hat keine Zeilen", str);
@@ -649,9 +654,6 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str)
         h->content_type = "text/plain";
         del_content(h);
     }
-
-    if ( h->vars["sqlend"] == "1" )
-        db->p_getConnect()->end();
 
     return;
 

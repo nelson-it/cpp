@@ -19,6 +19,7 @@ protected:
     Message msg;
 
     HttpHeader act_h;
+    std::string header;
 
     enum ERROR_TYPE
     {
@@ -37,6 +38,7 @@ protected:
     };
 
     void analyse_header(const unsigned char *data, int length);
+    void make_header();
 
 public:
 
@@ -45,8 +47,12 @@ public:
 
     std::string getOpcode() { return "HTTP"; }
     virtual int request (WsAnalyse::Client *c );
-    virtual unsigned char *p_getData() { return (unsigned char *)act_h.content; }
-    virtual int getLength() { return act_h.content_length; }
+
+    virtual const unsigned char *p_getData() { return (unsigned char *)act_h.content; }
+    virtual int getDataLength() { return act_h.content_length; }
+
+    virtual const unsigned char *p_getHeader() { return (unsigned char *)this->header.c_str(); }
+    virtual int getHeaderLength() { return this->header.length(); }
 
 };
 

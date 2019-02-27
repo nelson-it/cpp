@@ -46,6 +46,16 @@ void WsHttp::analyse_header(const unsigned char *data, int length)
     HttpRequest::analyse_header(&h, &act_h);
 }
 
+void WsHttp::make_header()
+{
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%d\n%s\n", act_h.status, act_h.header["telnum"].c_str());
+    buffer[sizeof(buffer) - 1] = '\0';
+    header = buffer;
+}
+
+
+
 int WsHttp::request(WsAnalyse::Client *c)
 {
     analyse_header(c->p_getData(), c->getLength());

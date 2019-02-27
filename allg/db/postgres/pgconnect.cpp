@@ -765,12 +765,14 @@ void PgConnect::commit()
 {
     I_MES(execute("COMMIT", 0, 1));
     connections[con].in_transaction = "";
+    start();
 }
 
 void PgConnect::rollback()
 {
     I_MES(execute("ROLLBACK", 0, 1));
     connections[con].in_transaction = "";
+    start();
 }
 
 int PgConnect::start(int check_status)
@@ -810,8 +812,6 @@ void PgConnect::end()
         rollback();
     else
         commit();
-
-    start();
 }
 
 int PgConnect::int2ext_pgtype(int pgtype)

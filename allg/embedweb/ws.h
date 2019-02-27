@@ -46,7 +46,7 @@ protected:
     Provider provider;
 
     void read_opcode();
-    void send_frame(const unsigned char *content, int size);
+    void send_wsheader(int size);
 public:
 
     Ws( ServerSocket *s, WsAnalyse *a, int register_thread = 1 );

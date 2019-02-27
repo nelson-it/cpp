@@ -37,7 +37,7 @@ public:
         unsigned char *data;
         unsigned char *end_data;
         int length = 0;
-        int max_length = 1024;
+        unsigned int max_length = 1024;
 
         unsigned int need_data = 2;
 

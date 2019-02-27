@@ -292,7 +292,7 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
 }
 
-std::string HttpFilesystem::getDir(HttpHeader *h)
+std::string HttpFilesystem::getDir(HttpHeader *h, int errormsg )
 {
     char rpath[PATH_MAX + 1];
     char *resolvpath;
@@ -313,8 +313,8 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
          || ( resolvpath = realpath((root + dir).c_str(), rpath)) == NULL
          || strstr(rpath, root.c_str()) == NULL )
     {
-    	msg.pdebug(0, "rpath: %s, root: %s", rpath, root.c_str());
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
+    	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s", rpath, root.c_str());
+        if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
         return "";
     }
 
@@ -324,7 +324,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h)
 
 std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg, std::string *result )
 {
-    getDir(h);
+    getDir(h, errormsg);
     return check_path(path, name, needname, errormsg, result );
 }
 
@@ -591,7 +591,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
-        msg.line("%s", str.c_str());
+        msg.line("%s %s", (dir + DIRSEP + name).c_str(), str.c_str());
         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
@@ -629,7 +629,7 @@ void HttpFilesystem::rmdir(HttpHeader *h)
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        msg.line("%s", str.c_str());
+        msg.line("%s %s", name.c_str(), str.c_str());
 
         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
@@ -775,7 +775,7 @@ void HttpFilesystem::rmfile(HttpHeader *h)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( ! DeleteFile(name.c_str()) )
     {
-        msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
+        msg.perror(E_DELFILE, "Fehler während des Löschen einer Datei");
         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;
     }
@@ -783,8 +783,8 @@ void HttpFilesystem::rmfile(HttpHeader *h)
     if ( ::unlink(name.c_str()) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
-        msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        msg.line("%s", str.c_str());
+        msg.perror(E_DELFILE, "Fehler während des Löschen einer Datei");
+        msg.line("%s %s", name.c_str(), str.c_str());
 
         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         return;

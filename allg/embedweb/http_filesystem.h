@@ -44,7 +44,7 @@ protected:
     };
 
     virtual std::string getRoot(HttpHeader *h);
-    virtual std::string getDir(HttpHeader *h);
+    virtual std::string getDir(HttpHeader *h, int errormsg = 1);
 
     virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1, std::string *result = NULL );
     virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1 , std::string *result = NULL );

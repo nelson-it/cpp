@@ -34,17 +34,18 @@ public:
 
     static const int CONTENT_SIZE = 10240;
 
+    typedef std::map<std::string, std::string> RawHeader;
     typedef std::map<std::string, std::string> SetCookies;
 
     std::vector<std::string> serverpath;
     std::map<std::string,std::string> datapath;
     std::string dataroot;
 
-    //typedef std::map<std::string, std::string> Header;
-    //Header rawheader;
+    int client;
 
     // Wird gesendet
     // =============
+    RawHeader   header;
     HttpCookie  cookies;
     HttpVars    vars;
 
@@ -113,15 +114,12 @@ public:
         if ( user_data != NULL ) delete (char *)user_data;
     }
 
-    int client;
 
-private:
     void clear()
     {
         client = -1;
 
-        //rawheader.clear();
-
+        header.clear();
         serverpath.clear();
         datapath.clear();
         typ       = "";

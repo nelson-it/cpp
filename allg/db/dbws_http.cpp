@@ -45,10 +45,27 @@ void DbWsHttp::analyse_header(const unsigned char *data, int length)
     HttpRequest::analyse_header(&h, &act_h);
 }
 
+void DbWsHttp::make_header()
+{
+    char buffer[1024];
+    snprintf(buffer, sizeof(buffer), "%d\n%s\n", act_h.status, act_h.header["telnum"].c_str());
+    buffer[sizeof(buffer) - 1] = '\0';
+    header = buffer;
+}
+
 int DbWsHttp::request(WsAnalyse::Client *c)
 {
+    act_h.clear();
     analyse_header(c->p_getData(), c->getLength());
-    this->make_content(&act_h);
+
+
+    msg.add_msgclient(this);
+    setThreadonly();
+
+    make_content(&act_h);
+    make_header();
+
+    msg.del_msgclient(this);
 
     return 1;
 }

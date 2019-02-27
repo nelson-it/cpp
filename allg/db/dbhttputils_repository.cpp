@@ -74,6 +74,10 @@ int DbHttpUtilsRepository::request(Database *db, HttpHeader *h)
         h->content_type = "text/xml";
         read_name(db, h);
         (this->*(i->second))(db, h);
+
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
+
         return 1;
     }
 
@@ -862,9 +866,6 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         name = name.substr(name.rfind("/")+ 1);
 
     h->content_type = "application/octet-stream";
-    snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(name.c_str()).c_str());
-    buffer[sizeof(buffer) -1] = '\0';
-    h->extra_header.push_back(buffer);
 
     if ( getDir(h) == "" )
     {
@@ -887,6 +888,10 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
         }
         else
         {
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode( h->vars["filenameInput.old"].c_str()).c_str());
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
+
             while ( ( rlen = ::read(file, buffer, sizeof(buffer))) > 0 )
                 DbHttpProvider::add_contentb(h, buffer, rlen );
             close(file);
@@ -912,7 +917,18 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
         p.wait();
         if ( p.getStatus() != 0 )
+        {
             h->content_type = "text/plain";
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"error.txt\"");
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
+        }
+        else
+        {
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode( h->vars["filenameInput.old"].c_str()).c_str());
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
+        }
     }
 }
 
@@ -970,16 +986,13 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
 
 void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 {
+    if ( h->vars["filenameInput.old"] != "" )
+        (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"];
     HttpFilesystem::mkdir(h);
-    if ( h->error_found == 0 )
-    {
-        DbHttpProvider::del_content(h);
-        if ( h->vars["filenameInput.old"] == "" )
-            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
-        else
-            (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"] + DIRSEP ".gitignore";
+    DbHttpProvider::del_content(h);
 
-        std::string name = h->vars["filenameInput"];
+    (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
+    std::string name = h->vars["filenameInput"];
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
@@ -988,7 +1001,6 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 #endif
         close(file);
         addfile(db, h);
-    }
 }
 
 void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
@@ -1025,22 +1037,22 @@ void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
     }
 
     std::string hdir = h->vars["dirInput.old"];
-    std::string hname = h->vars["filenameInputfile.old"];
+    std::string hname = h->vars["filenameInput.old"];
 
     (*h->vars.p_getVars())["dirInput.old"] = h->vars["dirInput.old"] + DIRSEP + h->vars["filenameInput.old"];
     (*h->vars.p_getVars())["filenameInput.old"] = ".gitignore";
     DbHttpProvider::del_content(h);
 
     rmfile(db, h);
-    if ( h->error_found )
+
+    std::string name = check_path(h, "", 0, 0);
+    if (  name != "" )
     {
         DbHttpProvider::del_content(h);
         h->error_found = 0;
         h->error_messages.clear();
 
-        (*h->vars.p_getVars())["dirInput.old"] = hdir;
-        (*h->vars.p_getVars())["filenameInput.old"] = hname;
-        HttpFilesystem::rmdir(h);
+       HttpFilesystem::rmdir(h);
     }
 }
 
@@ -1125,6 +1137,12 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
         return;
     }
 
+    if ( check_path(path, h->vars["filenameInput.old"], true, false ) == "" )
+    {
+        DbHttpProvider::add_content(h,  "<body>ok</body>");
+        return;
+    }
+
     if ( h->vars["statusInput.old"] == "Y" )
     {
         cmd.add("rm");
@@ -1166,6 +1184,13 @@ void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     }
 
     tab = db->p_getTable("mne_repository", "filedata");
+    where["repositoryid"] = h->vars["repositoryidInput.old"];
+    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
+
+    tab->del(&where,1);
+    db->release(tab);
+
+    tab = db->p_getTable("mne_repository", "fileinterests");
     where["repositoryid"] = h->vars["repositoryidInput.old"];
     where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
 
