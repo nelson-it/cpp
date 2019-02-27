@@ -18,6 +18,7 @@
 class MessageTranslator
 {
 public:
+    virtual ~MessageTranslator() {};
 	virtual std::string get(const char *str, const char *kategorie = "") = 0;
 	virtual std::string get(std::string str, const char *kategorie = "") = 0;
 
@@ -73,38 +74,31 @@ public:
 	class Param
 	{
 	public:
-		int argdebug;
-		int debug;
-		int errorfound;
-		int warningfound;
+		int argdebug = 0;
+		int debug = 0;
+		int errorfound = 0;
+		int warningfound = 0;
 
-		MessageTranslator *prg_trans;
-		MessageTranslator *msg_trans;
-	    Param()
-		{
-	        argdebug = 0;
-	        debug = 0;
-	        errorfound = 0;
-	        warningfound = 0;
-		};
+		MessageTranslator *prg_trans = NULL;
+		MessageTranslator *msg_trans = NULL;
 	};
 private:
 	static std::map<void *, Param> params;
 	static pthread_mutex_t mutex;
 	Param *p_getParam();
 
-       static std::string logfile;
-       static FILE *out;
+	static std::string logfile;
+	static FILE *out;
 
-        int errorclass;
-	int msg_typ;
-	int last_debuglevel;
+	int errorclass = 0;
+	int msg_typ = M_UNDEF;
+	int last_debuglevel = 100000;
 
 	char id[32];
 	int logonly;
 
 public:
-	int ignore_lang;
+	int ignore_lang = 0;
 
 	Message(const char *id, int logonly = 0);
 

@@ -19,6 +19,8 @@ XmlTextTex::XmlTextTex()
 
     leftbegin = "{\\trivlist\\raggedright\\item\\vspace{-\\baselineskip}";
     leftend = "\\endtrivlist}\n";
+
+    emptytext = -1;
 }
 
 XmlTextTex::~XmlTextTex()
@@ -66,7 +68,7 @@ void XmlTextTex::mk_text(XmlParseNode *node, int num)
     if ( node->getData() == " " )
         add_content("\\ ");
     else
-        add_content("%s", ToString::mktex(node->getData()).c_str());
+        add_content("%s", ToString::mktex(node->getData(), 1).c_str());
 }
 
 void XmlTextTex::mk_text_end(XmlParseNode *node, int num)

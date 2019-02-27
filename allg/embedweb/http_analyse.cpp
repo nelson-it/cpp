@@ -8,6 +8,8 @@
 #include <mbctype.h>
 #endif
 
+#include <unistd.h>
+
 #include <utils/cslist.h>
 #include <utils/gettimeofday.h>
 #include <crypt/base64.h>
@@ -35,6 +37,7 @@ void *HttpAnalyseThread(void *param)
 		if ( p->abort ) break;
 
 		p->act_h = p->analyse->getHeader();
+		//usleep((rand() % 1000000 ));
 		p->http->get(p->act_h);
 		p->analyse->releaseHeader(p->act_h);
 		p->act_h = NULL;

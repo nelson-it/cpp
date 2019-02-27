@@ -31,9 +31,9 @@ Ws::~Ws()
     analyse->del_ws(this);
 }
 
-void Ws::send_frame(const unsigned char *content, int size)
+void Ws::send_wsheader(int size)
 {
-    unsigned char *buffer = new unsigned char[size + 16];
+    unsigned char *buffer = new unsigned char[16];
     int pos = 0;
 
     buffer[pos++] = (unsigned char)0x81; // text frame
@@ -63,10 +63,7 @@ void Ws::send_frame(const unsigned char *content, int size)
         }
     }
 
-    memcpy((void*)(buffer+pos), content, size);
-    this->s->write(act_c->getClient(), (char *)buffer,  pos + size);
-    this->s->flush(act_c->getClient());
-
+    this->s->write(act_c->getClient(), (char *)buffer, pos);
     delete[] buffer;
 }
 
@@ -99,9 +96,13 @@ void Ws::get(WsAnalyse::Client *c)
     if (( p = find_provider(act_opcode)) != NULL )
     {
         if ( p->request(c) )
-            send_frame( p->p_getData(), p->getLength());
+        {
+            send_wsheader( p->getHeaderLength() + p->getDataLength());
+            this->s->write(act_c->getClient(), (char *)p->p_getHeader(), p->getHeaderLength() );
+            this->s->write(act_c->getClient(), (char *)p->p_getData(), p->getDataLength() );
+            this->s->flush(act_c->getClient());
+        }
     }
-
 
     gettimeofday(&t2, NULL);
     diff = (t2.tv_sec - t1.tv_sec ) * 1000000 + (t2.tv_usec - t1.tv_usec);

@@ -140,7 +140,7 @@ void HttpRequest::analyse_requestline( std::string arg, HttpHeader *h )
 		else
 		{
 			h->dirname = "";
-			h->filename = request;
+			h->filename = ( request != "" ) ? request : (std::string)a["EmbedwebHttpIndex"];
 		}
 
 		if ( h->filename.find_last_of('.') == std::string::npos )
@@ -256,6 +256,7 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
 
 	for( i = h->begin(); i != h->end(); ++i )
 	{
+
 		if ( ( n = i->find_first_of(" :")) == std::string::npos )
 			continue;
 
@@ -266,6 +267,7 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
 
 		//act_h->rawheader[i->substr(0, n)] = arg;
         msg.pdebug(D_RAWHEADER, " Header %s:%s", name.c_str(), arg.c_str());
+		act_h->header[name] = arg;
 
 		if ( name == "get")
 		{

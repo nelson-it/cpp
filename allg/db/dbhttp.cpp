@@ -96,7 +96,10 @@ void DbHttp::make_answer()
             if ( p->check_request(this->trans->p_getDb(), act_h) )
             {
                 if ( ! p->request(this->trans->p_getDb(), act_h, 1)  )
+                {
+                    msg.perror(E_NOTFOUND, "Provider %s unterstützt %s/%s nicht", act_h->providerpath.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
                     make_meldung();
+                }
                 return;
             }
         }
@@ -117,8 +120,15 @@ void DbHttp::make_answer()
         {
             if ( (p = (DbHttpProvider *)find_provider(&dbprovider)) != NULL )
             {
+                if ( act_h->vars["sqlstart"] != "")
+                    if ( act_client->db->p_getConnect()->start() )
+                        if ( act_h->vars["rollback"] != "" ) act_client->db->p_getConnect()->rollback();
+
                 if ( ! p->request(act_client->db, act_h) )
+                {
+                    msg.perror(E_NOTFOUND, "Provider %s unterstützt %s/%s nicht", act_h->providerpath.c_str(), act_h->dirname.c_str(), act_h->filename.c_str());
                     make_meldung();
+                }
             }
             else
             {
@@ -127,7 +137,6 @@ void DbHttp::make_answer()
                 Http::make_answer();
             }
         }
-        unlock_client();
     }
     else
     {

@@ -75,63 +75,64 @@ Http::Http(ServerSocket *s, HttpAnalyse *analyse ) :
     // Normal Meldung falls nicht überladen
 	// ====================================
 	meldungen[200]
-			= "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//DE\">"
-				"<html>"
-				"<head>"
-				"<title>M Nelson Embedded Http Server</title>"
-				"<meta http-equiv=\"Content-Type\""
-				" content=\"text/html; charset=UTF-8\">"
-				"</head>"
-				"<body>"
-				"Request: #request# ist in Ordnung"
-				"</body>"
-				"</html>";
+	          = "<!DOCTYPE html>"
+	                  "<html lang=\"de-DE\">"
+	                  "<html>"
+	                  "<head>"
+	                  "<title>M Nelson Embedded Http Server</title>"
+	                  "<meta http-equiv=\"Content-Type\""
+	                  " content=\"text/html; charset=UTF-8\">"
+	                  "</head>"
+	                  "<body>"
+	                  "Request: #request# ist in Ordnung"
+	                  "</body>"
+	                  "</html>";
 
-    // Benötige authorisation
-    // ======================
+	// Benötige authorisation
+	// ======================
 	meldungen[401]
-			= "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//DE\">"
-				"<html>"
-				"<head>"
-				"<title>M Nelson Embedded Http Server 401</title>"
-				"<meta http-equiv=\"Content-Type\""
-				" content=\"text/html; charset=UTF-8\">"
-				"</head>"
-				"<body>"
-				"Login ist fehlgeschlagen"
-				"</body>"
-				"</html>";
+	          = "<!DOCTYPE html>"
+	                  "<html lang=\"de-DE\">"
+	                  "<head>"
+	                  "<title>M Nelson Embedded Http Server 401</title>"
+	                  "<meta http-equiv=\"Content-Type\""
+	                  " content=\"text/html; charset=UTF-8\">"
+	                  "</head>"
+	                  "<body>"
+	                  "Login ist fehlgeschlagen"
+	                  "</body>"
+	                  "</html>";
 
-    // Anmeldung gescheitert
-    // =====================
+	// Anmeldung gescheitert
+	// =====================
 	meldungen[403]
-			= "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//DE\">"
-				"<html>"
-				"<head>"
-				"<title>M Nelson Embedded Http Server 403</title>"
-				"<meta http-equiv=\"Content-Type\""
-				" content=\"text/html; charset=UTF-8\">"
-				"</head>"
-				"<body>"
-				"Login ist fehlgeschlagen"
-				"</body>"
-				"</html>";
+	          = "<!DOCTYPE html>"
+	                  "<html lang=\"de-DE\">"
+	                  "<head>"
+	                  "<title>M Nelson Embedded Http Server 403</title>"
+	                  "<meta http-equiv=\"Content-Type\""
+	                  " content=\"text/html; charset=UTF-8\">"
+	                  "</head>"
+	                  "<body>"
+	                  "Login ist fehlgeschlagen"
+	                  "</body>"
+	                  "</html>";
 	status_str[403] = "Forbidden";
 
 	// Document wurde nicht gefunden
 	// =====================
 	meldungen[404]
-			= "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//DE\">"
-				"<html>"
-				"<head>"
-				"<title>M Nelson Embedded Http Server 404</title>"
-				"<meta http-equiv=\"Content-Type\""
-				" content=\"text/html; charset=UTF-8\">"
-				"</head>"
-				"<body>"
-				"Die angefragte Seite: #request# wurde nicht gefunden"
-				"</body>"
-				"</html>";
+	          = "<!DOCTYPE html>"
+	                  "<html lang=\"de-DE\">"
+	                  "<head>"
+	                  "<title>M Nelson Embedded Http Server 404</title>"
+	                  "<meta http-equiv=\"Content-Type\""
+	                  " content=\"text/html; charset=UTF-8\">"
+	                  "</head>"
+	                  "<body>"
+	                  "Die angefragte Seite: #request# wurde nicht gefunden"
+	                  "</body>"
+	                  "</html>";
 
 	this->s = s;
 	this->analyse = analyse;
@@ -352,10 +353,9 @@ void Http::write_header()
 	char buffer[10240];
 
 	status = act_h->status;
-	if (act_h->status < 0)
+	if ( !act_h->error_messages.empty() )
 	{
 		HttpVars::Vars::iterator v;
-        status = -status;
 		msg.perror(E_WRITEHEADER, "Headerdaten:");
 		msg.line("%s: %s", msg.get("Type").c_str(), act_h->typ.c_str());
 		msg.line("%s: %s", msg.get("Dirname").c_str(), act_h->dirname.c_str());
@@ -584,12 +584,6 @@ HttpProvider *Http::find_provider(Provider *p)
 
 void Http::mk_error(const char *typ, char *str)
 {
-	if (act_h->client < 0)
-		return;
-
-	if ( act_h->status > 0 )
-	    act_h->status = - act_h->status;
-
 	act_h->error_messages.push_back(str);
 	act_h->error_types.push_back(typ);
 

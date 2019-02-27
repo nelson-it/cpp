@@ -150,20 +150,22 @@ void DbHttpUtilsQuery::mk_export(HttpHeader *h)
      delete[] inbuf;
 
 }
+
 int DbHttpUtilsQuery::request(Database *db, HttpHeader *h)
 {
-
     SubProviderMap::iterator i;
 
     if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
     {
         (this->*(i->second))(db, h);
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
+
         return 1;
     }
-
     return 0;
-
 }
+
 void DbHttpUtilsQuery::data_csv(Database *db, HttpHeader *h)
 {
     h->vars.setVars("&exports=1");
@@ -271,8 +273,6 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 
 
         r = query->select(&wcol, &wval, &wop, &sorts, &params );
-        if (h->vars["sqlend"] != "")
-            db->p_getConnect()->end();
 
         resultcount = r->size();
         if (h->vars["lastquery"] != "" )
@@ -624,8 +624,6 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
 
         r = query->select(&wcol, &wval, &wop, &sorts, &params );
         resultcount = r->size();
-        if (h->vars["sqlend"] != "")
-            db->p_getConnect()->end();
 
         if (h->vars["lastquery"] != "" )
         {
@@ -707,12 +705,6 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         {
             mk_export(h);
         }
-    }
-    else
-    {
-        if (h->vars["sqlend"] != "")
-            db->p_getConnect()->end();
-
     }
     db->release(query);
     return;

@@ -20,8 +20,12 @@ public:
 
      virtual std::string getOpcode() = 0;
      virtual int request (WsAnalyse::Client *c) = 0;
-     virtual unsigned char *p_getData() = 0;
-     virtual int getLength() = 0;
+
+     virtual const unsigned char *p_getData() = 0;
+     virtual int getDataLength() = 0;
+
+     virtual const unsigned char *p_getHeader() = 0;
+     virtual int getHeaderLength() = 0;
 
      virtual void disconnect (int client) {};
      virtual void init_thread() {};

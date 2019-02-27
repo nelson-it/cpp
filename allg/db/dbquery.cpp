@@ -118,6 +118,8 @@ std::string DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsLis
             {
                 std::string op = "=";
                 std::string str = "";
+                std::string startstr = "";
+                std::string endstr = "";
 
                 if (where != "") wconcat = gwconcat;
                 if (having != "") hconcat = ghconcat;
@@ -143,6 +145,17 @@ std::string DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsLis
                         op = op.substr(1);
                         ornull = 1;
                     }
+                    if ( op[0] == '(' )
+                    {
+                        op = op.substr(1);
+                        startstr = "(";
+                    }
+                    if ( op[op.length() - 1] == ')' )
+                    {
+                        op = op.substr(0, op.length() - 1 );
+                        endstr = ")";
+                    }
+
                 }
 
                 if ((vi = std::find(sel_id.begin(), sel_id.end(), (*wcol)[i])) != sel_id.end())
@@ -201,8 +214,8 @@ std::string DbQuery::mk_statement(CsList *wcol, CsList *wval, CsList *wop, CsLis
                     this->errorfound = 1;
                 }
 
-                if (sel_musthaving[j][index]) having += " " + hconcat + no + str;
-                else where += " " + wconcat + no + str;
+                if (sel_musthaving[j][index]) having += " "  + hconcat + " " + startstr + no + str + endstr;
+                else where += " " + wconcat + startstr  + no + str + endstr;
             }
             if (where != "") laststm += stmconcat + "( " + where + " )";
         }

@@ -1,5 +1,6 @@
 // Http Optionnen
 // ================================================
+liste["EmbedwebHttpIndex"]      = Argument::Liste("-httpindex", 'c', 1, "index.html" );
 liste["EmbedwebHttpServerpath"] = Argument::Liste("-httproot", 'c', 1, "web" );
 liste["EmbedwebHttpDataroot"]   = Argument::Liste("-httpdataroot", 'c', 1, "data");
 liste["EmbedwebHttpDatapath"]   = Argument::Liste("-httpdatapath", 'c', 1, "data@data");

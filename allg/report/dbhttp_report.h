@@ -41,8 +41,9 @@ class DbHttpReport : public DbHttpProvider
 protected:
 
     Message msg;
+
     void mk_auto (Database *db, HttpHeader *h);
-    void index (Database *db, HttpHeader *h, const char *report);
+    void index (Database *db, HttpHeader *h, const char *report, DbHttpAnalyse::Client::Userprefs *userprefs = NULL);
 
     void header_html( Database *db, HttpHeader *h);
 

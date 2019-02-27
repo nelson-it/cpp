@@ -22,20 +22,18 @@ DbHttpAdminQuery::~DbHttpAdminQuery()
 
 int DbHttpAdminQuery::request(Database *db, HttpHeader *h)
 {
+    SubProviderMap::iterator i;
 
-	SubProviderMap::iterator i;
+    if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
+    {
+        (this->*(i->second))(db, h);
 
-	if ((i = subprovider.find(h->filename)) != subprovider.end())
-	{
-		(this ->* (i->second))(db, h);
-		if (h->vars["sqlend"] != "")
-			db->p_getConnect()->end();
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
 
-		return 1;
-	}
-
-	return 0;
-
+        return 1;
+    }
+    return 0;
 }
 
 void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)

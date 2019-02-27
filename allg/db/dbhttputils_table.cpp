@@ -34,7 +34,6 @@ DbHttpUtilsTable::~DbHttpUtilsTable()
 
 int DbHttpUtilsTable::request(Database *db, HttpHeader *h)
 {
-
     SubProviderMap::iterator i;
 
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
@@ -49,6 +48,7 @@ int DbHttpUtilsTable::request(Database *db, HttpHeader *h)
     }
     else
     {
+
         if ( h->filename == "index.html")
         {
             std::string::size_type i;

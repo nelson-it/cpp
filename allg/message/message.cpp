@@ -40,14 +40,9 @@ std::string Message::logfile;
 
 Message::Message(const char *id, int logonly)
 {
-	last_debuglevel = 100000;
-
-	this->msg_typ = M_UNDEF;
-	errorclass = 0;
 	strncpy(this->id, id, sizeof(this->id));
 	this->id[sizeof(this->id) - 1] = '\0';
 	this->logonly = logonly;
-
 }
 
 std::string Message::timestamp(time_t t)
