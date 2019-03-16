@@ -125,7 +125,6 @@ void HttpAnalyse::analyse_header()
 
 	std::string name;
 	std::string arg;
-	std::string::size_type n,k;
 	std::string forward_addr("-"), forward_host("-"), forward_port("-"), forward_proto("-");
 
 	msg.pdebug(D_HTTP, "Analysiere header für client %d", act_h->client );

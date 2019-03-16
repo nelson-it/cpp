@@ -212,9 +212,7 @@ void WsAnalyse::request( int client, char *buffer, long size )
     Clients::iterator i;
     unsigned int rest = size;
 
-    fprintf(stderr, "client %d\n", i);
     DumpHex(buffer, size);
-    fprintf(stderr, "\n");
 
     if ( ( i = clients.find(client) ) != clients.end() )
         c = i->second;

@@ -66,6 +66,7 @@ int DbWsHttp::request(WsAnalyse::Client *c)
     make_header();
 
     msg.del_msgclient(this);
+    DbHttp::unlock_client();
 
     return 1;
 }
