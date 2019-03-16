@@ -21,10 +21,6 @@ endif
 ifeq "$(UNAME)" "Linux"
           MKLIBNAME = lib$(1).so.$($(1).LIBMAJOR).$($(1).LIBMINOR)
 
-    ifeq "$(CODENAME)" "precise"
-            OPT_STD := -g -Wall -pedantic -std=c++0x
-    endif
-            
             OPT_STD := $(OPT_STD) -DLINUX
 	     OPT_SHARED := -fPIC
                 CPP := g++
@@ -183,26 +179,9 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
     else ifeq "$(UNAME)" "CYGWIN_NT-10.0"
               LIB_PG := -llibpq
               INC_PG := 
-
-    else ifeq "$(CODENAME)" "trusty"
-             LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.3/server
-
-    else ifeq "$(CODENAME)" "vivid"
-             LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.4/server
-
-    else ifeq "$(CODENAME)" "wily"
-             LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.4/server
-
-    else ifeq "$(CODENAME)" "xenial"
-             LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql -I/usr/include/postgresql/9.5/server
-
     else
              LIB_PG := -lpq
-             INC_PG := -I/usr/include/postgresql
+             INC_PG := -I/usr/include/postgresql -I$(shell pg_config --includedir-server)
   endif
 endif
 

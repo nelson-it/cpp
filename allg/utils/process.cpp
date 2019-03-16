@@ -83,60 +83,60 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             else logfile = "";
         }
     }
-    #if defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined(__MINGW32__) || defined(__CYGWIN__)
 
-	SECURITY_ATTRIBUTES psa;
-	SECURITY_ATTRIBUTES tsa;
-	char path[1024];
-	unsigned int i;
+    SECURITY_ATTRIBUTES psa;
+    SECURITY_ATTRIBUTES tsa;
+    char path[1024];
+    unsigned int i;
 
-	ZeroMemory( &si, sizeof(si) );
-	ZeroMemory( &pi, sizeof(pi) );
-	pi.hProcess = INVALID_HANDLE_VALUE;
-	have_logfile = 0;
-	have_pipe = 0;
+    ZeroMemory( &si, sizeof(si) );
+    ZeroMemory( &pi, sizeof(pi) );
+    pi.hProcess = INVALID_HANDLE_VALUE;
+    have_logfile = 0;
+    have_pipe = 0;
 
-	TCHAR actdir[MAX_PATH];
-	DWORD dwRet;
+    TCHAR actdir[MAX_PATH];
+    DWORD dwRet;
 
-	if ( waitidvalid )
-	    Pthread_join(waitid,NULL);
-	waitidvalid = 0;
+    if ( waitidvalid )
+        Pthread_join(waitid,NULL);
+    waitidvalid = 0;
 
-	if ( workdir != NULL && *workdir != '\0' )
-	{
-		dwRet = GetCurrentDirectory(MAX_PATH, actdir);
+    if ( workdir != NULL && *workdir != '\0' )
+    {
+        dwRet = GetCurrentDirectory(MAX_PATH, actdir);
 
-	    if ( dwRet == 0 || dwRet > MAX_PATH )
-	        msg.pwarning(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
+        if ( dwRet == 0 || dwRet > MAX_PATH )
+            msg.pwarning(E_FOLDER, "kann aktuellen Ordner nicht ermitteln");
 
-	    if ( SetCurrentDirectory(workdir) == 0 )
-		{
-			msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
-			return 0;
-		}
-	}
+        if ( SetCurrentDirectory(workdir) == 0 )
+        {
+            msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
+            return 0;
+        }
+    }
 
-	if ( extrapath != NULL && *extrapath != '\0' )
-	{
-		unsigned int i;
-		i = GetEnvironmentVariable("PATH", path, sizeof(path));
-		if ( i > sizeof(path) )
-		{
-			msg.perror(E_PATH, "kann $PATH nicht mit <%s> erweitern",extrapath);
-			return 0;
-		}
+    if ( extrapath != NULL && *extrapath != '\0' )
+    {
+        unsigned int i;
+        i = GetEnvironmentVariable("PATH", path, sizeof(path));
+        if ( i > sizeof(path) )
+        {
+            msg.perror(E_PATH, "kann $PATH nicht mit <%s> erweitern",extrapath);
+            return 0;
+        }
 
-		path[i] = '\0';
-		SetEnvironmentVariable("PATH", ((std::string)path + ";" + (std::string)extrapath).c_str());
-	}
+        path[i] = '\0';
+        SetEnvironmentVariable("PATH", ((std::string)path + ";" + (std::string)extrapath).c_str());
+    }
 
-	si.cb = sizeof(STARTUPINFO);
-	si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
-	si.wShowWindow = SW_HIDE;
-	si.hStdInput = INVALID_HANDLE_VALUE;
-	si.hStdOutput = INVALID_HANDLE_VALUE;
-	si.hStdError = INVALID_HANDLE_VALUE;
+    si.cb = sizeof(STARTUPINFO);
+    si.dwFlags = STARTF_USESHOWWINDOW | STARTF_USESTDHANDLES;
+    si.wShowWindow = SW_HIDE;
+    si.hStdInput = INVALID_HANDLE_VALUE;
+    si.hStdOutput = INVALID_HANDLE_VALUE;
+    si.hStdError = INVALID_HANDLE_VALUE;
 
     if ( pipe )
     {
@@ -147,7 +147,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             msg.perror(E_PIPE, "kann Pipe nicht erzeugen");
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                    msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
             return 0;
         }
@@ -157,7 +157,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             msg.perror(E_PIPE, "kann Handleinformationen nicht setzen");
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                    msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
             return 0;
         }
@@ -167,7 +167,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             msg.perror(E_PIPE, "kann Pipe nicht erzeugen");
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                    msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
             return 0;
         }
@@ -177,7 +177,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             msg.perror(E_PIPE, "kann Handleinformationen nicht setzen");
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                    msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
             return 0;
         }
@@ -221,7 +221,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
             SetEnvironmentVariable("PATH", path);
 
             if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                    msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
             return 0;
         }
@@ -231,7 +231,7 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
     {
         si.hStdOutput  = GetStdHandle(STD_ERROR_HANDLE);
         si.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
-	}
+    }
 
     STARTUPINFOEX ssi;
     SIZE_T size = 0;
@@ -264,64 +264,64 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
     ssi.StartupInfo.cb = sizeof(si);
 
     ZeroMemory( &psa, sizeof(psa) );
-	psa.nLength = sizeof(psa);
-	psa.bInheritHandle = true;
+    psa.nLength = sizeof(psa);
+    psa.bInheritHandle = true;
 
-	ZeroMemory( &tsa, sizeof(tsa) );
-	tsa.nLength = sizeof(tsa);
-	tsa.bInheritHandle = true;
+    ZeroMemory( &tsa, sizeof(tsa) );
+    tsa.nLength = sizeof(tsa);
+    tsa.bInheritHandle = true;
 
-	if ( nomask )
-	{
-	    cmd = cmd_list.getString(' ');
-	}
-	else
-	{
-	    cmd = ToString::mascarade(cmd_list[0].c_str(), "\"");
-	    for ( i =1; i<cmd_list.size(); i++)
-	        cmd += " \"" + ToString::mascarade(cmd_list[i].c_str(), "\"") + "\"";
-	}
+    if ( nomask )
+    {
+        cmd = cmd_list.getString(' ');
+    }
+    else
+    {
+        cmd = ToString::mascarade(cmd_list[0].c_str(), "\"");
+        for ( i =1; i<cmd_list.size(); i++)
+            cmd += " \"" + ToString::mascarade(cmd_list[i].c_str(), "\"") + "\"";
+    }
 
-	if( ! fSuccess || !CreateProcess( NULL,   // No module name (use command line).
-			(CHAR *)cmd.c_str(),              // Command line.
-			&psa,                             // Process handle inheritable.
-			&tsa,                             // Thread handle inheritable.
-			TRUE,                             // Handle inheritance
-			EXTENDED_STARTUPINFO_PRESENT,     // Creation flags.
-			NULL,                             // Use parent's environment block.
-			NULL,                             // Use parent's starting directory.
-			(STARTUPINFO*)(&ssi),             // Pointer to STARTUPINFO structure.
-			&pi )                             // Pointer to PROCESS_INFORMATION structure.
-	)
-	{
-	    msg.perror(E_START, "%d %s", GetLastError(), msg.getSystemerror(GetLastError()).c_str());
-		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden", cmd.c_str());
-		SetEnvironmentVariable("PATH", path);
+    if( ! fSuccess || !CreateProcess( NULL,   // No module name (use command line).
+            (CHAR *)cmd.c_str(),              // Command line.
+            &psa,                             // Process handle inheritable.
+            &tsa,                             // Thread handle inheritable.
+            TRUE,                             // Handle inheritance
+            EXTENDED_STARTUPINFO_PRESENT,     // Creation flags.
+            NULL,                             // Use parent's environment block.
+            NULL,                             // Use parent's starting directory.
+            (STARTUPINFO*)(&ssi),             // Pointer to STARTUPINFO structure.
+            &pi )                             // Pointer to PROCESS_INFORMATION structure.
+    )
+    {
+        msg.perror(E_START, "%d %s", GetLastError(), msg.getSystemerror(GetLastError()).c_str());
+        msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden", cmd.c_str());
+        SetEnvironmentVariable("PATH", path);
 
-	    if ( have_logfile )
-	    {
-	        have_logfile = 0;
-	        CloseHandle(si.hStdError);
-	    }
+        if ( have_logfile )
+        {
+            have_logfile = 0;
+            CloseHandle(si.hStdError);
+        }
 
-	    if ( have_pipe )
-	    {
-	        have_pipe = 0;
+        if ( have_pipe )
+        {
+            have_pipe = 0;
 
-	        CloseHandle(si.hStdOutput);
-	        CloseHandle(si.hStdInput);
-	        CloseHandle(pipew);
-	        CloseHandle(piper);
-	    }
+            CloseHandle(si.hStdOutput);
+            CloseHandle(si.hStdInput);
+            CloseHandle(pipew);
+            CloseHandle(piper);
+        }
 
         if ( workdir != NULL && *workdir != '\0' && SetCurrentDirectory(actdir) == 0 )
-                msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
+            msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
 
         if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
         if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
 
-		return 0;
-	}
+        return 0;
+    }
 
     if (fInitialized) DeleteProcThreadAttributeList(ssi.lpAttributeList);
     if (ssi.lpAttributeList != NULL) HeapFree(GetProcessHeap(), 0, ssi.lpAttributeList);
@@ -330,16 +330,16 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
     {
         msg.pwarning(E_FOLDER, "kann nicht in Ordner <%s> wechseln", actdir);
     }
-	if ( extrapath != NULL && *extrapath != '\0' )
-	    SetEnvironmentVariable("PATH", path);
+    if ( extrapath != NULL && *extrapath != '\0' )
+        SetEnvironmentVariable("PATH", path);
 
-	if ( have_pipe )
-	{
-		pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this);
-		waitidvalid = 1;
-	}
+    if ( have_pipe )
+    {
+        pthread_create(&waitid, NULL, ProcessWaitStop, (void *)this);
+        waitidvalid = 1;
+    }
 
-	return 1;
+    return 1;
 
 #else
     int sockets[2];
@@ -358,21 +358,21 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
     }
 
     pid = vfork();
-	if ( pid < 0 )
-	{
-		msg.perror(E_FORK,"vfork konnte nicht durchgeführt werden");
-		return 0;
-	}
-	if ( pid == 0 )
-	{
-		char **argv = new char*[cmd_list.size()+ 1];
-		unsigned int i;
+    if ( pid < 0 )
+    {
+        msg.perror(E_FORK,"vfork konnte nicht durchgeführt werden");
+        return 0;
+    }
+    if ( pid == 0 )
+    {
+        char **argv = new char*[cmd_list.size()+ 1];
+        unsigned int i;
         int ifile;
 
-		for ( i=0; i< cmd_list.size(); ++i)
-			argv[i] = strdup(cmd_list[i].c_str());
+        for ( i=0; i< cmd_list.size(); ++i)
+            argv[i] = strdup(cmd_list[i].c_str());
 
-		argv[i] = NULL;
+        argv[i] = NULL;
 
 
 
@@ -390,32 +390,32 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
         }
 
         if ( logfile != ""  )
-		{
-			std::string lf;
-			int lfile;
+        {
+            std::string lf;
+            int lfile;
 
-			if ( logdir != NULL && *logdir != '\0' )
-				lf = (std::string)logdir + "/" + logfile;
-			else
-				lf = logfile;
+            if ( logdir != NULL && *logdir != '\0' )
+                lf = (std::string)logdir + "/" + logfile;
+            else
+                lf = logfile;
 
-			lfile = open(lf.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
-			if ( lfile < 0 )
-			{
-			    msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", lf.c_str());
-			    _exit(-2);
-			}
+            lfile = open(lf.c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
+            if ( lfile < 0 )
+            {
+                msg.perror(E_LOGFILE, "konnte logfile <%s> nicht öffnen", lf.c_str());
+                _exit(-2);
+            }
 
-			if ( ! pipe )
-			    dup2(lfile,1);
-			dup2(lfile,2);
+            if ( ! pipe )
+                dup2(lfile,1);
+            dup2(lfile,2);
 
-			close(lfile);
-		}
+            close(lfile);
+        }
 
         if ( workdir != NULL && chdir(workdir) < 0 )
         {
-             msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
+            msg.perror(E_FOLDER, "kann nicht in Ordner <%s> wechseln", workdir);
             _exit(-1);
         }
 
@@ -429,50 +429,49 @@ int Process::start(CsList cmd_list, const char *p_logfile, const char *workdir, 
 
         }
 
-        if ( extrapath == NULL )
-            extrapath = "";
+        if ( extrapath == NULL ) extrapath = "";
 
-	    std::string path = getenv("PATH");
-  	    setenv("PATH", (path + ":" + extrapath).c_str(), 1);
+        std::string path = getenv("PATH");
+        setenv("PATH", (path + ":" + extrapath).c_str(), 1);
 
-  	    if ( access((std::string(workdir) + "/" + argv[0]).c_str(), X_OK ) == 0)
-  	    {
-  	        execve((std::string(workdir) + "/" + argv[0]).c_str(), argv, environ);
+        if ( access((std::string(workdir) + "/" + argv[0]).c_str(), X_OK ) == 0)
+        {
+            execve((std::string(workdir) + "/" + argv[0]).c_str(), argv, environ);
 
-  	         msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(std::string(workdir) + "/" + argv[0]).c_str());
-  	        _exit(-3);
-  	    }
+            msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(std::string(workdir) + "/" + argv[0]).c_str());
+            _exit(-3);
+        }
 
-  	    CsList pathlist( (path + ":" + extrapath), ':');
-  	    for ( i=0; i<pathlist.size(); ++i )
-  	    {
-  	        if ( access((pathlist[i] + "/" + argv[0]).c_str(), X_OK ) == 0)
-  	            break;
-  	    }
+        CsList pathlist( (path + ":" + extrapath), ':');
+        for ( i=0; i<pathlist.size(); ++i )
+        {
+            if ( access((pathlist[i] + "/" + argv[0]).c_str(), X_OK ) == 0)
+                break;
+        }
 
-		if ( i != pathlist.size() )
-		{
-		    execve((pathlist[i] + "/" + argv[0]).c_str(), argv, environ);
-    		msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(pathlist[i] + "/" + argv[0]).c_str());
-		}
-		else
-		{
-		    msg.perror(E_START,"Kommando <%s> konnte nicht gestartet werden",argv[0]);
-		}
+        if ( i != pathlist.size() )
+        {
+            execve((pathlist[i] + "/" + argv[0]).c_str(), argv, environ);
+            msg.perror(E_START,"Kommando <%s> konnte nicht ausgeführt werden",(pathlist[i] + "/" + argv[0]).c_str());
+        }
+        else
+        {
+            msg.perror(E_START,"Kommando <%s> konnte nicht gestartet werden",argv[0]);
+        }
 
-		_exit(-3);
-	}
-	else
-	{
-	    if ( pipe )
-	    {
-	        this->file = sockets[0];
-	        close(sockets[1]);
-	    }
-	    return 1;
-	}
+        _exit(-3);
+    }
+    else
+    {
+        if ( pipe )
+        {
+            this->file = sockets[0];
+            close(sockets[1]);
+        }
+        return 1;
+    }
 #endif
-	return 0;
+    return 0;
 }
 
 int Process::stop()
@@ -497,30 +496,30 @@ int Process::stop()
 
 int Process::wait()
 {
-   #if defined(__MINGW32__) || defined(__CYGWIN__)
+#if defined(__MINGW32__) || defined(__CYGWIN__)
     lock("wait");
 
-	if ( pi.hProcess == INVALID_HANDLE_VALUE )
-	{
+    if ( pi.hProcess == INVALID_HANDLE_VALUE )
+    {
         if ( waitidvalid )
         {
-        	Pthread_join(waitid,NULL);
-        	waitidvalid = 0;
+            Pthread_join(waitid,NULL);
+            waitidvalid = 0;
         }
-	    unlock("wait invalid");
-	    return status;
-	}
+        unlock("wait invalid");
+        return status;
+    }
 
     DWORD exitcode;
-	WaitForSingleObject( pi.hProcess, INFINITE );
-	GetExitCodeProcess ( pi.hProcess, &exitcode);
-	status = exitcode;
+    WaitForSingleObject( pi.hProcess, INFINITE );
+    GetExitCodeProcess ( pi.hProcess, &exitcode);
+    status = exitcode;
 
     if ( have_logfile )
-	{
+    {
         have_logfile = 0;
-	    CloseHandle(si.hStdOutput);
-	}
+        CloseHandle(si.hStdOutput);
+    }
 
     if ( have_pipe )
     {
@@ -537,9 +536,9 @@ int Process::wait()
     CloseHandle( pi.hThread );
     pi.hProcess = INVALID_HANDLE_VALUE;
 
-	unlock("wait valid");
+    unlock("wait valid");
 
-	return exitcode;
+    return exitcode;
 
 #else
     msg.pdebug(1, "wait");
@@ -547,8 +546,8 @@ int Process::wait()
     waitpid(pid, &status, 0);
     msg.pdebug(1, "waitready");
     pid = -1;
-	status = WEXITSTATUS(status);
-	return status;
+    status = WEXITSTATUS(status);
+    return status;
 #endif
 }
 
@@ -557,10 +556,10 @@ int Process::write(const char *buffer, int size)
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( have_pipe )
     {
-    DWORD anzahl;
-    if ( WriteFile(pipew, buffer, size, &anzahl, NULL) )
-        return anzahl;
-    else
+        DWORD anzahl;
+        if ( WriteFile(pipew, buffer, size, &anzahl, NULL) )
+            return anzahl;
+        else
         {
             if ( GetLastError() == ERROR_BROKEN_PIPE )
             {
@@ -571,21 +570,21 @@ int Process::write(const char *buffer, int size)
         }
     }
 #else
-        fd_set wr;
-        FD_ZERO(&wr);
-        FD_SET(file, &wr);
-        int sel = select( file + 1, (fd_set*)0, &wr, (fd_set*)0, NULL);
-        if ( sel > 0 )
-             return ::write(file, buffer, size);
-        else
-        {
-            close(file);
-            file = -1;
-            wait();
-        }
-#endif
-    return 0;
+    fd_set wr;
+    FD_ZERO(&wr);
+    FD_SET(file, &wr);
+    int sel = select( file + 1, (fd_set*)0, &wr, (fd_set*)0, NULL);
+    if ( sel > 0 )
+        return ::write(file, buffer, size);
+    else
+    {
+        close(file);
+        file = -1;
+        wait();
     }
+#endif
+return 0;
+}
 
 int Process::read( char *buffer, int size)
 {

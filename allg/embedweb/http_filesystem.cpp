@@ -445,8 +445,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
     FindClose(hh);
 #else
     DIR *dp;
-    struct dirent dirp;
-    struct dirent *result;
+    struct dirent *dirp;
     std::string dir;
 
     if((dp  = opendir(path.c_str())) == NULL)
@@ -459,16 +458,16 @@ void HttpFilesystem::readdir(HttpHeader *h)
     if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
         dir = dir + DIRSEP;
 
-    while ((readdir_r(dp, &dirp, &result) == 0 ) && result != NULL )
+    while (( dirp = ::readdir(dp) ) != NULL )
     {
-        if ( ( !pointdir && (std::string(dirp.d_name))[0] == '.' )|| (std::string(dirp.d_name)) == "." || (std::string(dirp.d_name)) == ".." ) continue;
+        if ( ( !pointdir && (std::string(dirp->d_name))[0] == '.' )|| (std::string(dirp->d_name)) == "." || (std::string(dirp->d_name)) == ".." ) continue;
         {
         FileData data;
-        data.name = dirp.d_name;
+        data.name = dirp->d_name;
         check_path(root, dir + data.name);
         data.statbuf = statbuf;
 
-        if ( dirp.d_type == DT_DIR )
+        if ( dirp->d_type == DT_DIR )
             dirs.push_back(data);
         else
             files.push_back(data);
