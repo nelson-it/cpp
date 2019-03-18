@@ -1,13 +1,16 @@
 #ifndef s_socket_mne
 #define s_socket_mne
 
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#include <winsock.h>
-#else
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#include<winsock2.h>
+#include<ws2tcpip.h>
+extern int      inet_aton(const char *cp, struct in_addr * addr);
 #endif
+
 
 #include <sys/time.h>
 

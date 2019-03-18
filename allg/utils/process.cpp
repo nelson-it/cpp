@@ -1,3 +1,7 @@
+#if defined(__MINGW32__) && ! defined(__CYGWIN__)
+#include <winsock2.h>
+#endif
+
 #include <pthread.h>
 #include <stdlib.h>
 #include <stdio.h>

@@ -6,6 +6,7 @@
 #define  WINVER       0x0500
 */
 
+#include <winsock2.h>
 #include <windows.h>
 #include <Lm.h>
 #include <Ntsecapi.h>

@@ -45,7 +45,7 @@ endif
 ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
            MKLIBNAME  = $(1).dll
              OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
+              LD_STD := $(LD_STD)  -lwsock31 -lmsvcr100
                  CPP := i686-w64-mingw32-g++
                   CC := i686-w64-mingw32-gcc
         SHARED_FLAGS := --enable-auto-import
@@ -95,7 +95,7 @@ endif
 ifeq "$(UNAME)" "CYGWIN_NT-10.0"
            MKLIBNAME  = $(1).dll
              OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32
+              LD_STD := $(LD_STD)  -lws2_32 -lwsock32
                  CPP := x86_64-w64-mingw32-g++
                   CC := x86_64-w64-mingw32-gcc
         SHARED_FLAGS := --enable-auto-import

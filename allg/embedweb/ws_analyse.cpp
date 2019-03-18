@@ -5,6 +5,9 @@
 #include <errno.h>
 
 #include <unistd.h>
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <mbctype.h>
+#endif
 
 #include "ws_analyse.h"
 #include "ws.h"

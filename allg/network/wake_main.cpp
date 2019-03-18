@@ -3,8 +3,8 @@
 #include <stdlib.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #endif
 
 #include <utils/cslist.h>

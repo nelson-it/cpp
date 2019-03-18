@@ -6,6 +6,7 @@
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #undef WINVER
 #define WINVER 0x0500
+#include <winsock2.h>
 #include <windows.h>
 #else
 #include <dirent.h>
