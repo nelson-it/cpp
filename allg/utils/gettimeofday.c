@@ -5,6 +5,7 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 
+#include <winsock2.h>
 #include <windows.h>
 #include <time.h>
 

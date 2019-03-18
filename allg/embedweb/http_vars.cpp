@@ -4,6 +4,7 @@
 #include <string.h>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
+#include <winsock2.h>
 #include <windows.h>
 #include <sec_api/stdio_s.h>
 #endif

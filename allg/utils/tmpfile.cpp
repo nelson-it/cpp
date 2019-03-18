@@ -7,6 +7,7 @@
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define DIRSEP   "\\"
 #define unlink DeleteFile
+#include <winsock2.h>
 #include <windows.h>
 #include <sys/unistd.h>
 #else

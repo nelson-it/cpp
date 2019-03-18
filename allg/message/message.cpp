@@ -1,7 +1,3 @@
-#if defined(__CYGWIN__) || defined(__MINGW32__)
-#include <winsock2.h>
-#endif
-
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>

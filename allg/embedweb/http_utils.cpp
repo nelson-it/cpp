@@ -149,7 +149,10 @@ void HttpUtils::locale(HttpHeader *h)
     l = localeconv();
 
     add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d></head><body>",h->charset.c_str());
-    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>",l->decimal_point, l->thousands_sep);
-
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>", l->decimal_point, "" );
+#else
+    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>", l->decimal_point, l->thousands_sep );
+#endif
     return;
 }
