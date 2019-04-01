@@ -696,6 +696,12 @@ void HttpFilesystem::mkfile(HttpHeader *h)
         {
             str = msg.get("Benötige einen Dateinamen");
         }
+        if ( PathFileExists (str.c_str()) && ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "1" ) )
+        {
+            msg.perror(E_FILEEXISTS, "Datei existiert und wird nicht überschrieben");
+            return;
+        }
+
         if ( ! CopyFile(str.c_str(), (path + DIRSEP + name).c_str(), FALSE) )
         {
             str = msg.getSystemerror(errno);
@@ -717,8 +723,14 @@ void HttpFilesystem::mkfile(HttpHeader *h)
             }
             else
             {
-                ::unlink((path + DIRSEP + name).c_str());
-                int file2 = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+                std::string file = path + DIRSEP + name;
+                if ( access( file.c_str() , F_OK ) == 0 && ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "1" ) )
+                {
+                    msg.perror(E_FILEEXISTS, "Datei existiert und wird nicht überschrieben");
+                    return;
+                }
+                ::unlink(file.c_str());
+                int file2 = open(file.c_str(), O_WRONLY | O_CREAT, 0666 );
                 if ( file2 < 0 )
                 {
                     str = msg.getSystemerror(errno);
