@@ -155,8 +155,7 @@ Argument::Argument(ListeMap *liste, std::string name) :
         this->fullname = name;
     }
 
-    if ((i = fullname.find_last_of("/\\")) != std::string::npos) this->name
-            = fullname.substr(i + 1);
+    if ((i = fullname.find_last_of("/\\")) != std::string::npos) this->name = fullname.substr(i + 1);
     else this->name = fullname;
 
     reset(liste);

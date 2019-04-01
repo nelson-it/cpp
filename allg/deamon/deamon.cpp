@@ -59,7 +59,10 @@ Deamon::Deamon()
     if ( runningdir != "" )
     {
         if ( chdir(runningdir.c_str()) != 0 )
+        {
             msg.perror(1, "kann nicht in Verzeichnis <%s> wechseln", runningdir.c_str() );
+            exit(1);
+        }
     }
 
     if ( mask != 0 )

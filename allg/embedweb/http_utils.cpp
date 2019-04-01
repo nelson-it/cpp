@@ -148,11 +148,15 @@ void HttpUtils::locale(HttpHeader *h)
     struct lconv *l;
     l = localeconv();
 
-    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d></head><body>",h->charset.c_str());
+    char hostname[256];
+    gethostname(hostname, sizeof(hostname));
+    hostname[sizeof(hostname) - 1 ] = '\0';
+
+    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><head><d><id>decimal_point</id><typ>2</typ><name>decimal_point</name></d><d><id>thousands_sep</id><typ>2</typ><name>thousands_sep</name></d><d><id>hostname</id><typ>2</typ><name>hostname</name></d></head><body>",h->charset.c_str());
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>", l->decimal_point, "" );
+    add_content(h,  "<r><v>%s</v><v>%s</v><v>%s</v></r></body>", l->decimal_point, "", hostname );
 #else
-    add_content(h,  "<r><v>%s</v><v>%s</v></r></body>", l->decimal_point, l->thousands_sep );
+    add_content(h,  "<r><v>%s</v><v>%s</v><v>%s</v></r></body>", l->decimal_point, l->thousands_sep, hostname );
 #endif
     return;
 }
