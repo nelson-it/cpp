@@ -176,9 +176,7 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
 
     static int in_get = 0;
 
-    if (!db->have_connection()) return str;
-
-    if (in_get && db->p_getConnect()->get_error()) return str;
+    if (in_get || !db->have_connection()) return str;
 
     in_get = 1;
 

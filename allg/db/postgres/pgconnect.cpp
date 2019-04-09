@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <locale.h>
+#include <unistd.h>
 
 #ifdef Darwin
 #include <xlocale.h>
@@ -635,10 +636,25 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
 
     msg.pdebug(D_STM, "%s", (char *) stm);
     pthread_mutex_lock(&connections[con].mutex);
+
+    while ( PQstatus(con) )
+    {
+        msg.ignore_lang = 1;
+        msg.pmessage(M_WAITDATABASE, "Warte auf Datenbank");
+        msg.ignore_lang = 0;
+        PQreset(con);
+        if ( PQstatus(con) ) sleep(5);
+    }
+
     if ( connections[con].in_transaction == "" )
     {
         res = PQexec(con, "BEGIN");
         if ( res != NULL ) PQclear(res);
+        if ( PQresultStatus(res) ==  PGRES_FATAL_ERROR )
+        {
+            pthread_mutex_unlock(&connections[con].mutex);
+            return execute( stm, ready, no_clearresult);
+        }
     }
 
     connections[con].in_transaction = connections[con].in_transaction + stm + "\n";
@@ -669,8 +685,12 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     case PGRES_COPY_IN: // 4
         break;
 
-    case PGRES_BAD_RESPONSE: // 5
     case PGRES_FATAL_ERROR: // 7
+        pthread_mutex_unlock(&connections[con].mutex);
+        return execute( stm, ready, no_clearresult);
+        break;
+
+    case PGRES_BAD_RESPONSE: // 5
         if (!ignore_error)
         {
             char *str;
@@ -717,7 +737,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
         break;
     }
 
-    PQclear(res);
+    if ( res != NULL ) PQclear(res);
 
     if (connections[con].error_found || connections[con].warning_found)
         r = -1;
