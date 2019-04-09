@@ -83,6 +83,13 @@ protected:
         W_WARNING_MAX = 1000
     };
 
+    enum MESSAGE_TYPE
+    {
+        M_WAITDATABASE = 1,
+
+        M_MESSAGE_MAX = 1000
+    };
+
     enum DEBUG_TYPE
     {
 	D_CON = 1,
