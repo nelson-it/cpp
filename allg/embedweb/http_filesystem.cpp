@@ -696,11 +696,6 @@ void HttpFilesystem::mkfile(HttpHeader *h)
         {
             str = msg.get("Benötige einen Dateinamen");
         }
-        if ( PathFileExists (str.c_str()) && ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "1" ) )
-        {
-            msg.perror(E_FILEEXISTS, "Datei existiert und wird nicht überschrieben");
-            return;
-        }
 
         if ( ! CopyFile(str.c_str(), (path + DIRSEP + name).c_str(), FALSE) )
         {
