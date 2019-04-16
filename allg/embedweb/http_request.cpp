@@ -23,7 +23,11 @@ HttpRequest::HttpRequest(ServerSocket *s)
     port = std::to_string((long)a["port"]);
     sport = std::to_string((long)a["sport"]);
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	spath.setString(a["EmbedwebHttpServerpath"], '!');
+#else
 	spath.setString(a["EmbedwebHttpServerpath"], ':');
+#endif
 	for (i=0; i<spath.size(); i++)
 	{
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -36,7 +40,11 @@ HttpRequest::HttpRequest(ServerSocket *s)
 		    serverpath.push_back(spath[i]);
 	}
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+	spath.setString(a["EmbedwebHttpDatapath"], '!');
+#else
 	spath.setString(a["EmbedwebHttpDatapath"], ':');
+#endif
 	for (i=0; i<spath.size(); i++)
 	{
 	    dele.setString(spath[i],'@');
