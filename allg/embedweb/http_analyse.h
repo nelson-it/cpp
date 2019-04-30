@@ -96,7 +96,7 @@ protected:
         D_EXEC = 5
     };
 
-    virtual void analyse_header();
+    virtual void read_header();
 
     virtual void read_postvalues();
     virtual void check_user(HttpHeader *h) {};

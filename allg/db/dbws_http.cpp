@@ -24,7 +24,7 @@ DbWsHttp::~DbWsHttp()
 {
 }
 
-void DbWsHttp::analyse_header(const unsigned char *data, int length)
+void DbWsHttp::read_header(const unsigned char *data, int length)
 {
     const unsigned char *c = data;
     const unsigned char *start = data;
@@ -56,7 +56,7 @@ void DbWsHttp::make_header()
 int DbWsHttp::request(WsAnalyse::Client *c)
 {
     act_h.clear();
-    analyse_header(c->p_getData(), c->getLength());
+    read_header(c->p_getData(), c->getLength());
 
     msg.add_msgclient(this);
     setThreadonly();
