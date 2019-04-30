@@ -118,7 +118,7 @@ HttpAnalyse::~HttpAnalyse()
 {
 }
 
-void HttpAnalyse::analyse_header()
+void HttpAnalyse::read_header()
 {
 	Headers::iterator h;
 	Header::iterator i;
@@ -243,7 +243,7 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 				chttp = http_headers.find(client);
 
 				act_h->client = client;
-				analyse_header();
+				read_header();
 				act_h->needed_postdata = act_h->post_length;
 				act_h->post_data = new char[act_h->post_length + 1];
 				act_h->post_data[act_h->post_length] = '\0';

@@ -38,7 +38,7 @@ protected:
     {
     };
 
-    void analyse_header(const unsigned char *data, int length);
+    void read_header(const unsigned char *data, int length);
     void make_header();
 
 public:

@@ -41,7 +41,7 @@ public:
 
         unsigned int need_data = 2;
 
-        int frametype = 0;
+        //int frametype = 0;
 
         unsigned char opcode = 0;
         unsigned char fin = 0;

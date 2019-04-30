@@ -25,7 +25,7 @@ WsHttp::~WsHttp()
 {
 }
 
-void WsHttp::analyse_header(const unsigned char *data, int length)
+void WsHttp::read_header(const unsigned char *data, int length)
 {
     const unsigned char *c = data;
     const unsigned char *start = data;
@@ -58,7 +58,7 @@ void WsHttp::make_header()
 
 int WsHttp::request(WsAnalyse::Client *c)
 {
-    analyse_header(c->p_getData(), c->getLength());
+    read_header(c->p_getData(), c->getLength());
     this->make_content(&act_h);
 
     return 1;
