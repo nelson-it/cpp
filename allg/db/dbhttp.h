@@ -23,6 +23,8 @@ class DbHttpApplication;
 class DbHttp : public Http
 {
     Message msg;
+protected:
+
     DbTranslate *trans;
     std::string cookieid;
 

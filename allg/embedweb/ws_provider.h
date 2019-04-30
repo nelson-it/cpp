@@ -27,7 +27,9 @@ public:
      virtual const unsigned char *p_getHeader() = 0;
      virtual int getHeaderLength() = 0;
 
+     virtual void connect (int client) {};
      virtual void disconnect (int client) {};
+
      virtual void init_thread() {};
 };
 

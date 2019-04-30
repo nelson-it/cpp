@@ -58,7 +58,6 @@ int DbWsHttp::request(WsAnalyse::Client *c)
     act_h.clear();
     analyse_header(c->p_getData(), c->getLength());
 
-
     msg.add_msgclient(this);
     setThreadonly();
 

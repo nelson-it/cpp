@@ -257,6 +257,10 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 	h->second[0] = str;
 }
 
+void HttpAnalyse::connect( int client )
+{
+}
+
 void HttpAnalyse::disconnect( int client )
 {
 	Headers::iterator h;
@@ -274,8 +278,6 @@ void HttpAnalyse::disconnect( int client )
 
 	for ( i = 0; i<https.size(); ++i)
 	    https[i]->disconnect(client);
-
-
 }
 
 void HttpAnalyse::add_http(Http *http)

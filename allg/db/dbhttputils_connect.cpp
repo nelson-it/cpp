@@ -9,7 +9,7 @@
 #include "dbconnect.h"
 #include "dbhttputils_connect.h"
 
-DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *a)
+DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *analyse)
           :DbHttpProvider(h),
 	   msg("DbHttpUtilsConnect")
 {
