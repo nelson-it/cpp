@@ -127,6 +127,8 @@ public:
 	virtual ~DbHttpAnalyse();
 
 	void timeout(long sec, long usec, long w_sec, long w_usec );
+
+	virtual void connect( int client );
 	virtual void disconnect( int client );
 
 

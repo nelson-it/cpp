@@ -11,6 +11,7 @@
 #include "php_exec.h"
 
 PhpExec::PhpExec(std::string cmd, HttpHeader *h )
+        :Process(0)
 {
     Argument a;
     int anzahl;

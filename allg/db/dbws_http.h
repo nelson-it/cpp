@@ -54,6 +54,9 @@ public:
     virtual const unsigned char *p_getHeader() { return (unsigned char *)this->header.c_str(); }
     virtual int getHeaderLength() { return this->header.length(); }
 
+    virtual void connect (int client) { this->analyse->connect(client); }
+    virtual void disconnect (int client) { this->analyse->disconnect(client); }
+
 };
 
 #endif /* ws_http_mne */

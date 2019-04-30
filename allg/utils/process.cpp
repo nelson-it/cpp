@@ -613,34 +613,30 @@ int Process::read( char *buffer, int size)
 #else
     if ( file >= 0 )
     {
+        int sel;
         fd_set rd;
-        struct timeval t;
 
-        t.tv_sec = 0;
-        t.tv_usec = 100000;
+        FD_ZERO(&rd);
+        FD_SET(file, &rd);
 
-        int sel = 0;
-        while ( sel == 0 )
+        sel = select( file + 1, &rd, (fd_set*)0, (fd_set*)0, NULL );
+
+        if ( sel > 0 )
         {
-            FD_ZERO(&rd);
-            FD_SET(file, &rd);
-
-            sel = select( file + 1, &rd, (fd_set*)0, (fd_set*)0, &t );
-
-            if ( sel > 0 )
-                result = ::read(file, buffer, size );
-            else
+            result = ::read(file, buffer, size );
+        }
+        else
+        {
+            if ( waitpid(pid, &status, WNOHANG) > 0 )
             {
-                if ( waitpid(pid, &status, WNOHANG) > 0 )
-                {
-                    status = WEXITSTATUS(status);
-                    close(file);
-                    pid = -1;
-                    sel = -1;
-                    file = -1;
-                }
-                result = 0;
+                status = WEXITSTATUS(status);
+                fprintf(stderr, "status %d\n", status);
+                close(file);
+                pid = -1;
+                sel = -1;
+                file = -1;
             }
+            result = 0;
         }
     }
 

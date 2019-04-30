@@ -79,6 +79,7 @@ protected:
     enum WARNING_TYPE
     {
         W_START = 1,
+        W_TYPE_UNKNOWN,
 
         W_WARNING_MAX = 1000
     };

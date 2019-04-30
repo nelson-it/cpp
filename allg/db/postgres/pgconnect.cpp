@@ -377,7 +377,7 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
                 r.typ = CHAR;
                 if (!r.isnull)
                 {
-                    msg.perror(E_TYPE_UNKNOWN, "Der Typ %d von Spalte %s ist unbekannt", typ, PQfname(res, i));
+                    msg.pwarning(W_TYPE_UNKNOWN, "Der Typ %d von Spalte %s ist unbekannt", typ, PQfname(res, i));
                     msg.line("für Sql-Befehl");
                     msg.ignore_lang = 1;
                     msg.line("%s", stm);
@@ -650,7 +650,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     {
         res = PQexec(con, "BEGIN");
         if ( res != NULL ) PQclear(res);
-        if ( PQresultStatus(res) ==  PGRES_FATAL_ERROR )
+        if ( PQstatus(con) )
         {
             pthread_mutex_unlock(&connections[con].mutex);
             return execute( stm, ready, no_clearresult);
@@ -686,9 +686,13 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
         break;
 
     case PGRES_FATAL_ERROR: // 7
-        pthread_mutex_unlock(&connections[con].mutex);
-        return execute( stm, ready, no_clearresult);
-        break;
+        if ( PQstatus(con) )
+        {
+            if ( res != NULL ) PQclear(res);
+            pthread_mutex_unlock(&connections[con].mutex);
+            return execute( stm, ready, no_clearresult);
+        }
+        /* no break */
 
     case PGRES_BAD_RESPONSE: // 5
         if (!ignore_error)

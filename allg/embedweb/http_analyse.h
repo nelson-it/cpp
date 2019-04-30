@@ -110,6 +110,7 @@ public:
     std::vector<std::string> getServerpath() { return serverpath; }
     void request( int client, char *buffer, long size );
 
+    virtual void connect( int client );
     virtual void disconnect( int client );
 
     void add_http( Http *http);

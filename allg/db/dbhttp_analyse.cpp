@@ -142,7 +142,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		if (   ic->second.host == s->getHost(client) && ic->second.base == h->base && ( ic->second.db->have_connection() ) )
 		{
 		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
-			ic->second.last_connect = time(NULL);
+			if ( ic->second.last_connect < time(NULL)) ic->second.last_connect = time(NULL);
 
 			unlock();
 			return;
@@ -278,17 +278,22 @@ void DbHttpAnalyse::setUserprefs(Client *cl)
 void DbHttpAnalyse::del_client(unsigned int client)
 {
     msg.pdebug(D_CLIENT, "lösche client %d", client);
+
     if (this->tv_sec == 0)
         setWakeup(time(NULL) + this->dbtimeout);
     msg.pdebug(D_CON, "Nächstes Aufräumen %s", Message::timestamp(this->tv_sec).c_str());
 }
 
 
+void DbHttpAnalyse::connect(int client)
+{
+}
+
 void DbHttpAnalyse::disconnect(int client)
 {
     lock();
-	del_client(client);
-	HttpAnalyse::disconnect(client);
+    del_client(client);
+    HttpAnalyse::disconnect(client);
     unlock();
 }
 
@@ -305,21 +310,20 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 	{
 		for (c = clients.begin(); c != clients.end(); ++c)
 		{
+		    msg.pdebug(D_CON, "client %s lastconnect %s", c->first.c_str(), ctime( &(c->second.last_connect)));
 			if (c->second.last_connect != 0)
 			{
 				if (c->second.last_connect + dbtimeout <= time(NULL) )
 				{
-					msg.pdebug(D_CON, "lösche client endgültig %s",
-							c->first.c_str());
+					msg.pdebug(D_CON, "lösche client endgültig %s", c->first.c_str());
 					c->second.lock();
 					delete c->second.db;
 					clients.erase(c);
 					break;
 				}
-				else
+				else if ( c->second.last_connect + dbtimeout <= time(NULL) + this->dbtimeout )
 				{
-					if (need_timeout == 0 || c->second.last_connect
-							< need_timeout)
+					if (need_timeout == 0 || c->second.last_connect < need_timeout )
 						need_timeout = c->second.last_connect;
 				}
 			}
