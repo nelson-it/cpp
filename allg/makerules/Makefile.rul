@@ -1,8 +1,17 @@
 
+$(OBJECTPATH)/%.o: $(PROJECT_ROOT)/%.cpp
+	mkdir -p $(dir $@)
+	$(CPP) -c $(OPT_FLAGS) $(INC_FLAGS) $(PROJECT_ROOT)/$*.cpp -o $@
+
+$(OBJECTPATH)/%.o: $(PROJECT_ROOT)/%.c
+	mkdir -p $(dir $@)
+	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $(PROJECT_ROOT)/$*.c -o $@
+
 %.o: %.cpp
+#$(OBJECTPATH)/%.o: %.cpp
 	$(CPP) -c $(OPT_FLAGS) $(INC_FLAGS) $*.cpp -o $@
 
-%.o: %.c
+$(OBJECTPATH)/%.o: %.c
 	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $*.c -o $@
 
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 
@@ -64,6 +73,7 @@ all_single::
 clean_single::
 	@echo make clean for $(TARGET)
 	@-rm -f $(CLEAN_OBJS)
+	@-rm -rf $(OBJECTPATH)
 
 depend_single::
 	@echo make depend for $(TARGET)
@@ -82,7 +92,7 @@ depend_single::
 	  if ! [ "$($(TARGET).ISDLL)" = "TRUE" ];  then mkd=1; fi;\
 	  if   [ "$(WITH_SHARED_LIBS)" = "TRUE" ]; then mkd=1; fi; \
 	  if [ $$mkd = 1 ] ; then \
-	     $(PROJECT_ROOT)/allg/makerules/mkdep -cpp $(CPP) $(INC_FLAGS) $(OPT_FLAGS)\
+	     $(PROJECT_ROOT)/allg/makerules/mkdep -root $(PROJECT_ROOT) -oroot $(OBJECTPATH) -cpp $(CPP) $(INC_FLAGS) $(OPT_FLAGS)\
 	                                          -o Makefile.dep $(SOURCES);\
 	  fi;
 
@@ -90,7 +100,7 @@ args_single::
 	-@ chmod +x $(PROJECT_ROOT)/allg/makerules/mkargs
 ifneq "$($(TARGET).ISDLL)" "TRUE" 
 	-@echo make args for $(TARGET)
-	 @$(PROJECT_ROOT)/allg/makerules/mkargs -o $(TARGET).inc \
+	 @$(PROJECT_ROOT)/allg/makerules/mkargs -o $(MAINPROG_DIR)$(TARGET).inc \
 	     $(sort $(dir $(SOURCES) $(LIBDIRS) $(foreach d, $($(TARGET).LIBS), $($(SHLIB_PRE)$(d).$(SHLIB).SOURCES)) ))
 endif
 
