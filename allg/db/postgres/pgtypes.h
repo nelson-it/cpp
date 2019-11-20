@@ -1,7 +1,7 @@
 #ifndef pgtypes_mne
 #define pgtypes_mne
 
-#if defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
+#if 1 || defined(__MINGW32__) || defined(__CYGWIN__) || defined(Darwin)
 #define BOOLOID         16
 #define BYTEAOID        17
 #define CHAROID         18

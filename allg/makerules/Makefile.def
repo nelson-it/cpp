@@ -7,6 +7,7 @@
 	      OPT_SHARED :=
            LD_SHARED :=
            
+          OBJECTPATH := object
            
 
 ifeq "$(NODEBUG)" "TRUE" 
@@ -27,6 +28,11 @@ ifeq "$(UNAME)" "Linux"
                  CC := gcc
           LD_SHARED := -shared -Wl,-soname,lib$(TARGET).so.$($(TARGET).LIBMAJOR)        
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
+
+ifeq "$(ARCH)" "ARMHF"
+                CPP := arm-linux-gnueabihf-g++
+                 CC := arm-linux-gnueabihf-gcc
+endif
              
 endif
 
@@ -40,47 +46,6 @@ ifeq "$(UNAME)" "Darwin"
              LD_STD := $(LD_STD)
           LD_SHARED := -shared -Wl,-soname,lib$(TARGET).so.$($(TARGET).LIBMAJOR)        
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
-endif
-
-ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock31 -lmsvcr100
-                 CPP := i686-w64-mingw32-g++
-                  CC := i686-w64-mingw32-gcc
-        SHARED_FLAGS := --enable-auto-import
-endif
-
-ifeq "$(UNAME)" "MINGW32_NT-6.1"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
-        SHARED_FLAGS := --enable-auto-import
-endif
-
-ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
-                 CPP := i686-w64-mingw32-g++
-                  CC := i686-w64-mingw32-gcc
-        SHARED_FLAGS := --enable-auto-import
-endif
-
-ifeq "$(UNAME)" "MINGW32_NT-6.2"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
-        SHARED_FLAGS := --enable-auto-import
-endif
-
-ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
-                 CPP := /usr/bin/i686-w64-mingw32-g++
-                  CC := /usr/bin/i686-w64-mingw32-gcc
-        SHARED_FLAGS := --enable-auto-import
 endif
 
 ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
@@ -146,31 +111,6 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
               LIB_PG := -L/Library/PostgreSQL/10/lib -lpq
               INC_PG := -I/Library/PostgreSQL/10/include 
 
-    else ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
-       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I$(POSTGRES_ROOT)/include
-
-    else ifeq "$(UNAME)" "MINGW32_NT-6.1"
-       POSTGRES_ROOT := "/c/Program Files/PostgreSQL/8.4/"
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I$(POSTGRES_ROOT)/include
-
-    else ifeq "$(UNAME)" "CYGWIN_NT-6.2-WOW64"
-       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/8.4/
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I$(POSTGRES_ROOT)/include
-
-    else ifeq "$(UNAME)" "MINGW32_NT-6.2"
-       POSTGRES_ROOT := "/c/Program Files (x86)/PostgreSQL/8.4/"
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I$(POSTGRES_ROOT)/include
-
-    else ifeq "$(UNAME)" "CYGWIN_NT-6.3-WOW64"
-       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/9.3/
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I/usr/i686-w64-mingw32/sys-root/mingw/include -I$(POSTGRES_ROOT)/include
-
     else ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
        POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/9.5/
               LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
@@ -179,10 +119,15 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
     else ifeq "$(UNAME)" "CYGWIN_NT-10.0"
               LIB_PG := -llibpq
               INC_PG := 
+
+    else ifeq "$(ARCH)" "ARMHF"
+       POSTGRES_ROOT := $(PROJECT_ROOT)/../extern/armhf/postgres
+              LIB_PG := -L $(POSTGRES_ROOT)/lib/arm-linux-gnueabihf -lpq
+             INC_PG  := -I$(POSTGRES_ROOT)/include/postgresql # -I$(POSTGRES_ROOT)/include/postgresql/11/server
     else
              LIB_PG := -lpq
              INC_PG := -I/usr/include/postgresql -I$(shell pg_config --includedir-server)
-  endif
+    endif
 endif
 
 ifeq "$($(TARGET).WITH_GD)" "TRUE" 
@@ -265,7 +210,8 @@ SOURCES := $($(TARGET).SOURCES) $(LIBSOURCES)
 
 LIBDIRS := $(foreach d, $($(TARGET).LIBS), $($(d).SOURCES))
 
-OBJECTS := $(patsubst %.ecpg,%.o, $(SOURCES))
+OBJECTS := $(patsubst $(PROJECT_ROOT)%,$(OBJECTPATH)%,$(SOURCES))
+OBJECTS := $(patsubst %.ecpg,%.o, $(OBJECTS))
 OBJECTS := $(patsubst   %.cpp,%.o, $(OBJECTS))
 OBJECTS := $(patsubst   %.c,%.o, $(OBJECTS))
 OBJECTS := $(OBJECTS) $($(TARGET).OBJS)
