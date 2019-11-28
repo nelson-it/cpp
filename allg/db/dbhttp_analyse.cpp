@@ -5,6 +5,7 @@
 #include <sys/unistd.h>
 #endif
 #include <unistd.h>
+#include <sys/utsname.h>
 
 #include <argument/argument.h>
 
@@ -72,6 +73,7 @@ void DbHttpAnalyse::read_datadir()
 	DbConnect::ResultMat *r;
     DbConnect::ResultMat::iterator ri;
     char *str;
+    struct utsname utsname;
 
     db = this->db->getDatabase();
 
@@ -91,11 +93,14 @@ void DbHttpAnalyse::read_datadir()
     for ( ri = r->begin(); ri != r->end(); ri++ )
     datapath[((char*)(*ri)[0])] = (char*)((*ri)[1]);
 
+    uname(&utsname);
+
     db->release(tab);
 
     tab = db->p_getTable(db->getApplschema(), "server");
+    tab->del(&where);
 
-    values["serverid"] = "0";
+    values["serverid"] = utsname.nodename;
 #if defined(Darwin) || defined(__MINGW32__) || defined(__CYGWIN__)
     str = (char *)malloc(10240);
     getcwd(str, 10240);
@@ -103,7 +108,7 @@ void DbHttpAnalyse::read_datadir()
 #else
     values["pwd"] = str = get_current_dir_name();
 #endif
-    where["serverid"] = "0";
+    where["serverid"] = utsname.nodename;
 
 
     r = tab->select(&values, &where);

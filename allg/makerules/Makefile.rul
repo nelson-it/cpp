@@ -7,11 +7,12 @@ $(OBJECTPATH)/%.o: $(PROJECT_ROOT)/%.c
 	mkdir -p $(dir $@)
 	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $(PROJECT_ROOT)/$*.c -o $@
 
-%.o: %.cpp
-#$(OBJECTPATH)/%.o: %.cpp
+$(OBJECTPATH)/%.o: %.cpp
+	mkdir -p $(dir $@)
 	$(CPP) -c $(OPT_FLAGS) $(INC_FLAGS) $*.cpp -o $@
 
 $(OBJECTPATH)/%.o: %.c
+	mkdir -p $(dir $@)
 	$(CC) -c $(OPT_FLAGS) $(INC_FLAGS) $*.c -o $@
 
 ifneq "$(WITH_SHARED_LIBS)" "TRUE" 

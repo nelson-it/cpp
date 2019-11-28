@@ -210,7 +210,8 @@ SOURCES := $($(TARGET).SOURCES) $(LIBSOURCES)
 
 LIBDIRS := $(foreach d, $($(TARGET).LIBS), $($(d).SOURCES))
 
-OBJECTS := $(patsubst $(PROJECT_ROOT)%,$(OBJECTPATH)%,$(SOURCES))
+OBJECTS := $(patsubst $(PROJECT_ROOT)/%,%,$(SOURCES))
+OBJECTS := $(patsubst %,$(OBJECTPATH)/%,$(OBJECTS))
 OBJECTS := $(patsubst %.ecpg,%.o, $(OBJECTS))
 OBJECTS := $(patsubst   %.cpp,%.o, $(OBJECTS))
 OBJECTS := $(patsubst   %.c,%.o, $(OBJECTS))
