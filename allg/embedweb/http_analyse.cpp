@@ -243,6 +243,9 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 				chttp = http_headers.find(client);
 
 				act_h->client = client;
+				act_h->client_host = this->serversocket->getHost(client);
+				act_h->client_port = this->serversocket->getPort(client);
+
 				read_header();
 				act_h->needed_postdata = act_h->post_length;
 				act_h->post_data = new char[act_h->post_length + 1];

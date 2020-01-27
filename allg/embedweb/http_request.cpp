@@ -331,6 +331,7 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
         else if ( name == "x-forwarded-for")
         {
                 forward_addr = arg;
+		        act_h->client_host = arg;
         }
 		else if ( name == "x-forwarded-proto")
 		{

@@ -43,6 +43,9 @@ public:
 
     int client;
 
+    std::string client_host;
+    std::string client_port;
+
     // Wird gesendet
     // =============
     RawHeader   header;
@@ -118,6 +121,8 @@ public:
     void clear()
     {
         client = -1;
+        client_host = "";
+        client_port = "";
 
         header.clear();
         serverpath.clear();
