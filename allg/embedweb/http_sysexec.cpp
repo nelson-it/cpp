@@ -75,7 +75,7 @@ void HttpSysexec::execute ( HttpHeader *h)
 
     if ( i == ips.size() || ( h->user != "admindb" && this->http->check_group(h, "adminsystem") == 0 && this->http->check_sysaccess(h) == 0 ))
     {
-        msg.perror(E_NOFUNC, "keine Berechtigung");
+        msg.perror(E_NOFUNC, "keine Berechtigung für %s", h->client_host.c_str() );
         if ( h->content_type == "text/xml" )
             add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
         else
