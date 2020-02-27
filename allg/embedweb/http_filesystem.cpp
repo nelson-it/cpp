@@ -208,7 +208,7 @@ int HttpFilesystem::findfile(HttpHeader *h)
 
         for (j=0; j<h->serverpath.size(); j++)
         {
-            file = h->serverpath[j] + "/static/file" + name;
+            file = h->serverpath[j] + "/file" + name;
             msg.pdebug(3, "check %s", file.c_str());
             if (stat(file.c_str(), &s) == 0)
             {
