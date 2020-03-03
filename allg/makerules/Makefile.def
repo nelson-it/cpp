@@ -48,18 +48,9 @@ ifeq "$(UNAME)" "Darwin"
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
 endif
 
-ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
-           MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
-              LD_STD := $(LD_STD)  -lwsock32 -lmsvcr100
-                 CPP := /usr/bin/i686-w64-mingw32-g++
-                  CC := /usr/bin/i686-w64-mingw32-gcc
-        SHARED_FLAGS := --enable-auto-import
-endif
-
 ifeq "$(UNAME)" "CYGWIN_NT-10.0"
            MKLIBNAME  = $(1).dll
-             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -DWINVER=0x600 -D_WIN32_WINNT=0x600
+             OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -D_POSIX_THREAD_SAFE_FUNCTIONS -DWINVER=0x600 -D_WIN32_WINNT=0x600
               LD_STD := $(LD_STD)  -lws2_32 -lwsock32
                  CPP := x86_64-w64-mingw32-g++
                   CC := x86_64-w64-mingw32-gcc
@@ -110,11 +101,6 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
     ifeq "$(UNAME)" "Darwin"
               LIB_PG := -L/Library/PostgreSQL/10/lib -lpq
               INC_PG := -I/Library/PostgreSQL/10/include 
-
-    else ifeq "$(UNAME)" "CYGWIN_NT-10.0-WOW"
-       POSTGRES_ROOT := /cygdrive/c/PROGRA~2/PostgreSQL/9.5/
-              LIB_PG := $(POSTGRES_ROOT)/lib/libpq.lib
-              INC_PG := -I/usr/i686-w64-mingw32/sys-root/mingw/include -I$(POSTGRES_ROOT)/include
 
     else ifeq "$(UNAME)" "CYGWIN_NT-10.0"
               LIB_PG := -llibpq
