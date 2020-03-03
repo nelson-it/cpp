@@ -140,7 +140,7 @@ void DbHttp::make_answer()
     }
     else
     {
-        if ( act_h->dirname == "/main/login" )
+        if ( act_h->dirname.find("/main/login") == 0 )
         {
             act_h->status = 404;
             Http::make_answer();

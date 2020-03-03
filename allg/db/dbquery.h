@@ -14,7 +14,7 @@
 class Database;
 class DbTable;
 
-class DbQuery
+class DbQuerySingle
 {
     Message msg;
 
@@ -27,13 +27,14 @@ class DbQuery
     int errorfound;
 
     std::string laststm;
+    CsList sel_cols;
 
     std::vector<DbJoin*> joins;
     std::vector<std::string> sel_fields;
     std::map<std::string, DbTable *> tables;
     std::map<int, std::string> tabnums;
     std::vector<std::vector<std::string> > sel_field;
-    std::vector<std::vector<std::string> > sel_groupby;
+    std::vector<std::map<std::string,std::string> > sel_groupby;
     std::vector<std::vector<long> > sel_musthaving;
     std::vector<long> unionall;
     std::vector<long> distinct;
@@ -73,15 +74,14 @@ public:
         W_NOTSTRING
     };
 
-    DbQuery(Database *db);
-    ~DbQuery();
+    DbQuerySingle(Database *db);
+    ~DbQuerySingle();
 
     void setName(std::string schema, std::string name, CsList *cols, std::string unionnum = "");
+    void setCols(CsList *cols);
 
-    void open(CsList *wcol, CsList *wval, CsList *wops = NULL,
-            CsList *sort = NULL, CsList *params = NULL);
-    void open(DbTable::ValueMap *where = NULL, CsList *wops = NULL,
-            CsList *sort = NULL, CsList *params = NULL);
+    void open(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
+    void open(DbTable::ValueMap *where = NULL, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
     void close()
     {
         cur->close();
@@ -100,16 +100,11 @@ public:
         return cur->p_next();
     }
 
-    DbConnect::ResultMat *select(DbTable::ValueMap *where, CsList *wops = NULL,
-            CsList *sort = NULL, CsList *params = NULL);
-    DbConnect::ResultMat *select(CsList *wcol, CsList *wval,
-            CsList *wops = NULL, CsList *sort = NULL,
-            CsList *params = NULL);
+    DbConnect::ResultMat *select(DbTable::ValueMap *where, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
+    DbConnect::ResultMat *select(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
 
     void start_cols();
-    int getCols(std::string *id, std::string *name, long *typ,
-            std::string *format = NULL, std::string *regexp = NULL,
-            std::string *regexphelp = NULL, std::string *regexpmod = NULL);
+    int getCols(std::string *id, std::string *name, long *typ, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL);
 
     std::string::size_type find(std::string id)
     {
@@ -176,6 +171,147 @@ public:
     std::string getLaststatement()
     {
         return laststm;
+    }
+};
+class DbQuery
+{
+    Message msg;
+
+    Database *db;
+    DbQuerySingle *act_query;
+
+    typedef std::map<std::string, DbQuerySingle *> DbQuerySingleMap;
+    static DbQuerySingleMap querys;
+    static pthread_mutex_t query_mutex;
+
+public:
+    enum ERROR_TYPE
+    {
+        E_OK, E_MAX = 1000
+    };
+
+    enum WARNING_TYPE
+    {
+        W_MAX = 1000
+    };
+
+    DbQuery(Database *db)
+    : msg("DbQuery")
+    {
+        this->db = db;
+        this->act_query = NULL;
+    }
+    virtual ~DbQuery()
+    {
+    }
+
+    void setName(std::string schema, std::string name, CsList *cols, std::string unionnum = "");
+
+    void open(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
+    {
+        if ( this->act_query != NULL ) this->act_query->open(wcol, wval, wops, sort, params);
+    }
+
+    void open(DbTable::ValueMap *where = NULL, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
+    {
+        if ( this->act_query != NULL ) this->act_query->open(where, wops, sort, params);
+    }
+    void close()
+    {
+        if ( this->act_query != NULL ) this->act_query->close();
+    }
+    int eof()
+    {
+        return ( this->act_query != NULL ) ? this->act_query->eof() : 1;
+    }
+
+    DbConnect::ResultVec next()
+    {
+        if ( this->act_query != NULL )
+        {
+            return this->act_query->next();
+        }
+        else
+        {
+            DbConnect::ResultVec v;
+            return v;
+        }
+    }
+    DbConnect::ResultVec *p_next()
+    {
+        return ( this->act_query != NULL ) ? this->act_query->p_next() : NULL;
+    }
+
+    DbConnect::ResultMat *select(DbTable::ValueMap *where, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->select(where, wops, sort, params) : NULL;
+    }
+
+    DbConnect::ResultMat *select(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->select(wcol, wval, wops, sort, params) : NULL;
+    }
+
+    void start_cols()
+    {
+        if ( this->act_query != NULL )  this->act_query->start_cols();
+    }
+    int getCols(std::string *id, std::string *name, long *typ, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getCols(id, name, typ, format, regexp, regexphelp, regexpmod) : 0;
+    }
+
+    std::string::size_type find(std::string id)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->find(id) : std::string::npos;
+    }
+    std::string::size_type ofind(std::string id)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->ofind(id) : std::string::npos;
+    }
+    std::string getId(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getId(num) : "";
+    }
+
+    std::string getName(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getName(num) : "";
+    }
+
+    long getColtyp(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getColtyp(num) : DbConnect::UNKNOWN;
+    }
+
+    long getOrigcoltyp(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getOrigcoltyp(num) : DbConnect::UNKNOWN;
+    }
+
+    std::string getFormat(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getFormat(num) : "";
+    }
+
+    std::string getRegexp(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getRegexp(num) : "";
+    }
+
+    std::string getRegexphelp(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getRegexphelp(num) : "";
+    }
+
+    std::string getRegexpmod(unsigned int num)
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getRegexpmod(num) : "";
+    }
+
+    std::string getLaststatement()
+    {
+        return ( this->act_query != NULL ) ?  this->act_query->getLaststatement() : "";
     }
 };
 

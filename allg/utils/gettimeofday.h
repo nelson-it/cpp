@@ -22,6 +22,8 @@ struct tm* localtime_r (const time_t *clock, struct tm *result);
 }
 #endif
 
+#else
+#include <sys/time.h>
 #endif /* __MINGW32__ */
 
 #endif /* gettimeofday_mne */

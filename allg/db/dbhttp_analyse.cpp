@@ -3,9 +3,10 @@
 #include <stdio.h>
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <sys/unistd.h>
+#else
+#include <sys/utsname.h>
 #endif
 #include <unistd.h>
-#include <sys/utsname.h>
 
 #include <argument/argument.h>
 
@@ -73,7 +74,6 @@ void DbHttpAnalyse::read_datadir()
 	DbConnect::ResultMat *r;
     DbConnect::ResultMat::iterator ri;
     char *str;
-    struct utsname utsname;
 
     db = this->db->getDatabase();
 
@@ -93,22 +93,28 @@ void DbHttpAnalyse::read_datadir()
     for ( ri = r->begin(); ri != r->end(); ri++ )
     datapath[((char*)(*ri)[0])] = (char*)((*ri)[1]);
 
-    uname(&utsname);
 
     db->release(tab);
 
     tab = db->p_getTable(db->getApplschema(), "server");
     tab->del(&where);
 
-    values["serverid"] = utsname.nodename;
 #if defined(Darwin) || defined(__MINGW32__) || defined(__CYGWIN__)
     str = (char *)malloc(10240);
+    gethostname( str, 10240);
+    values["serverid"] = str;
+    where["serverid"] = str;
+
     getcwd(str, 10240);
     values["pwd"] = str;
+    free(str);
 #else
+    struct utsname utsname;
+    uname(&utsname);
+    values["serverid"] = utsname.nodename;
     values["pwd"] = str = get_current_dir_name();
-#endif
     where["serverid"] = utsname.nodename;
+#endif
 
 
     r = tab->select(&values, &where);
@@ -116,7 +122,6 @@ void DbHttpAnalyse::read_datadir()
     tab->end();
     db->release(tab);
 
-    free(str);
     delete db;
 }
 
@@ -154,7 +159,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 		}
 	}
 
-	if ( h->dirname == "/main/login" )
+	if ( h->dirname.find("/main/login") == 0 )
 	{
 	    unlock();
 	    return;

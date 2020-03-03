@@ -12,25 +12,25 @@ class DbJoin
 public:
     enum JOIN_TYPES
     {
-	INNER = 0,
-	LEFT,
-	RIGHT,
+        INNER = 0,
+        LEFT,
+        RIGHT,
         FULL,
-	MAX_JOINTYPES
+        MAX_JOINTYPES
     };
 
     enum JOIN_OPPS
     {
         EQUAL,
-	NOT_EQUAL,
+        NOT_EQUAL,
 
-	GREATER,
-	GREATER_EQAL,
+        GREATER,
+        GREATER_EQAL,
 
-	LOWER,
-	LOWER_EQUAL,
+        LOWER,
+        LOWER_EQUAL,
 
-	MAX_JOINOPS
+        MAX_JOINOPS
     };
 
 
@@ -40,9 +40,9 @@ protected:
 
     enum ERROR_TYPES
     {
-       OK = 0,
-       EMPTY_TAB,
-       MAX_ERROR_TYPE = 100
+        OK = 0,
+        EMPTY_TAB,
+        MAX_ERROR_TYPE = 100
     };
 
 public:
@@ -58,17 +58,11 @@ public:
         return add_table(tab->getDbfullname(), pcols, tcols, op, typ);
     }
 
-    virtual std::string add_table(std::string name,
-			  std::string pcols = "", std::string tcols = "",
-			  std::string op = "", int typ = LEFT ) = 0;
+    virtual std::string add_table(std::string name, std::string pcols = "", std::string tcols = "", std::string op = "", int typ = LEFT ) = 0;
     virtual void back( int deepid = 0 ) = 0;
     virtual std::string getActtable() = 0;
 
-    virtual void add_where(int notop, int leftbrace,
-	                   std::string lefttab, std::string leftval,
-			   std::string op,
-			   std::string righttab, std::string rightval,
-			   int rightbrace, std::string boolop) = 0;
+    virtual void add_where(int notop, int leftbrace, std::string lefttab, std::string leftval, std::string op, std::string righttab, std::string rightval, int rightbrace, std::string boolop) = 0;
 
     virtual std::string getFrom() = 0;
     virtual std::string getWhere() = 0;
@@ -76,42 +70,42 @@ public:
     static const char* getJoinname(int i)
     {
         if ( i >= 0 && i<MAX_JOINTYPES ) return join_names[i];
-	else return "";
+        else return "";
     }
 
     static std::string getJoinop(int i)
     {
         if ( i >= 0 && i<MAX_JOINOPS ) return join_ops[i];
-	else { char str[24]; sprintf(str, "join%x", i ); return str; }
+        else { char str[24]; sprintf(str, "join%x", i ); return str; }
     }
 
     static std::string getJoinop(std::string op)
     {
-	CsList o;
+        CsList o;
         std::string str;
-	unsigned int i,j;
+        unsigned int i,j;
 
-	o.setString(op);
+        o.setString(op);
 
-	if ( o.size() > 0 )
+        if ( o.size() > 0 )
         {
-	    j = CsList::Element(o[0]);
-	    if ( j < MAX_JOINOPS )
-	        str = join_ops[j];
-	    else
-	        str = "x";
+            j = CsList::Element(o[0]);
+            if ( j < MAX_JOINOPS )
+                str = join_ops[j];
+            else
+                str = "x";
         }
 
-	for ( i = 1; i<o.size(); ++i )
-	{
-	    j = CsList::Element(o[i]);
-	    if ( j < MAX_JOINOPS )
-	        str = str + "," + join_ops[j];
-	    else
-	        str = str + ",x";
+        for ( i = 1; i<o.size(); ++i )
+        {
+            j = CsList::Element(o[i]);
+            if ( j < MAX_JOINOPS )
+                str = str + "," + join_ops[j];
+            else
+                str = str + ",x";
         }
 
-	return str;
+        return str;
     }
 };
 
