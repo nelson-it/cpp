@@ -35,6 +35,7 @@ public:
 
     DbConnect *p_getConnect ( std::string dbname, std::string user = "", std::string passwd = "" );
     DbConnect *p_getConnect ( DbConnect *dbconnect );
+    DbConnect *resetConnect (DbConnect *dbconnect);
     DbConnect *p_getConnect ();
 
     DbCursor *p_getCursor();

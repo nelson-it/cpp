@@ -145,6 +145,8 @@ $(SHLIB_PRE)mnedbhttp.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_repository.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttputils_trust.cpp \
                 \
+                $(PROJECT_ROOT)/allg/db/dbhttp_compose.cpp \
+                \
                 $(PROJECT_ROOT)/allg/db/dbhttpadmin_table.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttpadmin_query.cpp \
                 \

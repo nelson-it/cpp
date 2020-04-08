@@ -299,6 +299,17 @@ void Http::make_error()
                 add_content(act_h,  "<v class=\"%s\">%s</v>\n", act_h->error_types[i].c_str(), ToString::mkxml(act_h->error_messages[i]).c_str());
             add_content(act_h,  "\n</error>");
         }
+        else if ( act_h->content_type == "text/json" )
+        {
+            std::string komma;
+            add_content(act_h,  ",\"meldungen\": [\n");
+            for (i = 0; i< act_h->error_messages.size(); ++i)
+            {
+                add_content(act_h,  (komma + "  [ \"%s\", \"%s\" ]\n" ).c_str(), act_h->error_types[i].c_str(), ToString::mkjson(act_h->error_messages[i]).c_str());
+                komma = ",";
+            }
+            add_content(act_h,  "]");
+        }
         else
         {
             for (i = 0; i< act_h->error_messages.size(); ++i)
@@ -342,6 +353,8 @@ void Http::make_error()
 
     if ( act_h->content_type == "text/xml" )
         add_content(act_h, "</result>");
+    else if ( act_h->content_type == "text/json" )
+        add_content(act_h, "}");
 
 }
 
@@ -429,8 +442,8 @@ void Http::write_header()
 		s->write(act_h->client, buffer, strlen(buffer));
 	}
 
-	sprintf(buffer, "Accpet-Ranges: bytes\r\n");
-	s->write(act_h->client, buffer, strlen(buffer));
+    sprintf(buffer, "Accpet-Ranges: bytes\r\n");
+    s->write(act_h->client, buffer, strlen(buffer));
 
 	sprintf(buffer, "Content-Length: %ld\r\n", act_h->content_length);
 	s->write(act_h->client, buffer, strlen(buffer));

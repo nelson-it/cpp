@@ -90,6 +90,7 @@ protected:
     {
         D_CON  = 1,
         D_SEND = 2,
+        D_CLIENT = 3,
         D_HEADER = 4,
         D_RAWHEADER = 4,
         D_HTTP = 5,
@@ -99,7 +100,6 @@ protected:
     virtual void read_header();
 
     virtual void read_postvalues();
-    virtual void check_user(HttpHeader *h) {};
     virtual int  check_group(HttpHeader *h, const char *group) { return false; }
 
 public:

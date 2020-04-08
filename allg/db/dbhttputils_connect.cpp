@@ -17,9 +17,13 @@ DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *analyse)
 	subprovider["//end.xml"]           = &DbHttpUtilsConnect::end;
 	subprovider["//reload.xml"]        = &DbHttpUtilsConnect::reload;
 
-	subprovider["/func/execute.xml"]   = &DbHttpUtilsConnect::func_execute_xml;
-	subprovider["/func/mod.xml"]       = &DbHttpUtilsConnect::func_mod_xml;
-	subprovider["/func/del.xml"]       = &DbHttpUtilsConnect::func_del_xml;
+    subprovider["/func/execute.xml"]   = &DbHttpUtilsConnect::func_execute_xml;
+    subprovider["/func/mod.xml"]       = &DbHttpUtilsConnect::func_mod_xml;
+    subprovider["/func/del.xml"]       = &DbHttpUtilsConnect::func_del_xml;
+
+    subprovider["/func/execute.json"]   = &DbHttpUtilsConnect::func_execute_json;
+    subprovider["/func/mod.json"]       = &DbHttpUtilsConnect::func_mod_json;
+    subprovider["/func/del.json"]       = &DbHttpUtilsConnect::func_del_json;
 
 	subprovider["/sql/execute.xml"]    = &DbHttpUtilsConnect::sql_execute_xml;
 
@@ -38,20 +42,24 @@ int DbHttpUtilsConnect::request(Database *db, HttpHeader *h)
 
     if ( ( i = subprovider.find(h->dirname + "/" + h->filename)) != subprovider.end() )
     {
-    if ( h->filename.find(".xml") == strlen(h->filename.c_str()) - 4 )
-	{
-		h->status = 200;
-		h->content_type = "text/xml";
-		add_content(h, 
-				"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-				h->charset.c_str());
-	    (this->*(i->second))(db, h);
-	}
-	else
-	{
-		h->status = 200;
-	    (this->*(i->second))(db, h);
-	}
+        if ( h->filename.find(".json") == strlen(h->filename.c_str()) - 5 )
+        {
+            h->status = 200;
+            h->content_type = "text/json";
+            (this->*(i->second))(db, h);
+        }
+        else if ( h->filename.find(".xml") == strlen(h->filename.c_str()) - 4 )
+        {
+            h->status = 200;
+            h->content_type = "text/xml";
+            add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+            (this->*(i->second))(db, h);
+        }
+        else
+        {
+            h->status = 200;
+            (this->*(i->second))(db, h);
+        }
 
 	return 1;
     }
@@ -77,52 +85,11 @@ void DbHttpUtilsConnect::end( Database *db, HttpHeader *h)
 	add_content(h,  "<body>ok</body>");
 }
 
-void DbHttpUtilsConnect::func_mod_xml(Database *db, HttpHeader *h)
+std::string DbHttpUtilsConnect::func_execute(Database *db, HttpHeader *h)
 {
     std::string stm;
     std::string komma;
-
-    char str[256];
-    char typ[256];
-    int i;
-
-    stm = "SELECT mne_catalog.pgplsql_proc_create ( ";
-
-    i = 0;
-    sprintf(str, "par%d", i);
-    sprintf(typ, "typ%d", i);
-    while ( h->vars.exists(str) )
-    {
-	if ( h->vars[typ] == "" || h->vars[typ] == "text" )
-	    stm += komma
-	        + "E'"
-	        +  ToString::mascarade(h->vars[str].c_str(), "'\\")
-		+ "'";
-	else
-	    stm += komma
-	        +  ToString::mascarade(h->vars[str].c_str(), "'\\");
-
-	komma = ", ";
-	i++;
-
-	sprintf(str, "par%d", i);
-	sprintf(typ, "typ%d", i);
-    }
-
-    stm += ")";
-    if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
-    	add_content(h, "<body><schema>%s</schema><fullname>%s</fullname></body>",h->vars["par0"].c_str(), h->vars["par1"].c_str());
-    else
-    	add_content(h, "<body>error</body>");
-
-    if ( h->vars["sqlend"] != "" )
-        db->p_getConnect()->end();
-
-}
-void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
-{
-    std::string stm;
-    std::string komma;
+    std::string result;
 
     char str[256];
     char typ[256];
@@ -135,11 +102,11 @@ void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
     sprintf(typ, "typ%d", i);
     while ( h->vars.exists(str) )
     {
-	if ( h->vars[typ] == "" || h->vars[typ] == "text" )
-	    stm += komma
-	        + "E'"
-	        +  ToString::mascarade(h->vars[str].c_str(), "'\\")
-		+ "'";
+    if ( h->vars[typ] == "" || h->vars[typ] == "text" )
+        stm += komma
+            + "E'"
+            +  ToString::mascarade(h->vars[str].c_str(), "'\\")
+        + "'";
     else if ( h->vars[typ] == "double" )
     {
         stm += komma + db->p_getConnect()->getValue(DbConnect::DOUBLE, h->vars[str]);
@@ -159,52 +126,146 @@ void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
     else
     {
         msg.perror(E_TYPE, "#mne_lang#Unbekanter typ <%s>", h->vars[typ].c_str());
-        add_content(h, "<body>error</body>");
+        result = "error";
         if ( h->vars["sqlend"] != "" )
             db->p_getConnect()->end();
 
-        return;
+        return result;
     }
 
-	komma = ", ";
-	i++;
+    komma = ", ";
+    i++;
 
-	sprintf(str, "par%d", i);
-	sprintf(typ, "typ%d", i);
+    sprintf(str, "par%d", i);
+    sprintf(typ, "typ%d", i);
     }
 
     stm += ")";
     if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
     {
-    	DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
-    	if ( r->size() == 0 )
-    	  add_content(h, "<body>ok</body>");
-    	else
-    		add_content(h, "<body><result>%s</result></body>",ToString::mkxml(((*r)[0][0]).format(&msg)).c_str());
+        DbConnect::ResultMat *r = db->p_getConnect()->p_getResult();
+        if ( r->size() == 0 )
+          result = "ok";
+        else
+            result = ((*r)[0][0]).format(&msg);
     }
     else
-    	add_content(h, "<body>error</body>");
+        result = "error";
 
     if ( h->vars["sqlend"] != "" )
         db->p_getConnect()->end();
 
+    return result;
 }
-void DbHttpUtilsConnect::func_del_xml(Database *db, HttpHeader *h)
+
+int DbHttpUtilsConnect::func_mod(Database *db, HttpHeader *h)
 {
     std::string stm;
     std::string komma;
+    int result;
+
+    char str[256];
+    char typ[256];
+    int i;
+
+    stm = "SELECT mne_catalog.pgplsql_proc_create ( ";
+
+    i = 0;
+    sprintf(str, "par%d", i);
+    sprintf(typ, "typ%d", i);
+    while ( h->vars.exists(str) )
+    {
+    if ( h->vars[typ] == "" || h->vars[typ] == "text" )
+        stm += komma
+            + "E'"
+            +  ToString::mascarade(h->vars[str].c_str(), "'\\")
+        + "'";
+    else
+        stm += komma
+            +  ToString::mascarade(h->vars[str].c_str(), "'\\");
+
+    komma = ", ";
+    i++;
+
+    sprintf(str, "par%d", i);
+    sprintf(typ, "typ%d", i);
+    }
+
+    stm += ")";
+    result = db->p_getConnect()->execute(stm.c_str());
+
+    if ( h->vars["sqlend"] != "" )
+        db->p_getConnect()->end();
+
+    return result;
+
+}
+
+int DbHttpUtilsConnect::func_del(Database *db, HttpHeader *h)
+{
+    std::string stm;
+    std::string komma;
+    int result;
 
     stm  = "SELECT mne_catalog.pgplsql_proc_drop ('";
     stm += h->vars["schemaInput.old"] + "','" + h->vars["fullnameInput.old"] + "')";
 
-    if ( db->p_getConnect()->execute(stm.c_str()) == 0 )
-    	add_content(h, "<body>ok</body>");
-    else
-    	add_content(h, "<body>error</body>");
+   result = db->p_getConnect()->execute(stm.c_str());
 
     if ( h->vars["sqlend"] != "" )
         db->p_getConnect()->end();
 
+    return result;
+}
+
+void DbHttpUtilsConnect::func_execute_xml(Database *db, HttpHeader *h)
+{
+    std::string result = this->func_execute(db, h);
+    if ( result != "error" )
+        add_content(h, "<body><result>%s</result></body>", ToString::mkxml(result).c_str());
+    else
+        add_content(h, "<body>error</body>");
+}
+
+void DbHttpUtilsConnect::func_mod_xml(Database *db, HttpHeader *h)
+{
+    if ( this->func_mod(db, h) == 0 )
+        add_content(h, "<body><schema>%s</schema><fullname>%s</fullname></body>",h->vars["par0"].c_str(), h->vars["par1"].c_str());
+    else
+        add_content(h, "<body>error</body>");
+}
+
+void DbHttpUtilsConnect::func_del_xml(Database *db, HttpHeader *h)
+{
+    if ( this->func_del(db, h) )
+        add_content(h, "<body>ok</body>");
+    else
+        add_content(h, "<body>error</body>");
+}
+
+void DbHttpUtilsConnect::func_execute_json(Database *db, HttpHeader *h)
+{
+    std::string result = ToString::mkjson(this->func_execute(db, h));
+    if ( result != "error" )
+        add_content(h, "{ \"result\" : \"%s\",\n \"ids\" : [ \"result\" ],\n \"values\" : [ \"%s\" ]\n",result.c_str(), result.c_str());
+    else
+        add_content(h, "{ \"result\" : \"error\"");
+}
+
+void DbHttpUtilsConnect::func_mod_json(Database *db, HttpHeader *h)
+{
+    if ( this->func_mod(db, h) == 0 )
+        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"schema\", \"fullname\" ],\n \"values\" : [ \"%s\", \"%s\" ]\n", h->vars["par0"].c_str(), h->vars["par1"].c_str());
+    else
+        add_content(h, "{ \"result\" : \"error\"");
+}
+
+void DbHttpUtilsConnect::func_del_json(Database *db, HttpHeader *h)
+{
+    if ( this->func_del(db, h) )
+        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"result\" ],\n \"values\" : [ \"ok\" ]\n");
+    else
+        add_content(h, "{ \"result\" : \"error\"");
 }
 
 void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)

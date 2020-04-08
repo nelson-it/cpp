@@ -19,9 +19,13 @@ DbHttpProvider(h), msg("DbHttpUtilsTable")
     subprovider["insert.xml"] = &DbHttpUtilsTable::insert_xml;
     subprovider["modify.xml"] = &DbHttpUtilsTable::modify_xml;
     subprovider["delete.xml"] = &DbHttpUtilsTable::delete_xml;
-    subprovider["data.xml"] = &DbHttpUtilsTable::data_xml;
+    subprovider["data.xml"]  = &DbHttpUtilsTable::data_xml;
 
-    subprovider["modify.html"] = &DbHttpUtilsTable::modify_html;
+    subprovider["insert.json"] = &DbHttpUtilsTable::insert_json;
+    subprovider["modify.json"] = &DbHttpUtilsTable::modify_json;
+    subprovider["delete.json"] = &DbHttpUtilsTable::delete_json;
+    subprovider["data.json"] = &DbHttpUtilsTable::data_json;
+
     subprovider["file.dat"] = &DbHttpUtilsTable::file_dat;
 
     if ( noadd == 0 )
@@ -222,7 +226,7 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
 
     add_content(h,  "</head>");
 
-   if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
+    if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
     {
         DbConnect::ResultMat::iterator rm;
         DbConnect::ResultVec::iterator rv, re;
@@ -259,6 +263,115 @@ void DbHttpUtilsTable::data_xml(Database *db, HttpHeader *h)
     db->release(tab);
     return;
 }
+
+void DbHttpUtilsTable::data_json(Database *db, HttpHeader *h)
+{
+    std::string schema;
+    std::string table;
+    unsigned int i;
+
+    DbTable *tab;
+    DbConnect::ResultMat *r;
+    DbTable::ValueMap where;
+    DbTable::ColumnVec vals;
+    unsigned int anzahl_cols;
+    std::string lang;
+    std::string::size_type pos;
+    std::vector<std::string>::iterator si;
+    std::string ids, labels, typs, formats, regexps;
+    std::string komma0,komma1;
+
+    h->status = 200;
+    h->content_type = "text/json";
+
+    schema = h->vars["schema"];
+    table = h->vars["table"];
+
+    tab = db->p_getTable(schema, table);
+
+    CsList wop("");
+    CsList cols(h->vars["cols"]);
+    CsList sorts(h->vars["scols"]);
+    CsList shows(h->vars["showcols"]);
+
+    mk_selectcolumns(db, h, tab, vals, anzahl_cols, where, wop);
+
+    lang = msg.getLang();
+    if ( anzahl_cols > 0 && vals[0].text.find(lang) == vals[0].text.end() )
+        lang = "de";
+
+    ids = labels = typs = formats = regexps = "";
+    for (i=0; i < anzahl_cols; ++i)
+    {
+        ids     += komma0 + "\"" + vals[i].name + "\"";
+        labels  += komma0 + "\"" + vals[i].text[lang] + "\"";
+        typs    += komma0 + "\"" + std::to_string(( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp ) + "\"";
+        formats += komma0 + "\"\"";
+        regexps  += komma0 + "[ \"" + vals[i].regexp.c_str() + "\", \"" + vals[i].regexpmod.c_str() + "\", \"" + vals[i].regexphelp[lang] + "\" ] ";
+
+        komma0 = ",";
+    }
+
+    add_content(h, "{\n"
+            "  \"ids\"      : [ " + ids + " ],\n"
+            "  \"labels\"   : [ " + labels + " ],\n"
+            "  \"typs\"     : [ " + typs + " ],\n"
+            "  \"formats\"  : [ " + formats + " ],\n"
+            "  \"regexps\"  : [ " + regexps + " ]");
+
+    for ( si=sorts.begin(); si != sorts.end(); ++si)
+    {
+        if ( (pos = si->find("#mne_langid#")) != std::string::npos )
+        {
+            si->replace(pos, 12, lang.c_str());
+        }
+    }
+
+    if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
+    {
+        DbConnect::ResultMat::iterator rm;
+        DbConnect::ResultVec::iterator rv, re;
+
+        r = tab->select(&vals, &where, &wop, &sorts, ( h->vars["distinct"] != "" && h->vars["distinct"] != "0" && h->vars["distinct"] != "false" ) );
+        if (h->vars["sqlend"] != "")
+            db->p_getConnect()->end();
+
+        if (h->vars["lastquery"] != "" )
+        {
+            msg.pmessage(0,"Letze Abfrage:");
+            msg.ignore_lang = 1;
+            msg.line("%s", tab->getLaststatement().c_str());
+        }
+
+        add_content(h,  ",\n  \"values\" : [\n");
+        komma0="";
+        for (rm = r->begin(); rm != r->end(); ++rm, ++i)
+        {
+            komma1 = "";
+            add_content(h,  komma0 + "    [");
+            rv = (*rm).begin();
+            re = (*rm).end();
+            for (i=0; rv != re; ++rv,++i)
+            {
+                if ( vals[i].dpytyp == DbConnect::BINARY )
+                    add_content(h,  komma1 + "\"binary\"");
+                else
+                    add_content(h, ( komma1 + "\"%s\"").c_str(), ToString::mkjson( rv->format(&msg)).c_str());
+                komma1 = ',';
+            }
+
+            add_content(h,  " ]");
+            komma0 = ",\n";
+        }
+
+        add_content(h,  "\n ]");
+    }
+
+    add_content(h,"\n" );
+    db->release(tab);
+    return;
+}
+
 void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
 {
     std::string schema;
@@ -313,7 +426,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
 
         h->content_type = (char*)(((*r)[0])[1]);
         if ( h->content_type == "" )
-          h->content_type = "application/octet-stream";
+            h->content_type = "application/octet-stream";
 
         CryptBase64 base64;
         unsigned char *out = (unsigned char*) new char[(*r)[0][0].length];
@@ -328,7 +441,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
         db->p_getConnect()->end();
 }
 
-void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
+void DbHttpUtilsTable::insert(Database *db, HttpHeader *h)
 {
     std::string schema;
     std::string table;
@@ -346,11 +459,6 @@ void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
     table = h->vars["table"];
 
     h->status = 200;
-    h->content_type = "text/xml";
-
-    add_content(h, 
-            "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-            h->charset.c_str());
 
     act_table = db->p_getTable(schema, table);
 
@@ -382,17 +490,49 @@ void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
     if ( act_table->insert(&vals) == 0 )
     {
         DbTable::ValueMap::iterator i;
-        add_content(h,  "<body>");
+        if ( h->content_type == "text/xml")
+        {
+        add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>", h->charset.c_str());
         for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
             add_content(h,  "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
         add_content(h,  "</body>");
+        }
+        else
+        {
+            std::string ids, values, komma;
+
+            for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
+            {
+                ids    += komma + '"' + i->first + '"';
+                values += komma + '"' + ToString::mkjson(i->second.value) + '"';
+                komma = ',';
+            }
+            add_content(h,  "{ \"result\" : \"ok\",\n \"ids\" : [ %s ],\n \"values\" : [ %s ]\n", ids.c_str(), values.c_str());
+        }
     }
     else
-        add_content(h,  "<body>error</body>");
-
+    {
+        if ( h->content_type == "text/xml" )
+            add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        else
+            add_content(h, "{ \"result\" : \"error\"");
+    }
     db->release(act_table);
     return;
 }
+
+void DbHttpUtilsTable::insert_json(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/json";
+    insert(db, h);
+}
+
+void DbHttpUtilsTable::insert_xml(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/xml";
+    insert(db, h);
+}
+
 
 void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
 {
@@ -465,25 +605,18 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         msg.perror(E_MOD, "Modifizieren der gesammten Tabelle nicht gestattet");
         if ( h->content_type == "text/xml" )
         {
-            add_content(h, 
-                    "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-                    h->charset.c_str());
+            add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
             add_content(h,  "<body>error</body>");
         }
-        else if ( h->content_type == "text/html" )
+        else if ( h->content_type == "text/json")
         {
-            if ( h->vars["script"] != "" )
-            {
-                add_content(h, "<script type=\"text/javascript\">\n");
-                add_content(h, "<!--\n");
-                add_content(h, "%s\n", h->vars["script"].c_str());
-                add_content(h, "//-->\n");
-                add_content(h, "</script>\n");
-            }
+            add_content(h, "{\n\"result\" : \"error\"");
         }
     }
     else if ( act_table->modify(&vals, &where) == 0 )
     {
+        DbTable::ValueMap::iterator i;
+
         if (h->vars["modifyinsert"] != "")
         {
             r = act_table->select(&vals, &where_new);
@@ -493,59 +626,45 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
 
         if ( h->content_type == "text/xml" )
         {
-            DbTable::ValueMap::iterator i;
-            add_content(h, 
-                    "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-                    h->charset.c_str());
+            add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
             add_content(h,  "<body>");
             for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
                 add_content(h,  "<%s>%s</%s>", ToString::mkxml(i->first).c_str(), ToString::mkxml(i->second.value).c_str(), ToString::mkxml(i->first).c_str());
             add_content(h,  "</body>");
         }
-        else if ( h->content_type == "text/html")
+        else if ( h->content_type == "text/json")
         {
-            if ( h->vars["script"] != "" )
+            std::string ids, values, komma;
+
+            for ( i=orig_vals.begin(); i != orig_vals.end(); ++i )
             {
-                add_content(h, "<script type=\"text/javascript\">\n");
-                add_content(h, "<!--\n");
-                add_content(h, "%s\n", h->vars["script"].c_str());
-                add_content(h, "//-->\n");
-                add_content(h, "</script>\n");
+                ids    += komma + '"' + i->first + '"';
+                values += komma + '"' + ToString::mkjson(i->second.value) + '"';
+                komma = ',';
             }
-            add_content(h, "ok");
+            add_content(h,  "{\n\"result\" : \"ok\", \"ids\" : [ %s ],\n\"values\" : [ %s ]\n", ids.c_str(), values.c_str());
         }
     }
     else
     {
         if ( h->content_type == "text/xml" )
         {
-            add_content(h, 
-                    "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-                    h->charset.c_str());
+            add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
             add_content(h,  "<body>error</body>");
         }
-        else if ( h->content_type == "text/html" )
+        else if ( h->content_type == "text/json")
         {
-            if ( h->vars["script"] != "" )
-            {
-                add_content(h, "<script type=\"text/javascript\">\n");
-                add_content(h, "<!--\n");
-                add_content(h, "%s\n", h->vars["script"].c_str());
-                add_content(h, "//-->\n");
-                add_content(h, "</script>\n");
-            }
-            add_content(h,  "error");
+            add_content(h, "{\n\"result\" : \"error\"");
         }
-
     }
 
     db->release(act_table);
     return;
 }
 
-void DbHttpUtilsTable::modify_html(Database *db, HttpHeader *h)
+void DbHttpUtilsTable::modify_json(Database *db, HttpHeader *h)
 {
-    h->content_type = "text/html";
+    h->content_type = "text/json";
     modify(db, h);
 }
 
@@ -555,7 +674,7 @@ void DbHttpUtilsTable::modify_xml(Database *db, HttpHeader *h)
     modify(db, h);
 }
 
-void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
+void DbHttpUtilsTable::del(Database *db, HttpHeader *h)
 {
     std::string schema;
     std::string table;
@@ -569,9 +688,14 @@ void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
     h->status = 200;
     h->content_type = "text/xml";
 
-    add_content(h, 
-            "<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-            h->charset.c_str());
+    if ( h->content_type == "text/xml" )
+     {
+         add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+     }
+     else if ( h->content_type == "text/json")
+     {
+         add_content(h, "{\n");
+     }
 
     schema = h->vars["schema"];
     table = h->vars["table"];
@@ -590,16 +714,38 @@ void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
 
     if ( where.size() == 0 )
     {
-        msg.perror(E_DEL, "Löschen der gesammten Tabelle nicht gestattet");
-        add_content(h,  "<body>error</body>");
+        msg.perror(E_DEL, "Löschen der gesammten Tabelle nicht gestattet"); add_content(h,  "<body>error</body>");
     }
     else if ( act_table->del(&where) == 0 )
-        add_content(h,  "<body>ok</body>");
+    {
+        if ( h->content_type == "text/xml" )
+            add_content(h,  "<body>ok</body>");
+        else
+            add_content(h, "\"result\" : \"ok\"");
+    }
     else
-        add_content(h,  "<body>error</body>");
+    {
+        if ( h->content_type == "text/xml" )
+             add_content(h,  "<body>error</body>");
+        else
+            add_content(h, "\"result\" : \"error\"");
+    }
 
     db->release(act_table);
 
     return;
 }
+
+void DbHttpUtilsTable::delete_json(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/json";
+    del(db, h);
+}
+
+void DbHttpUtilsTable::delete_xml(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/xml";
+    del(db, h);
+}
+
 

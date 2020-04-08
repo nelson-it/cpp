@@ -61,6 +61,7 @@ public:
 
     virtual DbConnect *p_getConnect ( std::string dbname, std::string user = "", std::string passwd = "" ) = 0;
     virtual DbConnect *p_getConnect( DbConnect *dbconnect) = 0;
+    virtual DbConnect *resetConnect (DbConnect *dbconnect) = 0;
     virtual DbConnect *p_getConnect () = 0;
 
     virtual int have_connection ();

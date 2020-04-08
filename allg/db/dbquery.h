@@ -13,14 +13,16 @@
 
 class Database;
 class DbTable;
+class DbQuery;
 
 class DbQuerySingle
 {
+    friend class DbQuery;
+
     Message msg;
 
     Database *dbadmin;
     Database *db;
-    DbCursor *cur;
 
     std::string schema;
     std::string name;
@@ -80,31 +82,11 @@ public:
     void setName(std::string schema, std::string name, CsList *cols, std::string unionnum = "");
     void setCols(CsList *cols);
 
-    void open(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
-    void open(DbTable::ValueMap *where = NULL, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
-    void close()
-    {
-        cur->close();
-    }
-    int eof()
-    {
-        return cur->eof();
-    }
-
-    DbConnect::ResultVec next()
-    {
-        return cur->next();
-    }
-    DbConnect::ResultVec *p_next()
-    {
-        return cur->p_next();
-    }
-
     DbConnect::ResultMat *select(DbTable::ValueMap *where, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
     DbConnect::ResultMat *select(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL);
 
     void start_cols();
-    int getCols(std::string *id, std::string *name, long *typ, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL);
+    int getCols(std::string *id, std::string *name = NULL, long *typ = NULL, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL);
 
     std::string::size_type find(std::string id)
     {
@@ -203,44 +185,10 @@ public:
     }
     virtual ~DbQuery()
     {
+        delete this->act_query;
     }
 
     void setName(std::string schema, std::string name, CsList *cols, std::string unionnum = "");
-
-    void open(CsList *wcol, CsList *wval, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
-    {
-        if ( this->act_query != NULL ) this->act_query->open(wcol, wval, wops, sort, params);
-    }
-
-    void open(DbTable::ValueMap *where = NULL, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
-    {
-        if ( this->act_query != NULL ) this->act_query->open(where, wops, sort, params);
-    }
-    void close()
-    {
-        if ( this->act_query != NULL ) this->act_query->close();
-    }
-    int eof()
-    {
-        return ( this->act_query != NULL ) ? this->act_query->eof() : 1;
-    }
-
-    DbConnect::ResultVec next()
-    {
-        if ( this->act_query != NULL )
-        {
-            return this->act_query->next();
-        }
-        else
-        {
-            DbConnect::ResultVec v;
-            return v;
-        }
-    }
-    DbConnect::ResultVec *p_next()
-    {
-        return ( this->act_query != NULL ) ? this->act_query->p_next() : NULL;
-    }
 
     DbConnect::ResultMat *select(DbTable::ValueMap *where, CsList *wops = NULL, CsList *sort = NULL, CsList *params = NULL)
     {
@@ -256,7 +204,7 @@ public:
     {
         if ( this->act_query != NULL )  this->act_query->start_cols();
     }
-    int getCols(std::string *id, std::string *name, long *typ, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL)
+    int getCols(std::string *id, std::string *name = NULL, long *typ = NULL, std::string *format = NULL, std::string *regexp = NULL, std::string *regexphelp = NULL, std::string *regexpmod = NULL)
     {
         return ( this->act_query != NULL ) ?  this->act_query->getCols(id, name, typ, format, regexp, regexphelp, regexpmod) : 0;
     }

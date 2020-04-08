@@ -63,6 +63,20 @@ DbConnect *PgDatabase::p_getConnect(DbConnect *dbconnect)
     return con;
 }
 
+DbConnect *PgDatabase::resetConnect(DbConnect *dbconnect)
+{
+    if (con != NULL) delete con;
+
+    con = new PgConnect((PgConnect*)dbconnect);
+    if (!con->have_connection())
+    {
+        delete con;
+        con = NULL;
+    }
+
+    return con;
+}
+
 DbCursor *PgDatabase::p_getCursor()
 {
     last_cur = new PgCursor((PgConnect *) con);

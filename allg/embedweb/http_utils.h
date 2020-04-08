@@ -37,9 +37,15 @@ class HttpUtils : public HttpProvider
     void mk_window(HttpHeader *h, char *str);
 
     void time        ( HttpHeader *h);
-    void logout      ( HttpHeader *h);
     void file        ( HttpHeader *h);
-    void locale      ( HttpHeader *h);
+
+    void logout_xml   ( HttpHeader *h);
+    void logout_json  ( HttpHeader *h);
+
+    void locale_xml   ( HttpHeader *h);
+    void locale_json  ( HttpHeader *h);
+
+    void iconv        ( HttpHeader *h);
 
 public:
     HttpUtils( Http *h );

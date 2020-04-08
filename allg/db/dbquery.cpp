@@ -24,7 +24,7 @@ pthread_mutex_t DbQuery::query_mutex = PTHREAD_MUTEX_INITIALIZER;
                            COALESCE(NULLIF(t4.dpytype, -1), NULLIF(tcn.dpytype,-1), NULLIF(t0.fieldtyp,-1), -1),\
                            t0.groupby,\
                            t0.cannull,\
-                           COALESCE( NULLIF(t6.regexp, ''), NULLIF(t4.regexp, ''), NULLIF( t5.regexp, ''), NULLIF(rtcn.regexp, ''), NULLIF(tcn.regexp,'')),\
+                           COALESCE( NULLIF(t6.regexp, ''), NULLIF(t4.regexp, ''), NULLIF( t5.regexp, ''), NULLIF(rtcn.regexp, ''), NULLIF(tcn.regexp,''), '.+|^$'),\
                            COALESCE(NULLIF(t7.text_de,''), NULLIF(t8.text_de,''), NULLIF(trtcn.text_de,''), NULLIF(ttcn.text_de,''), NULLIF(t6.regexphelp,''), NULLIF(t4.regexphelp,''), NULLIF(t5.regexphelp,''), NULLIF(rtcn.regexphelp,''), NULLIF(tcn.regexphelp,'')),\
                            COALESCE( NULLIF(t6.regexpmod,''), NULLIF(t4.regexpmod,''), NULLIF( t5.regexpmod,''), NULLIF(rtcn.regexpmod,''), NULLIF(tcn.regexpmod,'')),\
                            t0.musthaving \
@@ -61,7 +61,6 @@ DbQuerySingle::DbQuerySingle(Database *db) :
     this->db = db;
     this->dbadmin = db->getDatabase();
     this->dbadmin->p_getConnect(db->p_getConnect());
-    this->cur = db->p_getCursor();
     this->errorfound = 0;
 }
 
@@ -75,7 +74,6 @@ DbQuerySingle::~DbQuerySingle()
     for (j = joins.begin(); j != joins.end(); ++j)
         dbadmin->release(*j);
 
-    db->release(cur);
     delete this->dbadmin;
 }
 
@@ -775,20 +773,11 @@ void DbQuerySingle::setCols(CsList *cols)
     }
 }
 
-void DbQuerySingle::open(CsList *wcol, CsList *wval, CsList *wop, CsList *sort, CsList *params)
-{
-    cur->open((char *) mk_statement(wcol, wval, wop, sort, params).c_str());
-}
-
 DbConnect::ResultMat * DbQuerySingle::select(CsList *wcol, CsList *wval, CsList *wop, CsList *sort, CsList *params)
 {
     db->p_getConnect()->execute((char *) mk_statement(wcol, wval, wop, sort, params).c_str());
     return db->p_getConnect()->p_get_result();
 
-}
-void DbQuerySingle::open(DbTable::ValueMap *w, CsList *wop, CsList *sort, CsList *params)
-{
-    cur->open((char *) mk_statement(w, wop, sort, params).c_str());
 }
 
 DbConnect::ResultMat * DbQuerySingle::select(DbTable::ValueMap *w, CsList *wop, CsList *sort, CsList *params)
@@ -846,14 +835,17 @@ void DbQuery::setName(std::string schema, std::string name, CsList *cols, std::s
 
     pthread_mutex_lock(&query_mutex);
 
-    if ( ( i = this->querys.find(id))  != this->querys.end() )
+    if ( 0 && ( i = this->querys.find(id))  != this->querys.end() )
     {
         this->act_query = i->second;
+        this->act_query->dbadmin->resetConnect(this->db->p_getConnect());
+        this->act_query->db = this->db;
         this->act_query->setCols(cols);
         pthread_mutex_unlock(&query_mutex);
     }
     else
     {
+        // wird im destructor deleted kein cache im Moment
         this->act_query = new DbQuerySingle(this->db);
         this->querys[id] = this->act_query;
         pthread_mutex_unlock(&query_mutex);

@@ -44,14 +44,19 @@ public:
     virtual std::string getPath() { return "db/utils/table"; }
     virtual int request (Database *db, HttpHeader *h);
 
+    void insert (Database *db, HttpHeader *h);
     void modify (Database *db, HttpHeader *h);
+    void del    (Database *db, HttpHeader *h);
 
     void insert_xml (Database *db, HttpHeader *h);
     void modify_xml (Database *db, HttpHeader *h);
     void delete_xml (Database *db, HttpHeader *h);
     void data_xml   (Database *db, HttpHeader *h);
 
-    void modify_html (Database *db, HttpHeader *h);
+    void insert_json (Database *db, HttpHeader *h);
+    void modify_json (Database *db, HttpHeader *h);
+    void delete_json (Database *db, HttpHeader *h);
+    void data_json (Database *db, HttpHeader *h);
 
     void file_dat(Database *db, HttpHeader *h);
 };

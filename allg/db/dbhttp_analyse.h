@@ -86,7 +86,8 @@ private:
 	{
 		D_CON = 1,
 		D_CLIENT = 3,
-		D_MUTEX = 6
+		D_MUTEX = 6,
+		D_TIMEOUT = 7,
 	};
 
 	pthread_mutex_t cl_mutex;
@@ -106,7 +107,6 @@ private:
 	std::string realm;
 	std::string cookieid;
 
-	void check_user(HttpHeader *h);
 	void del_client(unsigned int clientid);
 
 
@@ -131,6 +131,7 @@ public:
 	virtual void connect( int client );
 	virtual void disconnect( int client );
 
+	void check_user(HttpHeader *h);
 
 	Client *getClient(std::string cookie)
 	{

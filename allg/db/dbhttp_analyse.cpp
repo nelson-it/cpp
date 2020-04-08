@@ -130,7 +130,6 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 	std::string cookie;
 	Clients::iterator ic;
 	unsigned int client;
-
 	client = h->client;
 	cookie = h->cookies[cookieid.c_str()];
 
@@ -143,6 +142,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
 	    a1 = ic->second.host;
 	    a2 = s->getHost(client);
+        h->cookies.addCookie(cookieid, ic->first);
 
 	    msg.pdebug(D_CLIENT, "prüfe auf Gleichheit %d", client);
 		msg.pdebug(D_CLIENT, "host %s:%s", a1.c_str(), a2.c_str());
@@ -290,8 +290,10 @@ void DbHttpAnalyse::del_client(unsigned int client)
     msg.pdebug(D_CLIENT, "lösche client %d", client);
 
     if (this->tv_sec == 0)
+    {
         setWakeup(time(NULL) + this->dbtimeout);
-    msg.pdebug(D_CON, "Nächstes Aufräumen %s", Message::timestamp(this->tv_sec).c_str());
+        msg.pdebug(D_TIMEOUT, "Nächstes Aufräumen %s", Message::timestamp(this->tv_sec).c_str());
+    }
 }
 
 
@@ -313,19 +315,19 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 	int need_timeout = 0;
 
     lock();
-	msg.pdebug(D_CON, "Starte aufräumen");
+	msg.pdebug(D_CLIENT, "Starte aufräumen");
 	c = clients.begin();
 
 	while (c != clients.end() )
 	{
 		for (c = clients.begin(); c != clients.end(); ++c)
 		{
-		    msg.pdebug(D_CON, "client %s lastconnect %s", c->first.c_str(), ctime( &(c->second.last_connect)));
+		    msg.pdebug(D_CLIENT, "client %s lastconnect %s", c->first.c_str(), ctime( &(c->second.last_connect)));
 			if (c->second.last_connect != 0)
 			{
 				if (c->second.last_connect + dbtimeout <= time(NULL) )
 				{
-					msg.pdebug(D_CON, "lösche client endgültig %s", c->first.c_str());
+					msg.pdebug(D_CLIENT, "lösche client endgültig %s", c->first.c_str());
 					c->second.lock();
 					delete c->second.db;
 					clients.erase(c);
@@ -340,7 +342,7 @@ void DbHttpAnalyse::timeout(long sec, long usec, long w_sec, long w_usec)
 		}
 	}
 
-	msg.pdebug(D_CON, "Beende aufräumen need_timeout %d", need_timeout);
+	msg.pdebug(D_CLIENT, "Beende aufräumen need_timeout %d", need_timeout);
 
 	if (need_timeout == 0)
 		setWakeup(0);
