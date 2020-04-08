@@ -197,11 +197,11 @@ protected:
 
     enum DEBUG_TYPE
     {
-        D_CON  = 1,
         D_SEND = 2,
         D_HEADER = 4,
         D_RAWHEADER = 4,
         D_HTTP = 5,
+        D_CON  = 6,
     };
 
 public:

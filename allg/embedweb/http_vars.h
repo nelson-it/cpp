@@ -32,6 +32,10 @@ public:
 
     void setVars( std::string vars);
     void setMultipart( std::string boundary, char *data);
+    void setVar(std::string id, std::string value)
+    {
+        vars[id] = value;
+    }
 
     Vars *p_getVars() { return &vars; }
     Vars *p_getExtraVars() { return &extravars; }

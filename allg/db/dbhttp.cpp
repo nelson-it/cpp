@@ -15,7 +15,7 @@
 
 
 DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db, int register_it) :
-        Http(s, NULL ), msg("DbHttp")
+        Http(s, NULL), msg("DbHttp")
 {
     Argument a;
     char str[1024];
@@ -79,6 +79,7 @@ void DbHttp::make_content(HttpHeader *h)
     if ( h != NULL ) act_h = h;
     if ( act_h == NULL ) return;
 
+    this->analyse->check_user(act_h);
     make_answer();
     make_error();
     make_translate();
@@ -150,6 +151,8 @@ void DbHttp::make_answer()
             act_h->dirname = "/main/login";
             act_h->filename = "login.html";
             act_h->content_type = "text/html";
+            act_h->error_messages.clear();
+            act_h->error_types.clear();
             act_h->setstatus = 201;
             Http::make_answer();
         }

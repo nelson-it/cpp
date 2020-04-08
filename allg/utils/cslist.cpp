@@ -67,6 +67,7 @@ CsList::CsList(std::vector<std::string> *elements, int ignore_lastempty)
     this->ignore_lastempty = ignore_lastempty;
     f = list.end();
     cs_string_valid = 0;
+    sep = ',';
 }
 
 CsList::CsList(std::vector<std::string> elements, int ignore_lastempty)
@@ -75,6 +76,7 @@ CsList::CsList(std::vector<std::string> elements, int ignore_lastempty)
     this->ignore_lastempty = ignore_lastempty;
     f = list.end();
     cs_string_valid = 0;
+    sep = ',';
 }
 
 void CsList::mk_cs_string(char sep)

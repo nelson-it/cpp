@@ -176,11 +176,6 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
 
     static int in_get = 0;
 
-    if (in_get || !db->have_connection()) return str;
-
-    in_get = 1;
-
-    pthread_mutex_lock(&mutex);
     std::string stm, s;
     char *c;
     int result;
@@ -191,6 +186,7 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
     {
         if ((is = il->second.find(str)) != il->second.end())
         {
+            in_get = 0;
             pthread_mutex_unlock(&mutex);
             return is->second;
         }
@@ -202,6 +198,11 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
         cache[this->lang] = l;
         il = cache.find(this->lang);
     }
+
+    pthread_mutex_lock(&mutex);
+    if (in_get || !db->have_connection()) return str;
+
+    in_get = 1;
 
     s = str;
     db->p_getConnect()->mk_string(s);

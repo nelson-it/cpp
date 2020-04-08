@@ -81,6 +81,7 @@ HttpRequest::HttpRequest(ServerSocket *s)
 	content_types["xml"]  = "text/xml";
 	content_types["css"]  = "text/css";
 	content_types["js"]   = "text/javascript";
+	content_types["mjs"]  = "text/javascript";
 
 	content_types["gz"]   = "application/gzip";
 	content_types["gtar"] = "application/x-gtar";

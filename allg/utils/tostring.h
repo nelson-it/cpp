@@ -8,11 +8,11 @@
 class ToString
 {
 public:
-    enum STRIP_TYPE
+    enum CR_MASC_TYPE
     {
-        STRIP_NO,
-        STRIP_CLEAR,
-        STRIP_CHANGE
+        MASC_CR,
+        MASC_CR_NO,
+        MASC_CR_CLEAR,
     };
 
     static std::string convert(long i, const char *format = "%ld")
@@ -45,23 +45,6 @@ public:
         return temp;
     }
 
-    static void mascarade(std::string &str, const char c = '\'',
-            STRIP_TYPE strip = STRIP_NO, const char *sc = "\\n")
-    {
-        std::string::size_type i = 0;
-        while ( (i = str.find(c, i) ) != std::string::npos)
-        {
-            str.insert(i, 1, '\\');
-            i += 2;
-        }
-
-        if (strip == STRIP_CLEAR)
-            sc = "";
-        if (strip != STRIP_NO)
-            for (i = 0; (i = str.find_first_of("\n", i) ) != std::string::npos;)
-                str.replace(i, 1, sc);
-    }
-
     static std::string clear(std::string str, char *sc )
     {
         std::string::size_type i = 0;
@@ -70,8 +53,23 @@ public:
         return str;
     }
 
-    static void mascarade(std::string &str, const char *c,
-            STRIP_TYPE strip = STRIP_NO, const char *sc = "\\n")
+    static void mascarade(std::string &str, const char c = '\'', CR_MASC_TYPE strip = MASC_CR_NO, const char *sc = "\\n")
+    {
+        std::string::size_type i = 0;
+        while ( (i = str.find(c, i) ) != std::string::npos)
+        {
+            str.insert(i, 1, '\\');
+            i += 2;
+        }
+
+        if (strip == MASC_CR_CLEAR)
+            sc = "";
+        if (strip != MASC_CR_NO)
+            for (i = 0; (i = str.find_first_of("\n", i) ) != std::string::npos;)
+                str.replace(i, 1, sc);
+    }
+
+    static void mascarade(std::string &str, const char *c, CR_MASC_TYPE strip = MASC_CR_NO, const char *sc = "\\n")
     {
         std::string::size_type i = 0;
         while ( (i = str.find_first_of(c, i) ) != std::string::npos)
@@ -80,15 +78,14 @@ public:
             i += 2;
         }
 
-        if (strip == STRIP_CLEAR)
+        if (strip == MASC_CR_CLEAR)
             sc = "";
-        if (strip != STRIP_NO)
+        if (strip != MASC_CR_NO)
             for (i = 0; (i = str.find_first_of("\n", i) ) != std::string::npos;)
                 str.replace(i, 1, sc);
     }
 
-    static std::string mascarade(const char *str_in, const char *c,
-            STRIP_TYPE strip = STRIP_NO, const char *sc = "\\n")
+    static std::string mascarade(const char *str_in, const char *c, CR_MASC_TYPE strip = MASC_CR_NO, const char *sc = "\\n")
     {
         std::string str(str_in);
         std::string::size_type i = 0;
@@ -98,9 +95,9 @@ public:
             i += 2;
         }
 
-        if (strip == STRIP_CLEAR)
+        if (strip == MASC_CR_CLEAR)
             sc = "";
-        if (strip != STRIP_NO)
+        if (strip != MASC_CR_NO)
             for (i=0; (i = str.find_first_of("\n", i) ) != std::string::npos;)
                 str.replace(i, 1, sc);
         return str;
@@ -191,6 +188,11 @@ public:
         }
 
         return str;
+    }
+
+    static std::string mkjson(std::string s)
+    {
+        return ToString::mascarade( s.c_str(), "\"", MASC_CR);
     }
 
     static std::string substitute(std::string s, const char *from = "/", const char *to = "\\")

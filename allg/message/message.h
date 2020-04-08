@@ -50,6 +50,10 @@ public:
 		{
 			tid = NULL;
 		}
+		virtual ~MessageClient()
+		{
+
+		}
 		void setThreadonly()
 		{
 		    tid = PTHREADID;

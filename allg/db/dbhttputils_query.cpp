@@ -39,8 +39,7 @@ DbHttpUtilsQuery::DbHttpUtilsQuery(DbHttp *h, int noadd )
     subprovider["dyndata.xml"]  = &DbHttpUtilsQuery::dyndata_xml;
     subprovider["data.xml"]     = &DbHttpUtilsQuery::data_xml;
     subprovider["data.csv"]     = &DbHttpUtilsQuery::data_csv;
-
-    resultcount = 0;
+    subprovider["data.json"]    = &DbHttpUtilsQuery::data_json;
 
     if ( ! noadd )
        h->add_provider(this);
@@ -220,7 +219,6 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
 
-    resultcount = 0;
     query = db->p_getQuery();
     if ( h->vars["distinct"] != "" && ! cols.empty() )
         query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);
@@ -274,7 +272,6 @@ void DbHttpUtilsQuery::dyndata_xml(Database *db, HttpHeader *h)
 
         r = query->select(&wcol, &wval, &wop, &sorts, &params );
 
-        resultcount = r->size();
         if (h->vars["lastquery"] != "" )
         {
             msg.pmessage(0,"Letze Abfrage:");
@@ -505,7 +502,6 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
     while ( wval.size() < wcol.size() ) wval.add("");
     while ( wop.size()  < wcol.size() ) wop.add("");
 
-    resultcount = 0;
     query = db->p_getQuery();
     if ( h->vars["distinct"] != "" && ! cols.empty() )
         query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);
@@ -623,7 +619,6 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
         DbConnect::ResultVec::iterator rv, re;
 
         r = query->select(&wcol, &wval, &wop, &sorts, &params );
-        resultcount = r->size();
 
         if (h->vars["lastquery"] != "" )
         {
@@ -706,6 +701,163 @@ void DbHttpUtilsQuery::data_xml(Database *db, HttpHeader *h)
             mk_export(h);
         }
     }
+    db->release(query);
+    return;
+}
+
+void DbHttpUtilsQuery::data_json(Database *db, HttpHeader *h)
+{
+    std::string colid, colname, colformat, regexp, regexphelp, regexpmod;
+    long coltyp;
+    std::string ids, labels, typs, formats, regexps;
+    std::string::size_type i,j,pos;
+
+    DbConnect::ResultMat *r;
+    DbQuery *query;
+    std::vector<std::string::size_type> vals;
+    std::vector<std::string> colfs;
+    std::vector<long> dpytyp;
+
+    std::string komma0, komma1;
+
+    h->status = 200;
+    h->content_type = "text/json";
+
+    CsList cols(h->vars["cols"]);
+    CsList sorts(h->vars["scols"]);
+    CsList wval(h->vars["wval"]);
+    CsList wcol(h->vars["wcol"]);
+    CsList wop(h->vars["wop"]);
+    CsList params(h->vars["params"]);
+
+    while ( wval.size() < wcol.size() ) wval.add("");
+    while ( wop.size()  < wcol.size() ) wop.add("");
+
+    query = db->p_getQuery();
+    if ( h->vars["distinct"] != "" && ! cols.empty() )
+        query->setName(h->vars["schema"], h->vars["query"], &cols, h->vars["unionnum"]);
+    else
+        query->setName(h->vars["schema"], h->vars["query"], NULL,  h->vars["unionnum"]);
+
+    if ( cols.empty() )
+    {
+        for (query->start_cols(); query->getCols(&colid); )
+        {
+            if ( colid[0] != '-')
+                cols.add(colid);
+        }
+    }
+
+    ids = labels = typs = formats = regexps = "[ ";
+    komma0 = "";
+    for ( i=0; i<cols.size(); ++i)
+    {
+        pos = query->ofind(cols[i]);
+        if ( pos != std::string::npos )
+        {
+            coltyp = query->getColtyp(pos);
+            colformat = query->getFormat(pos);
+            if (  coltyp == DbConnect::FLOAT || coltyp == DbConnect::DOUBLE )
+            {
+                if ( ( j = colformat.find('%',0) != std::string::npos ))
+                    colformat.insert(j, 1, '\'');
+            }
+
+            ids     += komma0 + "\"" + query->getId(pos) + "\"";
+            labels  += komma0 + "\"" + query->getName(pos) + "\"";
+            typs    += komma0 + "\"" + std::to_string(coltyp) + "\"";
+            formats += komma0 + "\"" + colformat + "\"";
+            regexps  += komma0 + "[ \"" + query->getRegexp(pos) + "\", \"" + query->getRegexpmod(pos) + "\", \"" + query->getRegexphelp(pos) + "\" ] ";
+
+            komma0 = ",";
+
+            vals.push_back(pos);
+            colfs.push_back(colformat);
+            dpytyp.push_back(coltyp);
+
+        }
+        else
+        {
+            msg.perror(E_WRONG_COLUMN, "Spaltenid <%s> unbekannt", cols[i].c_str());
+        }
+    }
+
+    if ( h->vars["distinct"] != "" && h->error_found == 0 )
+    {
+        int found;
+        i=0;
+        for (query->start_cols(); query->getCols(&colid, &colname, &coltyp, &colformat);)
+        {
+            found = 0;
+            cols.reset();
+            while ( ( j = cols.find(colid,1)) != std::string::npos )
+            {
+                vals[j] = i;
+                found = 1;
+            }
+
+            if ( found ) ++i;
+        }
+    }
+
+    add_content(h, "{\n"
+                "  \"ids\"    : " + ids + " ],\n"
+                "  \"labels\" : " + labels + " ],\n"
+                "  \"typs\"   : " + typs + " ],\n"
+                "  \"formats\" : " + formats + " ],\n"
+                "  \"regexps\"  : " + regexps + " ]");
+
+    if ( ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  && h->error_found == 0 )
+    {
+        for (query->start_cols(); query->getCols(&colid, &colname, &coltyp, &colformat);)
+        {
+            if (h->vars.exists(colid + "Input.old") )
+            {
+                wcol.add(colid);
+                if ( h->vars.exists(colid + "Op.old") )
+                    wop.add(h->vars[colid + "Op.old"]);
+                else
+                    wop.add("=");
+                wval.add(h->vars[colid + "Input.old"]);
+            }
+        }
+
+
+        DbConnect::ResultMat::iterator rm;
+        DbConnect::ResultVec::iterator rv, re;
+
+        r = query->select(&wcol, &wval, &wop, &sorts, &params );
+
+        if (h->vars["lastquery"] != "" )
+        {
+            msg.pmessage(0,"Letze Abfrage:");
+            msg.ignore_lang = 1;
+            msg.line("%s", query->getLaststatement().c_str());
+        }
+
+        add_content(h,  ",\n  \"values\" : [\n");
+        komma0="";
+        for (rm = r->begin(); rm != r->end(); ++rm)
+        {
+            komma1 = "";
+            add_content(h,  komma0 + "    [");
+            for ( i=0; i<vals.size(); i++)
+            {
+                if ( dpytyp[i] != DbConnect::BINARY )
+                    add_content(h,  ( komma1 + "\"%s\"").c_str(), ToString::mkjson( (*rm)[vals[i]].format(&msg, NULL, 0, colfs[i].c_str())).c_str());
+                else
+                    add_content(h,  komma1 + "\"binary\"");
+                komma1 = ',';
+            }
+                add_content(h,  " ]");
+                komma0 = ",\n";
+        }
+
+        add_content(h,  "\n ]");
+    }
+
+    add_content(h,"\n" );
+
     db->release(query);
     return;
 }

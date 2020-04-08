@@ -182,7 +182,7 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 		headers[client] = tmp;
 		headers[client].push_back("");
 
-		msg.pdebug(D_CON, "neuer Client %d ",client);
+		msg.pdebug(D_CLIENT, "neuer Client %d ",client);
 
 	}
 	else  if ( ( chttp = http_headers.find(client) ) != http_headers.end() )
@@ -220,7 +220,6 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 		else if ( act_h != NULL && act_h->client == client && act_h->needed_postdata == 0 )
 		{
-			check_user(act_h);
 			putHeader(act_h);
 			http_headers.erase(chttp);
 			act_h = NULL;
@@ -271,12 +270,12 @@ void HttpAnalyse::disconnect( int client )
 
 	if ( ( h = headers.find(client)) != headers.end() )
 	{
-		msg.pdebug(D_CON, "Verbindung zum Client %d wurde abgebrochen",client);
+		msg.pdebug(D_CLIENT, "Verbindung zum Client %d wurde abgebrochen",client);
 		headers.erase(h);
 	}
 	else
 	{
-		msg.pdebug(D_CON, "Client %d existiert nicht",client);
+		//msg.pdebug(D_CLIENT, "Client %d existiert nicht",client);
 	}
 
 	for ( i = 0; i<https.size(); ++i)

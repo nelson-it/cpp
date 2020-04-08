@@ -40,13 +40,14 @@ do
 	        cname=`basename $file`;;
         *     ) echo "unknow file type: $file" 1>&2
     esac
+    
 
+    d=${depdir#$root/}
     hfiles=`sh -c "$cpp -E $inc $depdir/$cname" | sed -n -e "/lib\/gcc/d " -e "/^#.*\.h/p"  | cut -d\" -f2 | sort -u | sed -e '/:/d' `
     for hfile in $hfiles
     do
-        d=${depdir#$root/}
         if [ "$d" = "$depdir" ]; then
-          echo $depdir/$depname"": $hfile >> $out
+          echo object/$depdir/$depname"": $hfile >> $out
         else
           echo $oroot/$d/$depname"": $hfile >> $out
         fi

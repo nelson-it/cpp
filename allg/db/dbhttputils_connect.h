@@ -36,6 +36,14 @@ class DbHttpUtilsConnect : public DbHttpProvider
 
     void reload               (Database *db, HttpHeader *h);
 
+    void func_execute_json    (Database *db, HttpHeader *h);
+    void func_mod_json        (Database *db, HttpHeader *h);
+    void func_del_json        (Database *db, HttpHeader *h);
+
+    std::string func_execute    (Database *db, HttpHeader *h);
+    int func_mod                (Database *db, HttpHeader *h);
+    int func_del                (Database *db, HttpHeader *h);
+
 public:
     DbHttpUtilsConnect( DbHttp *h, DbHttpAnalyse *a );
     virtual ~DbHttpUtilsConnect();

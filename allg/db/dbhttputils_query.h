@@ -40,8 +40,6 @@ protected:
     static std::map<std::string,std::string> dateformat;
     static std::map<std::string,std::string> days;
 
-    int resultcount;
-
 public:
     DbHttpUtilsQuery( DbHttp *h, int noadd = 0 );
     virtual ~DbHttpUtilsQuery();
@@ -52,8 +50,7 @@ public:
     void dyndata_xml (Database *db, HttpHeader *h);
     void data_xml (Database *db, HttpHeader *h);
     void data_csv (Database *db, HttpHeader *h);
-
-    int getResultcount() { return resultcount; }
+    void data_json (Database *db, HttpHeader *h);
 
 };
 
