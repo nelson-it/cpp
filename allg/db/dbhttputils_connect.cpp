@@ -13,9 +13,13 @@ DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *analyse)
           :DbHttpProvider(h),
 	   msg("DbHttpUtilsConnect")
 {
-	subprovider["//start.xml"]         = &DbHttpUtilsConnect::start;
-	subprovider["//end.xml"]           = &DbHttpUtilsConnect::end;
-	subprovider["//reload.xml"]        = &DbHttpUtilsConnect::reload;
+	subprovider["//start.xml"]         = &DbHttpUtilsConnect::start_xml;
+	subprovider["//end.xml"]           = &DbHttpUtilsConnect::end_xml;
+	subprovider["//reload.xml"]        = &DbHttpUtilsConnect::reload_xml;
+
+	subprovider["//start.json"]         = &DbHttpUtilsConnect::start_json;
+	subprovider["//end.json"]           = &DbHttpUtilsConnect::end_json;
+	subprovider["//reload.json"]        = &DbHttpUtilsConnect::reload_json;
 
     subprovider["/func/execute.xml"]   = &DbHttpUtilsConnect::func_execute_xml;
     subprovider["/func/mod.xml"]       = &DbHttpUtilsConnect::func_mod_xml;
@@ -26,6 +30,7 @@ DbHttpUtilsConnect::DbHttpUtilsConnect(DbHttp *h, DbHttpAnalyse *analyse)
     subprovider["/func/del.json"]       = &DbHttpUtilsConnect::func_del_json;
 
 	subprovider["/sql/execute.xml"]    = &DbHttpUtilsConnect::sql_execute_xml;
+	subprovider["/sql/execute.json"]   = &DbHttpUtilsConnect::sql_execute_json;
 
 	this->analyse = analyse;
 	h->add_provider(this);
@@ -68,22 +73,64 @@ int DbHttpUtilsConnect::request(Database *db, HttpHeader *h)
 
 }
 
-void DbHttpUtilsConnect::start( Database *db, HttpHeader *h)
+void DbHttpUtilsConnect::start_xml( Database *db, HttpHeader *h)
 {
-	if ( db->p_getConnect()->start() )
-		if ( h->vars["rollback"] != "" )
-			db->p_getConnect()->rollback();
-	add_content(h,  "<body>ok</body>");
+    if ( db->p_getConnect()->start() )
+        if ( h->vars["rollback"] != "" )
+            db->p_getConnect()->rollback();
+    add_content(h,  "<body>ok</body>");
 }
 
-void DbHttpUtilsConnect::end( Database *db, HttpHeader *h)
+void DbHttpUtilsConnect::end_xml( Database *db, HttpHeader *h)
 {
-	if ( h->vars["rollback"] != "" )
-		db->p_getConnect()->rollback();
-	else
-		db->p_getConnect()->end();
-	add_content(h,  "<body>ok</body>");
+    if ( h->vars["rollback"] != "" )
+        db->p_getConnect()->rollback();
+    else
+        db->p_getConnect()->end();
+    add_content(h,  "<body>ok</body>");
 }
+
+void DbHttpUtilsConnect::reload_xml(Database *db, HttpHeader *h)
+{
+    DbTable *tab = db->p_getTable(db->getApplschema(), "update");
+    tab->del_allcolumns();
+    db->release(tab);
+
+    this->analyse->read_datadir();
+
+    msg.pmessage(0, "ok");
+    add_content(h, "{ \"result\" : \"ok\"");
+}
+
+void DbHttpUtilsConnect::start_json( Database *db, HttpHeader *h)
+{
+    if ( db->p_getConnect()->start() )
+        if ( h->vars["rollback"] != "" )
+            db->p_getConnect()->rollback();
+    add_content(h, "{ \"result\" : \"ok\"");
+}
+
+void DbHttpUtilsConnect::end_json( Database *db, HttpHeader *h)
+{
+    if ( h->vars["rollback"] != "" )
+        db->p_getConnect()->rollback();
+    else
+        db->p_getConnect()->end();
+    add_content(h, "{ \"result\" : \"ok\"");
+}
+
+void DbHttpUtilsConnect::reload_json(Database *db, HttpHeader *h)
+{
+    DbTable *tab = db->p_getTable(db->getApplschema(), "update");
+    tab->del_allcolumns();
+    db->release(tab);
+
+    this->analyse->read_datadir();
+
+    msg.pmessage(0, "ok");
+    add_content(h, "<body>ok</body>");
+}
+
 
 std::string DbHttpUtilsConnect::func_execute(Database *db, HttpHeader *h)
 {
@@ -247,7 +294,7 @@ void DbHttpUtilsConnect::func_execute_json(Database *db, HttpHeader *h)
 {
     std::string result = ToString::mkjson(this->func_execute(db, h));
     if ( result != "error" )
-        add_content(h, "{ \"result\" : \"%s\",\n \"ids\" : [ \"result\" ],\n \"values\" : [ \"%s\" ]\n",result.c_str(), result.c_str());
+        add_content(h, "{ \"result\" : \"%s\",\n \"ids\" : [ \"result\" ],\n \"values\" : [[ \"%s\" ]]\n",result.c_str(), result.c_str());
     else
         add_content(h, "{ \"result\" : \"error\"");
 }
@@ -255,7 +302,7 @@ void DbHttpUtilsConnect::func_execute_json(Database *db, HttpHeader *h)
 void DbHttpUtilsConnect::func_mod_json(Database *db, HttpHeader *h)
 {
     if ( this->func_mod(db, h) == 0 )
-        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"schema\", \"fullname\" ],\n \"values\" : [ \"%s\", \"%s\" ]\n", h->vars["par0"].c_str(), h->vars["par1"].c_str());
+        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"schema\", \"fullname\" ],\n \"values\" : [[ \"%s\", \"%s\" ]]\n", h->vars["par0"].c_str(), h->vars["par1"].c_str());
     else
         add_content(h, "{ \"result\" : \"error\"");
 }
@@ -263,7 +310,7 @@ void DbHttpUtilsConnect::func_mod_json(Database *db, HttpHeader *h)
 void DbHttpUtilsConnect::func_del_json(Database *db, HttpHeader *h)
 {
     if ( this->func_del(db, h) )
-        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"result\" ],\n \"values\" : [ \"ok\" ]\n");
+        add_content(h, "{ \"result\" : \"ok\"");
     else
         add_content(h, "{ \"result\" : \"error\"");
 }
@@ -323,15 +370,81 @@ void DbHttpUtilsConnect::sql_execute_xml(Database *db, HttpHeader *h)
         db->p_getConnect()->end();
 
 }
-void DbHttpUtilsConnect::reload(Database *db, HttpHeader *h)
+void DbHttpUtilsConnect::sql_execute_json(Database *db, HttpHeader *h)
 {
-    DbTable *tab = db->p_getTable(db->getApplschema(), "update");
-    tab->del_allcolumns();
-    db->release(tab);
+    std::string stm;
+    stm = h->vars["command"];
+    unsigned int i;
+    DbConnect *dbconnect = db->p_getConnect();
 
-    this->analyse->read_datadir();
+    std::string ids, labels, typs, formats, regexps;
+    std::string komma0, komma1;
 
-    msg.pmessage(0, "ok");
-    add_content(h, "<body>ok</body>");
+    ids = labels = typs = formats = regexps = "[ ";
+    komma0 = "";
+
+    if ( stm != "" && dbconnect->execute(stm.c_str()) == 0 )
+    {
+        DbConnect::ResultMat::iterator rm;
+        DbConnect::ResultVec::iterator rv, re;
+        DbConnect::ResultMat *r = dbconnect->p_getResult();
+
+        if ( r->size() > 0 )
+        {
+            for (i=0; i < (*r)[0].size(); ++i)
+            {
+                ids     += komma0 + "\"" + dbconnect->getResultName(i) + "\"";
+                labels  += komma0 + "\"" + dbconnect->getResultName(i) + "\"";
+                typs    += komma0 + "\"" + std::to_string(((*r)[0][i]).typ) + "\"";
+                formats += komma0 + "\"" + "" + "\"";
+                regexps  += komma0 + "[ \"\", \"\", \"\" ] ";
+
+                komma0 = ",";
+
+            }
+        }
+
+        add_content(h, "{\n"
+                    "  \"ids\"    : " + ids + " ],\n"
+                    "  \"labels\" : " + labels + " ],\n"
+                    "  \"typs\"   : " + typs + " ],\n"
+                    "  \"formats\" : " + formats + " ],\n"
+                    "  \"regexps\"  : " + regexps + " ]");
+
+        add_content(h,  ",\n  \"values\" : [\n");
+
+        komma0 = "";
+        for (rm = r->begin(); rm != r->end(); ++rm)
+        {
+            komma1 = "";
+            add_content(h,  komma0 + "    [");
+             rv = (*rm).begin();
+            re = (*rm).end();
+            for (; rv != re; ++rv)
+            {
+                add_content(h,  ( komma1 + "\"%s\"").c_str(), ToString::mkjson( rv->format(&msg)).c_str());
+                komma1 = ",";
+            }
+
+            add_content(h,  " ]");
+            komma0 = ",\n";
+        }
+
+        if ( r->empty() )
+            add_content(h,  "[]]");
+        else
+            add_content(h,  "]");
+    }
+    else if ( stm != "" )
+    {
+        add_content(h, "{ \"result\" : \"error\"");
+    }
+    else
+    {
+        add_content(h, "{ \"result\" : \"ok\"");
+    }
+
+    if (h->vars["sqlend"] != "")
+        dbconnect->end();
+
 }
-

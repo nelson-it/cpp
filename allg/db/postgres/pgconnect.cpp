@@ -19,6 +19,17 @@
 #include "pgtypes.h"
 #include "pgconnect.h"
 
+#if 1
+#define Pthread_mutex_lock(x,y)  pthread_mutex_lock(y);
+#define Pthread_mutex_unlock(x,y)  pthread_mutex_unlock(y);
+#else
+#define Pthread_mutex_lock(x,y)  fprintf(stderr, "lock %s\n", x);\
+        pthread_mutex_lock(y);
+#define Pthread_mutex_unlock(x, y)  fprintf(stderr, "unlock %s\n", x);\
+        pthread_mutex_unlock(y);
+#endif
+
+
 static void NoticeProcessor(void *arg, const char *message)
 {
     ((PgConnect*) arg)->notice(message);
@@ -252,9 +263,13 @@ void PgConnect::mk_result(PGresult *res, const char *stm)
     loc = uselocale(loc);
 #endif
     result.clear();
+    resultname.clear();
 
     is_eof = (rows = PQntuples(res)) == 0;
     cols = PQnfields(res);
+
+        for (i = 0; i < cols; i++)
+          resultname.push_back(PQfname(res,i));
 
     for (k = 0; k < rows; k++)
     {
@@ -635,7 +650,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     }
 
     msg.pdebug(D_STM, "%s", (char *) stm);
-    pthread_mutex_lock(&connections[con].mutex);
+    Pthread_mutex_lock("execute", &connections[con].mutex);
 
     while ( PQstatus(con) )
     {
@@ -652,7 +667,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
         if ( res != NULL ) PQclear(res);
         if ( PQstatus(con) )
         {
-            pthread_mutex_unlock(&connections[con].mutex);
+            Pthread_mutex_unlock("executebegin", &connections[con].mutex);
             return execute( stm, ready, no_clearresult);
         }
     }
@@ -689,7 +704,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
         if ( PQstatus(con) )
         {
             if ( res != NULL ) PQclear(res);
-            pthread_mutex_unlock(&connections[con].mutex);
+            Pthread_mutex_unlock("fatalerror", &connections[con].mutex);
             return execute( stm, ready, no_clearresult);
         }
         /* no break */
@@ -748,7 +763,7 @@ int PgConnect::execute(const char *stm, int ready, int no_clearresult)
     else
         r = 0;
 
-    pthread_mutex_unlock(&connections[con].mutex);
+    Pthread_mutex_unlock("end", &connections[con].mutex);
 
     if (ready)
         this->end();

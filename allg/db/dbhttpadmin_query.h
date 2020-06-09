@@ -14,8 +14,14 @@ class DbHttpAdminQuery : public DbHttpProvider
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
-    void   ok(Database *db, HttpHeader *h);
-    void  del(Database *db, HttpHeader *h);
+    std::string   ok(Database *db, HttpHeader *h);
+    std::string  del(Database *db, HttpHeader *h);
+
+    void   ok_xml(Database *db, HttpHeader *h);
+    void  del_xml(Database *db, HttpHeader *h);
+
+    void   ok_json(Database *db, HttpHeader *h);
+    void  del_json(Database *db, HttpHeader *h);
 
 protected:
     enum ERROR_TYPES

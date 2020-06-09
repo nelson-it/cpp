@@ -41,7 +41,6 @@ public:
     DbCursor *p_getCursor();
 
     DbTable *p_getTable( std::string schema, std::string name);
-    DbTable *p_getTable( std::string name );
     DbTable *p_getTable( );
 
     DbConstraint *p_getConstraint();

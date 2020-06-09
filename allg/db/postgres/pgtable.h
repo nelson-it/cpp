@@ -45,11 +45,9 @@ public:
     };
 
     PgTable( PgConnect *con, std::string schema, std::string name);
-    PgTable( PgConnect *con, std::string name);
     PgTable( PgConnect *con );
 
     PgTable( std::string schema, std::string name);
-    PgTable( std::string name);
     PgTable();
 
     ~PgTable();
@@ -57,18 +55,14 @@ public:
     void end() { PgConnect::end(); }
 
     void setName( std::string schema, std::string name, int ready = 0);
-    void setName( std::string name, int ready = 0);
 
-    int create( std::string schema, std::string name, ColumnMap *cols,
-                int ready = 0);
-    int create( std::string name, ColumnMap *cols, int ready = 0);
-    int create( ColumnMap *cols, int ready = 0);
-    int rename( std::string newschema, std::string newname, int ready = 0);
-    int remove(std::string name = "", int ready = 0);
+    int create( std::string schema, std::string name, ColumnMap *cols, std::string owner, int ready = 0);
+    int rename( std::string newschema, std::string newname, std::string owner, int ready = 0);
+    int remove( std::string schema, std::string name, int ready = 0);
 
     int chk_column(std::string name, Column col,int modify = 0, int ready = 0 );
     int add_column(std::string name, Column col,int ready = 0 );
-    int del_column(std::string name,int ready = 0 );
+    int del_column(std::string name, int ready = 0 );
     int  mv_column(std::string oldname, std::string newname,int ready = 0 );
 
     std::string mk_where(ValueMap *where, CsList *wop = NULL);

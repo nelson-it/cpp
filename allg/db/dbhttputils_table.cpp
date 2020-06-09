@@ -473,7 +473,7 @@ void DbHttpUtilsTable::insert(Database *db, HttpHeader *h)
             if (ci->second.typ == DbConnect::CHAR)
             {
                 if (val == "################")
-                    orig_vals[ci->first] = vals[ci->first] = db->p_getConnect()->mk_index();
+                    orig_vals[ci->first] = vals[ci->first] = db->p_getConnect()->mk_unique_id();
                 else
                 {
                     orig_vals[ci->first] = val;
@@ -507,7 +507,7 @@ void DbHttpUtilsTable::insert(Database *db, HttpHeader *h)
                 values += komma + '"' + ToString::mkjson(i->second.value) + '"';
                 komma = ',';
             }
-            add_content(h,  "{ \"result\" : \"ok\",\n \"ids\" : [ %s ],\n \"values\" : [ %s ]\n", ids.c_str(), values.c_str());
+            add_content(h,  "{ \"result\" : \"ok\",\n \"ids\" : [ %s ],\n \"values\" : [[ %s ]]\n", ids.c_str(), values.c_str());
         }
     }
     else
@@ -574,7 +574,7 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
             if (ci->second.typ == DbConnect::CHAR)
             {
                 if (val == "################")
-                    orig_vals[ci->first] = vals[ci->first] = v = db->p_getConnect()->mk_index();
+                    orig_vals[ci->first] = vals[ci->first] = v = db->p_getConnect()->mk_unique_id();
                 else if ( val.find("##########") == 0 && val.size() > 10 && val[10] != '#')
                 {
                     orig_vals[ci->first + "type"] = vals[ci->first + "type"] = std::string(val, 10);
@@ -642,7 +642,7 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
                 values += komma + '"' + ToString::mkjson(i->second.value) + '"';
                 komma = ',';
             }
-            add_content(h,  "{\n\"result\" : \"ok\", \"ids\" : [ %s ],\n\"values\" : [ %s ]\n", ids.c_str(), values.c_str());
+            add_content(h,  "{\n\"result\" : \"ok\", \"ids\" : [ %s ],\n\"values\" : [[ %s ]]\n", ids.c_str(), values.c_str());
         }
     }
     else

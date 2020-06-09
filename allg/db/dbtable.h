@@ -150,15 +150,11 @@ public:
 
     virtual std::string getValue( const Column *col );
 
-    virtual void setName(std::string name, int ready = 0) = 0;
     virtual void setName(std::string schema, std::string name, int ready=0) = 0;
 
-    virtual int create(std::string schema, std::string name,
-            ColumnMap *cols, int ready = 0)=0;
-    virtual int create(std::string name, ColumnMap *cols, int ready = 0) = 0;
-    virtual int create(ColumnMap *cols, int ready = 0) = 0;
-    virtual int rename(std::string newschema, std::string newname, int ready = 0) = 0;
-    virtual int remove(std::string name, int ready = 0) = 0;
+    virtual int create(std::string schema, std::string name, ColumnMap *cols, std::string owner, int ready = 0 )=0;
+    virtual int rename(std::string newschema, std::string newname, std::string owner, int ready = 0) = 0;
+    virtual int remove(std::string schema, std::string name, int ready = 0) = 0;
 
     virtual int mk_usertime_columns();
     virtual int chk_usertime_columns() { return have_usertime_columns; }

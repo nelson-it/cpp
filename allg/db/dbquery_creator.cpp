@@ -14,6 +14,7 @@ DbQueryCreator::DbQueryCreator(Database *db) :
 	msg("DbQueryCreator")
 {
 	this->db = db;
+    distinct = unionall = unionnum = -1;
 }
 
 DbQueryCreator::~DbQueryCreator()
@@ -266,8 +267,7 @@ int DbQueryCreator::add_where(std::string notop, std::string leftbrace,
 			return -1;
 	}
 
-	w_lines.push_back(WhereLine(notop != "", leftbrace != "", lefttab, leftval,
-			op, righttab, rightval, rightbrace != "", boolop));
+	w_lines.push_back(WhereLine(( notop != "" && notop != "0" && notop[0] != 'f'), leftbrace != "", lefttab, leftval, op, righttab, rightval, rightbrace != "", boolop));
 
 	return w_lines.size() - 1;
 
@@ -382,7 +382,7 @@ int DbQueryCreator::save(std::string schema, std::string name, int unionnum, std
 	}
 
 	if ( queryid == "################")
-		id = db->p_getConnect()->mk_index();
+		id = db->p_getConnect()->mk_unique_id();
 	else
 		id = this->queryid;
 

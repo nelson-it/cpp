@@ -798,6 +798,20 @@ void ServerSocket::loop()
             }
         }
 
+        if ( ! del_clients.empty() )
+        {
+            std::vector<int>::iterator ii;
+            for ( ii = del_clients.begin(); ii != del_clients.end() ; ++ii )
+            {
+                std::map<std::string, SocketProvider*>::iterator p;
+                for ( p = provider.begin(); p != provider.end(); ++p )
+                    p->second->disconnect(*ii);
+
+                clients.erase(clients.find(*ii));
+            }
+            del_clients.clear();
+        }
+
         // Vieleicht ein neuer Client
         // ==========================
 
@@ -834,62 +848,23 @@ void ServerSocket::loop()
                 }
 
             }
-
-            FD_ZERO(rd_set);
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-            unsigned long cmd;
-            cmd = 1;
-            ioctlsocket(rval, FIONBIO, &cmd);
-            FD_SET((unsigned)sock, rd_set);
-#else
-            FD_SET(sock, rd_set);
-#endif
-            max_sock = sock;
-            for ( i=clients.begin(); i != clients.end(); ++i )
-            {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-                FD_SET((unsigned)i->first, rd_set);
-#else
-                FD_SET(i->first, rd_set);
-#endif
-                if ( i->first > max_sock ) max_sock = i->first;
-            }
         }
 
-        // Clients dessen Verbindungen unterbrochen wurden
-        // ===============================================
-
-        if ( ! del_clients.empty() )
+        FD_ZERO(rd_set);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        FD_SET((unsigned)sock, rd_set);
+#else
+        FD_SET(sock, rd_set);
+#endif
+        max_sock = sock;
+        for ( i=clients.begin(); i != clients.end(); ++i )
         {
-            std::vector<int>::iterator ii;
-            for ( ii = del_clients.begin(); ii != del_clients.end() ; ++ii )
-            {
-                std::map<std::string, SocketProvider*>::iterator p;
-                for ( p = provider.begin(); p != provider.end(); ++p )
-                    p->second->disconnect(*ii);
-
-                clients.erase(clients.find(*ii));
-            }
-
-
-            del_clients.clear();
-
-            FD_ZERO(rd_set);
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-            FD_SET((unsigned)sock, rd_set);
+            FD_SET((unsigned)i->first, rd_set);
 #else
-            FD_SET(sock, rd_set);
+            FD_SET(i->first, rd_set);
 #endif
-            max_sock = sock;
-            for ( i=clients.begin(); i != clients.end(); ++i )
-            {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-                FD_SET((unsigned)i->first, rd_set);
-#else
-                FD_SET(i->first, rd_set);
-#endif
-                if ( i->first > max_sock ) max_sock = i->first;
-            }
+            if ( i->first > max_sock ) max_sock = i->first;
         }
     }
 }

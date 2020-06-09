@@ -35,9 +35,11 @@ class DbQueryCreator
 
 		JoinLine()
 		{
+			deep = tabnum = typ = -1;
 			tab = NULL;
-		}
-		;
+			 db = NULL;
+		};
+
 		JoinLine(Database *db, int deep, int tabnum, std::string joindefid,
 				std::string fcols, std::string tschema, std::string ttab,
 				std::string tcols, std::string op, int typ)
@@ -118,6 +120,7 @@ class DbQueryCreator
 
 		SelectLine()
 		{
+		    tabnum = typ = lang = groupby = cannull = musthaving = -1;
 		}
 		;
 		SelectLine(int tabnum, std::string field, std::string id, long typ,
@@ -153,6 +156,7 @@ class DbQueryCreator
 
 		WhereLine()
 		{
+		    notop = leftbrace = rightbrace = -1;
 		}
 		;
 		WhereLine(int notop, int leftbrace, std::string lefttab,

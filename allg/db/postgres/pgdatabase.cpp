@@ -105,21 +105,6 @@ DbTable *PgDatabase::p_getTable(std::string schema, std::string name)
     return last_tab;
 }
 
-DbTable *PgDatabase::p_getTable(std::string name)
-{
-
-    std::string::size_type i;
-
-    if ((i = name.find_first_of('.')) != std::string::npos)
-    {
-        return p_getTable(name.substr(0, i), name.substr(i + 1));
-    }
-    else
-    {
-        return p_getTable(con->getCurschema(), name);
-    }
-}
-
 DbTable *PgDatabase::p_getTable()
 {
     last_tab = new PgTable((PgConnect *) con);

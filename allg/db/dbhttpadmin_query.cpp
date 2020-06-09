@@ -10,8 +10,11 @@
 DbHttpAdminQuery::DbHttpAdminQuery(DbHttp *h) :
 	DbHttpProvider(h), msg("DbHttpAdminQuery")
 {
-	subprovider["ok.xml"] = &DbHttpAdminQuery::ok;
-	subprovider["del.xml"] = &DbHttpAdminQuery::del;
+	subprovider["ok.xml"] = &DbHttpAdminQuery::ok_xml;
+	subprovider["del.xml"] = &DbHttpAdminQuery::del_xml;
+
+	subprovider["ok.json"] = &DbHttpAdminQuery::ok_json;
+	subprovider["del.json"] = &DbHttpAdminQuery::del_json;
 
 	h->add_provider(this);
 }
@@ -36,31 +39,23 @@ int DbHttpAdminQuery::request(Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
+std::string DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 {
 	DbQueryCreator *query;
 	std::string queryid;
 	long i, janzahl, sanzahl, wanzahl;
 	int unionnum;
-    int result;
-
-	queryid = h->vars["queryidInput"];
+    std::string result = "";
 
 	h->status = 200;
-	h->content_type = "text/xml";
 
-	add_content(h, 
-			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-			h->charset.c_str());
-
+	queryid = h->vars["queryidInput"];
 	unionnum = atoi(h->vars["unionnumInput"].c_str());
 
 	db->p_getConnect()->start();
 	query = db->p_getQuerycreator();
 
-	query->setName(h->vars["schemaInput.old"],
-                   h->vars["queryInput.old"],
-                   h->vars["unionnumInput.old"]);
+	query->setName(h->vars["schemaInput.old"], h->vars["queryInput.old"], h->vars["unionnumInput.old"]);
 
 	if (h->vars["tcolumnlength"] != "" || h->vars["twherelength"] != "")
 	{
@@ -88,14 +83,10 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 			snprintf(op, 64, "joinop%ld", i);
 			snprintf(typ, 64, "jointyp%ld", i);
 
-			if (query->add_join(atoi(h->vars[deep].c_str()), atoi(h->vars[tabnum].c_str()),
-					h->vars[joindefid], h->vars[fcols], h->vars[tschema],
-					h->vars[ttab], h->vars[tcols], h->vars[op], atoi(
-							h->vars[typ].c_str())) < 0)
+			if (query->add_join(atoi(h->vars[deep].c_str()), atoi(h->vars[tabnum].c_str()), h->vars[joindefid], h->vars[fcols], h->vars[tschema], h->vars[ttab], h->vars[tcols], h->vars[op], atoi( h->vars[typ].c_str())) < 0)
 			{
 				msg.perror(E_JADD, "Fehler beim hinzufügen eines Joins");
-				add_content(h,  "<body>error</body>");
-				return;
+				return result;
 			}
 
 		}
@@ -122,26 +113,16 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 			std::string lang;
 			std::string::size_type j;
 
-			snprintf(t, 32, "jtabnumInput%ld", i);
-			t[31] = '\0';
-			snprintf(n, 32, "colInput%ld", i);
-			n[31] = '\0';
-			snprintf(c, 32, "colidInput%ld", i);
-			c[31] = '\0';
-			snprintf(l, 32, "langInput%ld", i);
-			l[31] = '\0';
-			snprintf(ty, 32, "typInput%ld", i);
-			ty[31] = '\0';
-			snprintf(f, 32, "formatInput%ld", i);
-			f[31] = '\0';
-            snprintf(g, 32, "groupbyInput%ld", i);
-            g[31] = '\0';
-            snprintf(hm, 32, "musthavingInput%ld", i);
-            g[31] = '\0';
-			snprintf(de, 32, "colname_deInput%ld", i);
-			de[31] = '\0';
-			snprintf(en, 32, "colname_enInput%ld", i);
-			en[31] = '\0';
+			snprintf(t, 32, "tabnumInput%ld", i); t[31] = '\0';
+			snprintf(n, 32, "fieldInput%ld", i); n[31] = '\0';
+			snprintf(c, 32, "columnidInput%ld", i); c[31] = '\0';
+			snprintf(l, 32, "langInput%ld", i); l[31] = '\0';
+			snprintf(ty, 32, "typInput%ld", i); ty[31] = '\0';
+			snprintf(f, 32, "formatInput%ld", i); f[31] = '\0';
+            snprintf(g, 32, "groupbyInput%ld", i); g[31] = '\0';
+            snprintf(hm, 32, "musthavingInput%ld", i); g[31] = '\0';
+			snprintf(de, 32, "text_deInput%ld", i); de[31] = '\0';
+			snprintf(en, 32, "text_enInput%ld", i); en[31] = '\0';
 
 			col = h->vars[n];
 			if (atoi(h->vars[l].c_str()) != 0)
@@ -156,16 +137,10 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 				lang = "";
 			}
 
-			if (query->add_select(h->vars[t], col, h->vars[c], lang, atoi(
-					h->vars[ty].c_str()), h->vars[f], atoi(h->vars[g].c_str()), atoi(h->vars[hm].c_str()),
-					h->vars[de], h->vars[en]) < 0)
+			if (query->add_select(h->vars[t], col, h->vars[c], lang, atoi( h->vars[ty].c_str()), h->vars[f], atoi(h->vars[g].c_str()), atoi(h->vars[hm].c_str()), h->vars[de], h->vars[en]) < 0)
 			{
-				msg.perror(E_SADD,
-						"Tabelle <%s> oder Spalte <%s> beim addieren "
-							"zum Selektieren nicht vorhanden",
-						h->vars[t].c_str(), h->vars[n].c_str());
-				add_content(h,  "<body>error</body>");
-				return;
+				msg.perror(E_SADD, "Tabelle <%s> oder Spalte <%s> beim addieren " "zum Selektieren nicht vorhanden", h->vars[t].c_str(), h->vars[n].c_str());
+				return result;
 			}
 		}
 	}
@@ -186,78 +161,81 @@ void DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 			char rightbrace[32];
 			char boolop[32];
 
-			snprintf(notop, 32, "wnotInput%ld", i);
-			notop[31] = '\0';
-			snprintf(leftbrace, 32, "wleftbraceInput%ld", i);
-			leftbrace[31] = '\0';
-			snprintf(lefttab, 32, "wlefttabInput%ld", i);
-			lefttab[31] = '\0';
-			snprintf(leftval, 32, "wleftvalInput%ld", i);
-			leftval[31] = '\0';
-			snprintf(op, 32, "wopInput%ld", i);
-			op[31] = '\0';
-			snprintf(righttab, 32, "wrighttabInput%ld", i);
-			righttab[31] = '\0';
-			snprintf(rightval, 32, "wrightvalInput%ld", i);
-			rightval[31] = '\0';
-			snprintf(rightbrace, 32, "wrightbraceInput%ld", i);
-			rightbrace[31] = '\0';
-			snprintf(boolop, 32, "wboolopInput%ld", i);
-			boolop[31] = '\0';
+			snprintf(notop, 32, "wnotoperatorInput%ld", i); notop[31] = '\0';
+			snprintf(leftbrace, 32, "wleftbraceInput%ld", i); leftbrace[31] = '\0';
+			snprintf(lefttab, 32, "wlefttabInput%ld", i); lefttab[31] = '\0';
+			snprintf(leftval, 32, "wleftvalueInput%ld", i); leftval[31] = '\0';
+			snprintf(op, 32, "woperatorInput%ld", i); op[31] = '\0';
+			snprintf(righttab, 32, "wrighttabInput%ld", i); righttab[31] = '\0';
+			snprintf(rightval, 32, "wrightvalueInput%ld", i); rightval[31] = '\0';
+			snprintf(rightbrace, 32, "wrightbraceInput%ld", i); rightbrace[31] = '\0';
+			snprintf(boolop, 32, "wbooloperatorInput%ld", i); boolop[31] = '\0';
 
-			if (query->add_where(h->vars[notop], h->vars[leftbrace],
-					h->vars[lefttab], h->vars[leftval], h->vars[op],
-					h->vars[righttab], h->vars[rightval], h->vars[rightbrace],
-					h->vars[boolop]) < 0)
+			if (query->add_where(h->vars[notop], h->vars[leftbrace], h->vars[lefttab], h->vars[leftval], h->vars[op], h->vars[righttab], h->vars[rightval], h->vars[rightbrace], h->vars[boolop]) < 0)
 			{
-				msg.perror(E_WADD, "Table <%s,%s> oder Spalte <%s,%s> beim "
-					"addieren zur Whereclause nicht vorhanden",
-						h->vars[lefttab].c_str(), h->vars[righttab].c_str(),
-						h->vars[leftval].c_str(), h->vars[rightval].c_str());
-				add_content(h,  "<body>error</body>");
-				return;
+				msg.perror(E_WADD, "Table <%s,%s> oder Spalte <%s,%s> beim addieren zur Whereclause nicht vorhanden", h->vars[lefttab].c_str(), h->vars[righttab].c_str(), h->vars[leftval].c_str(), h->vars[rightval].c_str());
+				return result;
 			}
 		}
 	}
 
-	result = query->save(h->vars["schemaInput"],
-			             h->vars["queryInput"],
-			             unionnum,
-			             h->vars["queryidInput"],
-                         atoi(h->vars["unionallInput"].c_str()) != 0, atoi(
-					     h->vars["selectdistinctInput"].c_str()) !=0,
-					     h->vars["copy"] != "");
-
-	if ( result >= 0  )
-		add_content(h,  "<body><queryid>%s</queryid></body>",query->getQueryid().c_str());
-	else
-		add_content(h,  "<body>error</body>");
+	if ( query->save(h->vars["schemaInput"], h->vars["queryInput"], unionnum, h->vars["queryidInput"], atoi(h->vars["unionallInput"].c_str()) != 0, atoi( h->vars["selectdistinctInput"].c_str()) !=0, h->vars["copy"] != "") >= 0 )
+	    result = query->getQueryid();
 
 	db->release(query);
-	return;
+	return result;
 }
 
-void DbHttpAdminQuery::del(Database *db, HttpHeader *h)
+void DbHttpAdminQuery::ok_xml(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/xml";
+    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+
+    std::string result = this->ok(db, h);
+
+    if ( result != "" )
+        add_content(h,  "<body><queryid>%s</queryid></body>",result.c_str());
+    else
+        add_content(h,  "<body>error</body>");
+}
+
+void DbHttpAdminQuery::ok_json(Database *db, HttpHeader *h)
+{
+    h->content_type = "text/json";
+
+    std::string result = this->ok(db, h);
+
+    if ( result != "" )
+        add_content(h,  "{ \"result\" : \"ok\",\n \"ids\" : [ \"queryid\" ],\n \"values\" : [[ \"%s\" ]]\n", result.c_str());
+    else
+        add_content(h,  "{ \"result\" : \"error\"\n" );
+}
+
+std::string DbHttpAdminQuery::del(Database *db, HttpHeader *h)
 {
 	DbQueryCreator *query;
 	std::string queryid;
+    std::string result = "error";
 
 	h->status = 200;
-	h->content_type = "text/xml";
-
-	add_content(h, 
-			"<?xml version=\"1.0\" encoding=\"%s\"?><result>",
-			h->charset.c_str());
-
 	queryid = h->vars["queryidInput.old"];
 
 	query = db->p_getQuerycreator();
-	if ( query->del(queryid) == 0 )
-		add_content(h,  "<body>ok</body>");
-	else
-		add_content(h,  "<body>error</body>");
-
+	if ( query->del(queryid) == 0 ) result = "ok";
     db->release(query);
 
-    return;
+    return result;
+}
+
+void DbHttpAdminQuery::del_xml(Database *db, HttpHeader *h)
+{
+	h->content_type = "text/xml";
+    add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+	add_content(h,  "<body>%s</body>", this->del(db,h));
+}
+
+void DbHttpAdminQuery::del_json(Database *db, HttpHeader *h)
+{
+	h->content_type = "text/json";
+	add_content(h,  "{ \"result\" : \"%s\"\n", this->del(db,h));
 }

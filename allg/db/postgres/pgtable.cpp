@@ -63,7 +63,7 @@ typedef signed int int32;
 	"COALESCE( NULLIF(ta5.text_de,''), NULLIF(ta4.text_de,''), NULLIF(ta7.text_de,''), NULLIF(ta6.text_de,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_de," \
 	"COALESCE( NULLIF(ta5.text_en,''), NULLIF(ta4.text_en,''), NULLIF(ta7.text_en,''), NULLIF(ta6.text_en,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_en," \
     "COALESCE( NULLIF(a5.regexpmod,''),  NULLIF(a4.regexpmod,''), NULLIF(a7.regexpmod,''), NULLIF(a6.regexpmod,'') ),"\
-    "COALESCE( a4.dpytype, a6.dpytype, -1 ) "\
+    "COALESCE( NULLIF(a4.dpytype,-1), NULLIF(a6.dpytype,-1), -1 ) "\
   "from "\
   "((((((( "\
    "( pg_catalog.pg_attribute a1 LEFT JOIN pg_catalog.pg_attrdef a2  ON a1.attrelid = a2.adrelid and a1.attnum = a2.adnum )  "\
@@ -117,13 +117,6 @@ PgTable::PgTable(std::string schema, std::string name) :
 	dbconnect = this;
 }
 
-PgTable::PgTable(std::string name) :
-	msg("PgTable")
-{
-	setName(name);
-	dbconnect = this;
-}
-
 PgTable::PgTable() :
 	msg("PgTable")
 {
@@ -135,13 +128,6 @@ PgTable::PgTable(PgConnect *con, std::string schema, std::string name) :
 	PgConnect(con), msg("PgTable")
 {
 	setName(schema, name);
-	dbconnect = this;
-}
-
-PgTable::PgTable(PgConnect *con, std::string name) :
-	PgConnect(con), msg("PgTable")
-{
-	setName(name);
 	dbconnect = this;
 }
 
@@ -215,21 +201,6 @@ std::string PgTable::getColumnstring(std::string name, const Column *col)
 		result += " NOT NULL ";
 
 	return result;
-}
-
-void PgTable::setName(std::string name, int ready)
-{
-
-	std::string::size_type i;
-
-	if ((i = name.find_first_of('.')) != std::string::npos)
-	{
-		setName(name.substr(0, i), name.substr(i + 1), ready);
-	}
-	else
-	{
-		setName(getCurschema(), name, ready);
-	}
 }
 
 void PgTable::setName(std::string schema, std::string name, int ready)
@@ -343,19 +314,7 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 
 }
 
-int PgTable::create(std::string schema, std::string name, ColumnMap *c, int ready)
-{
-	setName(schema, name);
-	return create(c, ready);
-}
-
-int PgTable::create(std::string name, ColumnMap *c, int ready)
-{
-	setName(name);
-	return create(c, ready);
-}
-
-int PgTable::create(ColumnMap *c, int ready)
+int PgTable::create( std::string schema, std::string name, ColumnMap *c, std::string owner, int ready)
 {
 
 	std::string stm;
@@ -363,23 +322,19 @@ int PgTable::create(ColumnMap *c, int ready)
 	int first;
 	int result;
 
-	if (this->name == "")
+	setName(schema, name);
+
+	if ( this->schema == "" || this->name == "")
 	{
-		msg.perror(NO_TABLENAME, "Kein Tabellenname beim Erzeugen der Tabelle "
-			"vorhanden");
-		if (ready)
-			end();
+		msg.perror(NO_TABLENAME, "Kein Tabellenname beim Erzeugen der Tabelle vorhanden");
+		if (ready) end();
 		return -NO_TABLENAME;
 	}
 
-	setName(schema, name);
-
 	if (!cols.empty())
 	{
-		msg.perror(TABLE_EXISTS, "kann Tabelle %s nicht erzeugen - "
-			"Tabelle existiert", name.c_str());
-		if (ready)
-			end();
+		msg.perror(TABLE_EXISTS, "kann Tabelle %s nicht erzeugen - " "Tabelle existiert", name.c_str());
+		if (ready) end();
 		return -TABLE_EXISTS;
 	}
 
@@ -395,6 +350,9 @@ int PgTable::create(ColumnMap *c, int ready)
 
 	stm += " );";
 
+	if ( owner != "" )
+	    stm += "ALTER TABLE " + getDbfullname() + " OWNER TO " + owner + ";";
+
 	result = execute(stm.c_str(), ready);
 	del_allcolumns();
 	setName(schema, name, ready);
@@ -402,21 +360,27 @@ int PgTable::create(ColumnMap *c, int ready)
 	return result;
 }
 
-int PgTable::rename(std::string newschema, std::string newname, int ready)
+int PgTable::rename(std::string newschema, std::string newname, std::string owner, int ready)
 {
 	int result = 0;
 	std::string cmd;
 
-	if ( newschema != this->schema )
+    if ( owner != "" )
+    {
+        cmd = "ALTER TABLE " + getDbfullname() + " OWNER TO " + owner + ";";
+        result = execute(cmd.c_str());
+    }
+
+	if ( result == 0 && newschema != this->schema )
 	{
 	    cmd = "ALTER TABLE " + getDbfullname() + " SET SCHEMA \"" + newschema + "\"";
 		result = execute(cmd.c_str());
 	}
 
-	if ( result == 0 && newname != this->name )
+    if ( result == 0 && newname != this->name )
     {
-		cmd = "ALTER TABLE " + getDbfullname() + " RENAME TO \"" + newname + "\"";
-		result = execute(cmd.c_str());
+        cmd = "ALTER TABLE " + getDbfullname() + " RENAME TO \"" + newname + "\"";
+        result = execute(cmd.c_str());
     }
 
 	if ( result == 0 )
@@ -431,26 +395,26 @@ int PgTable::rename(std::string newschema, std::string newname, int ready)
 	return result;
 }
 
-int PgTable::remove(std::string name, int ready)
+int PgTable::remove(std::string schema, std::string name, int ready)
 {
-
 	int result;
 	char stm[256];
 
-	setName(name);
+	setName(schema, name);
+	if ( this->check_history())
+	    this->del_history();
 
-	sprintf(stm, "DROP TABLE %s", name.c_str());
+	sprintf(stm, "DROP TABLE %s.%s", schema.c_str(), name.c_str());
 	result = execute(stm, ready);
 
 	del_allcolumns();
-	setName(name, ready);
+	setName(schema, name, ready);
 
 	if (!cols.empty())
 	{
-		msg.perror(TABLE_NOTDROPED, "kann Tabelle %s nicht löschen",
-				name.c_str());
+		msg.perror(TABLE_NOTDROPED, "kann Tabelle %s nicht löschen", name.c_str());
 		del_allcolumns();
-		return -TABLE_EXISTS;
+		result = -TABLE_EXISTS;
 	}
 
 	return result;

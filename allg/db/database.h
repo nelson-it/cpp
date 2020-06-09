@@ -71,7 +71,6 @@ public:
     virtual void release(DbCursor *cur);
 
     virtual DbTable *p_getTable( std::string schema, std::string name) = 0;
-    virtual DbTable *p_getTable( std::string name ) = 0;
     virtual DbTable *p_getTable() = 0;
     virtual DbTable *p_getLasttable() { return last_tab; };
     virtual int release( DbTable *tab );

@@ -94,10 +94,13 @@ public:
 
     typedef std::vector<Result> ResultVec;
     typedef std::vector<ResultVec> ResultMat;
+    typedef std::vector<std::string> ResultName;
 
 protected:
     Message msg;
     ResultMat result;
+    ResultName resultname;
+
     iconv_t iv;
 
 public:
@@ -171,7 +174,15 @@ public:
     ResultMat    getResult() { return result;  }
     ResultMat *p_getResult() { return &result; }
 
-    virtual std::string mk_index();
+    std::string getResultName(unsigned int i)
+    {
+        if ( i < this->resultname.size())
+            return resultname[i];
+        else
+            return "";
+    }
+
+    virtual std::string mk_unique_id();
 };
 
 

@@ -5,6 +5,8 @@
 #include <string>
 #include <iconv.h>
 
+#define CHANGE_SINGLE(c,val) i=0; while ( (i = str.find(c, i) ) != std::string::npos) { str.replace(i, 1, val); i += 2; }
+
 class ToString
 {
 public:
@@ -137,17 +139,16 @@ public:
         return str;
     }
 
-#define MKXML_SINGLE(c,val) i=0; while ( (i = str.find(c, i) ) != std::string::npos) { str.replace(i, 1, val); i += 2; }
     static std::string mkxml(std::string str)
     {
         std::string::size_type i = 0;
 
-        MKXML_SINGLE('%', "%25");
-        MKXML_SINGLE('<', "%3C");
-        MKXML_SINGLE('>', "%3E");
-        MKXML_SINGLE('&', "%26");
-        MKXML_SINGLE('(', "%28");
-        MKXML_SINGLE(')', "%29");
+        CHANGE_SINGLE('%', "%25");
+        CHANGE_SINGLE('<', "%3C");
+        CHANGE_SINGLE('>', "%3E");
+        CHANGE_SINGLE('&', "%26");
+        CHANGE_SINGLE('(', "%28");
+        CHANGE_SINGLE(')', "%29");
 
         return str;
     }
@@ -156,10 +157,10 @@ public:
     {
         std::string::size_type i = 0;
 
-        MKXML_SINGLE('&', "&amp;");
-        MKXML_SINGLE(' ', "&nbsp;");
-        MKXML_SINGLE('<', "&lt;");
-        MKXML_SINGLE('>', "&gt;");
+        CHANGE_SINGLE('&', "&amp;");
+        CHANGE_SINGLE(' ', "&nbsp;");
+        CHANGE_SINGLE('<', "&lt;");
+        CHANGE_SINGLE('>', "&gt;");
 
         return str;
     }
@@ -190,9 +191,20 @@ public:
         return str;
     }
 
-    static std::string mkjson(std::string s)
+    static std::string mkjson(std::string str)
     {
-        return ToString::mascarade( s.c_str(), "\"", MASC_CR);
+        std::string::size_type i = 0;
+
+        CHANGE_SINGLE('\\', "\\\\");
+        CHANGE_SINGLE('"', "\\\"");
+        CHANGE_SINGLE('/', "\\/");
+        CHANGE_SINGLE('\b', "\\b");
+        CHANGE_SINGLE('\f', "\\f");
+        CHANGE_SINGLE('\n', "\\n");
+        CHANGE_SINGLE('\r', "\\r");
+        CHANGE_SINGLE('\t', "\\t");
+
+        return str;
     }
 
     static std::string substitute(std::string s, const char *from = "/", const char *to = "\\")

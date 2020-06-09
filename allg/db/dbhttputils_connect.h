@@ -25,16 +25,20 @@ class DbHttpUtilsConnect : public DbHttpProvider
     typedef std::map<std::string, SubProvider> SubProviderMap;
     SubProviderMap subprovider;
 
-    void end          (Database *db, HttpHeader *h);
-    void start        (Database *db, HttpHeader *h);
+    void start_xml        (Database *db, HttpHeader *h);
+    void end_xml          (Database *db, HttpHeader *h);
+    void reload_xml       (Database *db, HttpHeader *h);
+
+    void start_json        (Database *db, HttpHeader *h);
+    void end_json          (Database *db, HttpHeader *h);
+    void reload_json       (Database *db, HttpHeader *h);
+
+    void sql_execute_xml      (Database *db, HttpHeader *h);
+    void sql_execute_json     (Database *db, HttpHeader *h);
 
     void func_execute_xml     (Database *db, HttpHeader *h);
     void func_mod_xml         (Database *db, HttpHeader *h);
     void func_del_xml         (Database *db, HttpHeader *h);
-
-    void sql_execute_xml      (Database *db, HttpHeader *h);
-
-    void reload               (Database *db, HttpHeader *h);
 
     void func_execute_json    (Database *db, HttpHeader *h);
     void func_mod_json        (Database *db, HttpHeader *h);

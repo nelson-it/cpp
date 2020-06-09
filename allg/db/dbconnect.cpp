@@ -375,7 +375,7 @@ std::string DbConnect::getValue(int typ, std::string value)
 
     if (typ == DbConnect::CHAR && value == "################")
     {
-        str = "'" + mk_index() + "'";
+        str = "'" + mk_unique_id() + "'";
     }
     else if (typ == DbConnect::CHAR || typ == DbConnect::EMAIL || typ == DbConnect::LINK )
     {
@@ -479,7 +479,7 @@ std::string DbConnect::getValue(int typ, std::string value)
     return str;
 }
 
-std::string DbConnect::mk_index()
+std::string DbConnect::mk_unique_id()
 {
     char str[33];
     static int indexcount = 0;

@@ -13,10 +13,10 @@
 DbQuery::DbQuerySingleMap DbQuery::querys;
 pthread_mutex_t DbQuery::query_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-#define COL_SELECT "SELECT t0.tabnum,\
+#define COL_SELECT(lang) "SELECT t0.tabnum,\
                            t0.field,\
                            t0.colid,\
-                           COALESCE(NULLIF(t2.text_de,''), NULLIF(t4.text_de, ''), NULLIF(t5.text_de, ''), NULLIF(tcn.text_de,''), NULLIF(t0.colid,''), t0.field),\
+                           COALESCE(NULLIF(t2.text_" + lang + ",''), NULLIF(t4.text_" + lang + ", ''), NULLIF(t5.text_" + lang + ", ''), NULLIF(tcn.text_" + lang + ",''), NULLIF(t0.colid,''), t0.field),\
                            t0.fieldtyp,\
                            t0.lang,\
                            t0.format,\
@@ -24,7 +24,7 @@ pthread_mutex_t DbQuery::query_mutex = PTHREAD_MUTEX_INITIALIZER;
                            COALESCE(NULLIF(t4.dpytype, -1), NULLIF(tcn.dpytype,-1), NULLIF(t0.fieldtyp,-1), -1),\
                            t0.groupby,\
                            t0.cannull,\
-                           COALESCE( NULLIF(t6.regexp, ''), NULLIF(t4.regexp, ''), NULLIF( t5.regexp, ''), NULLIF(rtcn.regexp, ''), NULLIF(tcn.regexp,''), '.+|^$'),\
+                           COALESCE( NULLIF(t6.regexp, ''), NULLIF(t4.regexp, ''), NULLIF( t5.regexp, ''), NULLIF(rtcn.regexp, ''), NULLIF(tcn.regexp,''), ''),\
                            COALESCE(NULLIF(t7.text_de,''), NULLIF(t8.text_de,''), NULLIF(trtcn.text_de,''), NULLIF(ttcn.text_de,''), NULLIF(t6.regexphelp,''), NULLIF(t4.regexphelp,''), NULLIF(t5.regexphelp,''), NULLIF(rtcn.regexphelp,''), NULLIF(tcn.regexphelp,'')),\
                            COALESCE( NULLIF(t6.regexpmod,''), NULLIF(t4.regexpmod,''), NULLIF( t5.regexpmod,''), NULLIF(rtcn.regexpmod,''), NULLIF(tcn.regexpmod,'')),\
                            t0.musthaving \
@@ -371,7 +371,7 @@ void DbQuerySingle::setName(std::string schema, std::string name, CsList *cols, 
     tcur = dbadmin->p_getCursor();
     wcur = dbadmin->p_getCursor();
 
-    snprintf(cmd, sizeof(cmd), COL_SELECT, schema.c_str(), name.c_str(), (unionnum != "" && unionnum != "0") ? (std::string(" AND t1.unionnum = ") + unionnum ).c_str(): "" );
+    snprintf(cmd, sizeof(cmd), (COL_SELECT(lang)).c_str(), schema.c_str(), name.c_str(), (unionnum != "" && unionnum != "0") ? (std::string(" AND t1.unionnum = ") + unionnum ).c_str(): "" );
     ccur->open((char*) cmd);
     snprintf(cmd, sizeof(cmd), TAB_SELECT, schema.c_str(), name.c_str(), (unionnum != "" && unionnum != "0") ? (std::string(" AND t1.unionnum = ") + unionnum ).c_str(): "" );
     tcur->open((char*) cmd);
