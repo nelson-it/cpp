@@ -59,10 +59,10 @@ void XmlText::compute(XmlParseNode *node)
 
 		act_tab = node;
 
-		if ( act_tab->getAttr("border") == "" )
+		if ( act_tab->getAttr("border") != "1" )
 			act_tab->setAttr("border", "0");
 
-		if ( act_tab->getAttr("padding") == "" )
+		if ( act_tab->getAttr("padding") != "1" )
 			act_tab->setAttr("padding", "0");
 
 		for ( i=0; i< node->size(); ++i ) compute(node->getChild(i));
@@ -70,8 +70,7 @@ void XmlText::compute(XmlParseNode *node)
 		act_tab->setAttr("colcount", itoa(act_colcount, buffer, 10));
 
 		if ( save_tab != NULL )
-			act_tab->setAttr("parentborder",
-					save_tab->getAttr("border").c_str());
+			act_tab->setAttr("parentborder", save_tab->getAttr("border").c_str());
 		else
 			act_tab->setAttr("parentborder", "0" );
 

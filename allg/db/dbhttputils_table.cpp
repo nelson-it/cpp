@@ -303,11 +303,11 @@ void DbHttpUtilsTable::data_json(Database *db, HttpHeader *h)
     ids = labels = typs = formats = regexps = "";
     for (i=0; i < anzahl_cols; ++i)
     {
-        ids     += komma0 + "\"" + vals[i].name + "\"";
-        labels  += komma0 + "\"" + vals[i].text[lang] + "\"";
-        typs    += komma0 + "\"" + std::to_string(( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp ) + "\"";
+        ids     += komma0 + "\"" + ToString::mkjson(vals[i].name) + "\"";
+        labels  += komma0 + "\"" + ToString::mkjson(vals[i].text[lang]) + "\"";
+        typs    += komma0 + "\"" + ToString::mkjson(std::to_string(( vals[i].dpytyp == -1 ) ? vals[i].typ : vals[i].dpytyp )) + "\"";
         formats += komma0 + "\"\"";
-        regexps  += komma0 + "[ \"" + vals[i].regexp.c_str() + "\", \"" + vals[i].regexpmod.c_str() + "\", \"" + vals[i].regexphelp[lang] + "\" ] ";
+        regexps  += komma0 + "[ \"" + ToString::mkjson(vals[i].regexp) + "\", \"" + ToString::mkjson(vals[i].regexpmod) + "\", \"" + ToString::mkjson(vals[i].regexphelp[lang]) + "\" ] ";
 
         komma0 = ",";
     }
@@ -517,6 +517,14 @@ void DbHttpUtilsTable::insert(Database *db, HttpHeader *h)
         else
             add_content(h, "{ \"result\" : \"error\"");
     }
+
+    if (h->vars["lastquery"] != "" )
+    {
+        msg.pmessage(0,"Letze Abfrage:");
+        msg.ignore_lang = 1;
+        msg.line("%s", act_table->getLaststatement().c_str());
+    }
+
     db->release(act_table);
     return;
 }
@@ -658,6 +666,13 @@ void DbHttpUtilsTable::modify(Database *db, HttpHeader *h)
         }
     }
 
+    if (h->vars["lastquery"] != "" )
+    {
+        msg.pmessage(0,"Letze Abfrage:");
+        msg.ignore_lang = 1;
+        msg.line("%s", act_table->getLaststatement().c_str());
+    }
+
     db->release(act_table);
     return;
 }
@@ -686,16 +701,8 @@ void DbHttpUtilsTable::del(Database *db, HttpHeader *h)
     DbTable *act_table;
 
     h->status = 200;
-    h->content_type = "text/xml";
 
-    if ( h->content_type == "text/xml" )
-     {
-         add_content(h, "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
-     }
-     else if ( h->content_type == "text/json")
-     {
-         add_content(h, "{\n");
-     }
+    add_content(h, ( h->content_type == "text/xml" ) ? "<?xml version=\"1.0\" encoding=\"%s\"?><result>" : "{\n", h->charset.c_str());
 
     schema = h->vars["schema"];
     table = h->vars["table"];
@@ -714,22 +721,25 @@ void DbHttpUtilsTable::del(Database *db, HttpHeader *h)
 
     if ( where.size() == 0 )
     {
-        msg.perror(E_DEL, "Löschen der gesammten Tabelle nicht gestattet"); add_content(h,  "<body>error</body>");
+        msg.perror(E_DEL, "Löschen der gesammten Tabelle nicht gestattet");
+        add_content(h, ( h->content_type == "text/xml" ) ? "<body>error</body>" : "\"result\" : \"error\"");
     }
     else if ( act_table->del(&where) == 0 )
     {
-        if ( h->content_type == "text/xml" )
-            add_content(h,  "<body>ok</body>");
-        else
-            add_content(h, "\"result\" : \"ok\"");
+         add_content(h,  ( h->content_type == "text/xml" ) ? "<body>ok</body>" : "\"result\" : \"ok\"");
     }
     else
     {
-        if ( h->content_type == "text/xml" )
-             add_content(h,  "<body>error</body>");
-        else
-            add_content(h, "\"result\" : \"error\"");
+        add_content(h, ( h->content_type == "text/xml" ) ? "<body>error</body>" : "\"result\" : \"error\"");
     }
+
+    if (h->vars["lastquery"] != "" )
+    {
+        msg.pmessage(0,"Letze Abfrage:");
+        msg.ignore_lang = 1;
+        msg.line("%s", act_table->getLaststatement().c_str());
+    }
+
 
     db->release(act_table);
 

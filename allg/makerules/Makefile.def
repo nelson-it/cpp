@@ -120,6 +120,10 @@ ifeq "$($(TARGET).WITH_GD)" "TRUE"
               LIB_GD := -lgd -lpng -lz -ljpeg -lm
 endif
 
+ifeq "$($(TARGET).WITH_MAGIC)" "TRUE" 
+              LIB_MG := -lmagic
+endif
+
 ifeq "$(WITH_ICONV)" "TRUE"
 	ifeq "$(UNAME)" "Darwin"
              LD_STD := $(LD_STD) -L/usr/lib -liconv
@@ -184,7 +188,7 @@ else
     endif
 endif
 
-           LD_FLAGS := $(LD_STD) $(LD_SHARED)  \
+           LD_FLAGS := $(LD_STD) $(LD_SHARED)  $(LIB_MG) \
                        $(LIB_GD) $(LIB_ADD) $(LIB_PTH) $(LIB_PG)
           INC_FLAGS := $(INC_ADD) $(INC_STD) \
                        $(INC_PTH) $(INC_PGSQL) $(INC_PG) $(INC_GD)

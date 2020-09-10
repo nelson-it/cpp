@@ -749,7 +749,6 @@ void PgTable::del_history(int ready)
 
 int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 {
-	std::string stm;
 	ValueMap::iterator i;
 	int first;
 	int result;
@@ -778,7 +777,7 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 	}
 
 	result = 0;
-	stm = "INSERT INTO " + this->schema + ". " + this->name + "( ";
+	laststm = "INSERT INTO " + this->schema + ". " + this->name + "( ";
 
 	start_columncheck();
 	if (this->schema == "pg_catalog")
@@ -793,10 +792,10 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 					|| i->first == "modifydate")))
 			{
 				if (!first)
-					stm += " , ";
+				    laststm += " , ";
 				first = 0;
 
-				stm += "\"" + i->first + "\"";
+				laststm += "\"" + i->first + "\"";
 				ok_columncheck(i->first);
 			}
 		}
@@ -815,7 +814,7 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 		ok_columncheck("createdate");
 		ok_columncheck("modifyuser");
 		ok_columncheck("modifydate");
-		stm += ", createuser, createdate, modifyuser, modifydate";
+		laststm += ", createuser, createdate, modifyuser, modifydate";
 	}
 
 	result += columncheck();
@@ -823,7 +822,7 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 	if (result)
 		return result;
 
-	stm += " ) VALUES (";
+	laststm += " ) VALUES (";
 
 	for (first = 1, i = c->begin(); i != c->end(); ++i)
 	{
@@ -836,11 +835,11 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 	        if ( ( ic = this->cols.find(i->first)) != this->cols.end() )
 	        {
 	            if (!first)
-	                stm += " , ";
+	                laststm += " , ";
 	            first = 0;
 
 	            ic->second.value = i->second.value;
-	            stm += DbTable::getValue(&(ic->second));
+	            laststm += DbTable::getValue(&(ic->second));
 	        }
 	        else if ( have_usertime_columns && i->first == "ocreatedate" )
 	        {
@@ -865,13 +864,13 @@ int PgTable::insert(ValueMap *c, int ready, int ignore_error)
 	}
 
 	if (have_usertime_columns)
-		stm = stm + ", session_user, " + cdate + ", session_user, " + mdate;
+	    laststm = laststm + ", session_user, " + cdate + ", session_user, " + mdate;
 
-	stm += " ) ";
+	laststm += " ) ";
 
 	if (ignore_error)
 		setIgnore_error();
-	result = execute(stm.c_str(), ready);
+	result = execute(laststm.c_str(), ready);
 	resetIgnore_error();
 
 	return result;
@@ -932,7 +931,6 @@ std::string PgTable::mk_where(ValueMap *w, CsList *wop)
 
 int PgTable::modify(ValueMap *c, ValueMap *w, int ready)
 {
-	std::string stm;
 	ValueMap::iterator i;
 	int first;
 	int result;
@@ -962,31 +960,27 @@ int PgTable::modify(ValueMap *c, ValueMap *w, int ready)
 	// Update zusammensetzen
 	// =====================
 	result = 0;
-	stm = "UPDATE " + getDbfullname() + " SET ";
+	laststm = "UPDATE " + getDbfullname() + " SET ";
 
 	for (first = 1, i = c->begin(); i != c->end(); ++i)
 	{
 		if ((ci = this->cols.find(i->first)) != this->cols.end())
 		{
-			if (!(have_usertime_columns && (i->first == "createuser"
-					|| i->first == "createdate" || i->first == "modifyuser"
-					|| i->first == "modifydate")))
+			if (!(have_usertime_columns && (i->first == "createuser" || i->first == "createdate" || i->first == "modifyuser" || i->first == "modifydate")))
 			{
 				if (!first)
-					stm += " , ";
+				    laststm += " , ";
 				first = 0;
 
 				col = ci->second;
 				col.value = i->second.value;
-				stm += "\"" + i->first + "\" = " + DbTable::getValue(&col);
+				laststm += "\"" + i->first + "\" = " + DbTable::getValue(&col);
 			}
 		}
 		else
 		{
 			result = -1;
-			msg.perror(COL_UNKNOWN, "Spalte %s ist in der Tabelle "
-				"%s beim Modifizieren nicht forhanden", i->first.c_str(),
-					getDbfullname().c_str());
+			msg.perror(COL_UNKNOWN, "Spalte %s ist in der Tabelle " "%s beim Modifizieren nicht forhanden", i->first.c_str(), getDbfullname().c_str());
 		}
 	}
 
@@ -995,10 +989,10 @@ int PgTable::modify(ValueMap *c, ValueMap *w, int ready)
 		char now[32];
 		sprintf(now, "%ld", (long)time(NULL));
 
-		stm += std::string(", modifyuser = session_user, modifydate = ") + now;
+		laststm += std::string(", modifyuser = session_user, modifydate = ") + now;
 	}
 
-	stm += " " + where;
+	laststm += " " + where;
 
 	if (result)
 	{
@@ -1007,13 +1001,13 @@ int PgTable::modify(ValueMap *c, ValueMap *w, int ready)
 		return result;
 	}
 
-	return execute(stm.c_str(), ready);
+	return execute(laststm.c_str(), ready);
 }
 
 int PgTable::del(ValueMap *w, int ready)
 {
-	std::string stm = "delete from " + getDbfullname() + " " + mk_where(w);
-	return execute(stm.c_str(), ready);
+    laststm = "delete from " + getDbfullname() + " " + mk_where(w);
+	return execute(laststm.c_str(), ready);
 }
 
 DbConnect::ResultMat *PgTable::select(ValueMap *cols, ValueMap *w, CsList *wop, CsList *o, int distinct, int ready)

@@ -56,7 +56,6 @@ $(SHLIB_PRE)mnexml.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/xml/xmlparse.cpp \
                 $(PROJECT_ROOT)/allg/xml/xmltext.cpp \
                 $(PROJECT_ROOT)/allg/xml/xmltext_tex.cpp \
-                $(PROJECT_ROOT)/allg/xml/xmltext_htmledit.cpp \
                 $(PROJECT_ROOT)/allg/xml/xmltext_html.cpp \
 
 $(SHLIB_PRE)mnemail.$(SHLIB).ISDLL := TRUE

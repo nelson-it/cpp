@@ -610,7 +610,7 @@ void DbHttpAdminTable::table_mod_json( Database *db, HttpHeader *h)
     else
         add_content(h, "{ \"result\" : \"error\"");
 
-    if ( result == 0 && h->vars["showhistoryInput"] != "" )
+    if ( result == 0 && h->vars["showhistoryInput"] != "0" )
         tab->add_history(table + "id");
 
     if ( h->vars["sqlend"] != "" )

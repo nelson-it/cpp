@@ -16,6 +16,44 @@
 #include <crypt/base64.h>
 #include "http_vars.h"
 
+int percent_decode(char* out, const char* in)
+{
+    static const char tbl[256] = {
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+         0, 1, 2, 3, 4, 5, 6, 7,  8, 9,-1,-1,-1,-1,-1,-1,
+        -1,10,11,12,13,14,15,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,10,11,12,13,14,15,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1,
+        -1,-1,-1,-1,-1,-1,-1,-1, -1,-1,-1,-1,-1,-1,-1,-1
+    };
+    char c, v1, v2, *beg=out;
+    if(in != NULL) {
+        while((c=*in++) != '\0') {
+            if(c == '%') {
+                if((v1=tbl[(unsigned char)*in++])<0 ||
+                   (v2=tbl[(unsigned char)*in++])<0) {
+                    *beg = '\0';
+                    return -1;
+                }
+                c = (v1<<4)|v2;
+            }
+            *out++ = c;
+        }
+    }
+    *out = '\0';
+    return 0;
+}
+
 HttpVars::~HttpVars()
 {
     clear();
@@ -68,23 +106,22 @@ HttpVars::setVars(std::string vars)
         if ((vpos = c.find_first_of('=')) != std::string::npos)
         {
             std::string val = c.substr(vpos + 1);
+            char *result;
 
             while ((cpos = val.find('+')) != std::string::npos)
                 val.replace(cpos, 1, " ", 1);
 
-            cpos = 0;
-            while ((cpos = val.find('%', cpos)) != std::string::npos)
+            result = new char[val.size() + 1];
+            if ( percent_decode( result, val.c_str()) == 0 )
             {
-                char cv[2];
-
-                cv[0] = (char) strtol(val.substr(cpos + 1, 2).c_str(), NULL, 16);
-                cv[1] = '\0';
-
-                val.replace(cpos, 3, cv);
-                cpos++;
+                val = "";
+                this->vars[c.substr(0, vpos)] = std::string(result);
+                delete [] result;
             }
-
-            this->vars[c.substr(0, vpos)] = val;
+            else
+            {
+                msg.perror(DECODE, "Decodefehler für Variable %s", c.substr(0, vpos).c_str());
+            }
         }
     }
 
@@ -174,6 +211,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
                 {
                     fwrite(c_old, 1, c - c_old - 2, f);
                     fclose(f);
+                    msg.pdebug(5, "name: %s filename: %s type %s", name.c_str(), filename, content_type.c_str());
                     files[name] = filename;
                     vars[name] = "##########" + content_type;
                 }
@@ -191,6 +229,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
         }
         else if (str.find("Content-Disposition:") != std::string::npos)
         {
+            msg.pdebug(5, "%s", str.c_str());
             if ((npos = str.find("name")) == std::string::npos) continue;
 
             name = str.substr(npos);

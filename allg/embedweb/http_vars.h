@@ -15,7 +15,8 @@ public:
 private:
     enum ErrorTypes
     {
-        FILEOPEN = 1
+        FILEOPEN = 1,
+        DECODE
     };
 
     Message msg;

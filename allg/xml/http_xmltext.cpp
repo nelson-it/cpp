@@ -7,17 +7,13 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include <xml/xmltext_html.h>
-#include <xml/xmltext_htmledit.h>
-
+#include "xmltext_html.h"
 #include "http_xmltext.h"
 
 HttpXmlText::HttpXmlText(Http *h) :
 	HttpProvider(h), msg("HttpXmlText")
 {
 		subprovider["html.html"] = &HttpXmlText::html;
-		subprovider["html.js"]   = &HttpXmlText::htmledit;
-
 		h->add_provider(this);
 }
 
@@ -73,15 +69,3 @@ void HttpXmlText::html(HttpHeader *h)
 	xml.mk_output();
 	add_content(h, xml.get_string(), strlen(xml.get_string()));
 }
-
-void HttpXmlText::htmledit(HttpHeader *h)
-{
-	XmlTextHtmlEdit xml(h->vars["editor"]);
-
-	h->content_type = "text/plain";
-	h->status = 200;
-	xml.setXml(h->vars["xmltext"]);
-	xml.mk_output();
-	add_content(h, xml.get_string(), strlen(xml.get_string()));
-}
-

@@ -16,10 +16,10 @@ public:
     {
         E_OK,
         E_NOENDTAG,
-	E_TAGNOTCLOSE,
-	E_TAGNOTOPEN,
-	E_ARGUMENT,
-	E_DELIMITER,
+        E_TAGNOTCLOSE,
+        E_TAGNOTOPEN,
+        E_ARGUMENT,
+        E_DELIMITER,
         E_MAXTYPE
     };
 
@@ -31,7 +31,7 @@ private:
     std::string id;
     std::string data;
     AttrMap attrs;
-    
+
     int parse_attr(std::string stag);
 
 public:
@@ -45,17 +45,17 @@ public:
     std::string getData() { return data; }
     AttrMap    *getAttrs() { return &attrs; }
     void        setAttr(const char* name, const char *value)
-        { attrs[name] = value; }
+    { attrs[name] = value; }
     std::string getAttr( const char *name)
     {
         AttrMap::iterator i;
-	if ( ( i = attrs.find(name) ) != attrs.end() ) return i->second;
-	else return "";
+        if ( ( i = attrs.find(name) ) != attrs.end() ) return i->second;
+        else return "";
     }
 
 
     XmlParseNode *getChild(unsigned int i)
-	{ if ( i < childs.size() ) return childs[i]; else return NULL; }
+    { if ( i < childs.size() ) return childs[i]; else return NULL; }
     XmlParseNode *operator[] (unsigned int i) { return getChild(i); }
     unsigned int size() { return childs.size(); }
 

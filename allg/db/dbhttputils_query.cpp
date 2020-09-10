@@ -763,11 +763,11 @@ void DbHttpUtilsQuery::data_json(Database *db, HttpHeader *h)
                     colformat.insert(j, 1, '\'');
             }
 
-            ids     += komma0 + "\"" + query->getId(pos) + "\"";
-            labels  += komma0 + "\"" + query->getName(pos) + "\"";
-            typs    += komma0 + "\"" + std::to_string(coltyp) + "\"";
-            formats += komma0 + "\"" + colformat + "\"";
-            regexps  += komma0 + "[ \"" + query->getRegexp(pos) + "\", \"" + query->getRegexpmod(pos) + "\", \"" + query->getRegexphelp(pos) + "\" ] ";
+            ids     += komma0 + "\"" + ToString::mkjson(query->getId(pos)) + "\"";
+            labels  += komma0 + "\"" + ToString::mkjson(query->getName(pos)) + "\"";
+            typs    += komma0 + "\"" + ToString::mkjson(std::to_string(coltyp)) + "\"";
+            formats += komma0 + "\"" + ToString::mkjson(colformat) + "\"";
+            regexps  += komma0 + "[ \"" + ToString::mkjson(query->getRegexp(pos)) + "\", \"" + ToString::mkjson(query->getRegexpmod(pos)) + "\", \"" + ToString::mkjson(query->getRegexphelp(pos)) + "\" ] ";
 
             komma0 = ",";
 

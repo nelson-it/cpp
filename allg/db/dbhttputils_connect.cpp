@@ -294,7 +294,7 @@ void DbHttpUtilsConnect::func_execute_json(Database *db, HttpHeader *h)
 {
     std::string result = ToString::mkjson(this->func_execute(db, h));
     if ( result != "error" )
-        add_content(h, "{ \"result\" : \"%s\",\n \"ids\" : [ \"result\" ],\n \"values\" : [[ \"%s\" ]]\n",result.c_str(), result.c_str());
+        add_content(h, "{ \"result\" : \"%s\",\n \"ids\" : [ \"result\" ],\n \"values\" : [[ \"%s\" ]]\n", ToString::mkjson(result).c_str(), ToString::mkjson(result).c_str());
     else
         add_content(h, "{ \"result\" : \"error\"");
 }
@@ -302,7 +302,7 @@ void DbHttpUtilsConnect::func_execute_json(Database *db, HttpHeader *h)
 void DbHttpUtilsConnect::func_mod_json(Database *db, HttpHeader *h)
 {
     if ( this->func_mod(db, h) == 0 )
-        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"schema\", \"fullname\" ],\n \"values\" : [[ \"%s\", \"%s\" ]]\n", h->vars["par0"].c_str(), h->vars["par1"].c_str());
+        add_content(h, "{ \"result\" : \"ok\",\n \"ids\" : [ \"schema\", \"fullname\" ],\n \"values\" : [[ \"%s\", \"%s\" ]]\n", ToString::mkjson(h->vars["par0"]).c_str(), ToString::mkjson(h->vars["par1"]).c_str());
     else
         add_content(h, "{ \"result\" : \"error\"");
 }
@@ -393,9 +393,9 @@ void DbHttpUtilsConnect::sql_execute_json(Database *db, HttpHeader *h)
         {
             for (i=0; i < (*r)[0].size(); ++i)
             {
-                ids     += komma0 + "\"" + dbconnect->getResultName(i) + "\"";
-                labels  += komma0 + "\"" + dbconnect->getResultName(i) + "\"";
-                typs    += komma0 + "\"" + std::to_string(((*r)[0][i]).typ) + "\"";
+                ids     += komma0 + "\"" + ToString::mkjson(dbconnect->getResultName(i)) + "\"";
+                labels  += komma0 + "\"" + ToString::mkjson(dbconnect->getResultName(i)) + "\"";
+                typs    += komma0 + "\"" + ToString::mkjson(std::to_string(((*r)[0][i]).typ)) + "\"";
                 formats += komma0 + "\"" + "" + "\"";
                 regexps  += komma0 + "[ \"\", \"\", \"\" ] ";
 

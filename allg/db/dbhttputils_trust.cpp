@@ -191,6 +191,13 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         cmd.add("-port");
         cmd.add(h->port);
 
+        cmd.add("-project");
+        cmd.add(a["project"]);
+
+        cmd.add("-r");
+        cmd.add(a["projectroot"]);
+
+
         for ( i= h->vars.p_getVars()->begin(); i != h->vars.p_getVars()->end(); ++i )
         {
             if ( validpar.empty() || validpar.find(i->first) != std::string::npos )
@@ -229,13 +236,28 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
 
         if ( p.getStatus() != 0 )
         {
-            h->content_type = "text/plain";
-            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
-            buffer[sizeof(buffer) -1] = '\0';
-            h->extra_header.push_back(buffer);
+            if ( h->content_type == "text/json")
+            {
+                 add_contentb(h, "\0", 1);
+                 msg.perror(E_EXEC, "%s", h->content);
+                 del_content(h);
+                 add_content(h, "{ \"result\" : \"error\"");
+            }
+            else
+            {
+                h->content_type = "text/plain";
+                snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
+                buffer[sizeof(buffer) -1] = '\0';
+                h->extra_header.push_back(buffer);
+            }
         }
         else
         {
+            if ( h->content_length == 0 && h->content_type == "text/json" )
+                add_content(h, "{ \"result\" : \"ok\"");
+            else
+                h->content_type = "application/octet-stream";
+
             snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->filename.c_str()).c_str());
             buffer[sizeof(buffer) -1] = '\0';
             h->extra_header.push_back(buffer);
@@ -243,14 +265,23 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
     }
     else
     {
-        h->content_type = "text/plain";
-        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
-        buffer[sizeof(buffer) -1] = '\0';
-        h->extra_header.push_back(buffer);
+        if ( h->content_type == "text/json")
+        {
+            msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+            del_content(h);
+            add_content(h, "{ \"result\" : \"error\"");
+        }
+        else
+        {
+            h->content_type = "text/plain";
+            snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", "error.txt");
+            buffer[sizeof(buffer) -1] = '\0';
+            h->extra_header.push_back(buffer);
 
-        del_content(h);
-        add_content(h,  "error");
-        msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+            del_content(h);
+            add_content(h,  "error");
+            msg.perror(E_NOFUNC, "keine Funktion für den Namen <%s> gefunden", name.c_str());
+        }
         return;
 
     }

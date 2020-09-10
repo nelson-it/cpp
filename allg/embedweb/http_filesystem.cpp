@@ -178,9 +178,12 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 
     subprovider["ls.xml"]     = &HttpFilesystem::ls;
     subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
-    subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir;
-    subprovider["mkfile.html"] = &HttpFilesystem::mkfile;
-    subprovider["rmfile.xml"] = &HttpFilesystem::rmfile;
+    subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir_xml;
+    subprovider["rmdir.json"]  = &HttpFilesystem::rmdir_json;
+    subprovider["mkfile.html"] = &HttpFilesystem::mkfile_xml;
+    subprovider["mkfile.json"] = &HttpFilesystem::mkfile_json;
+    subprovider["rmfile.xml"] = &HttpFilesystem::rmfile_xml;
+    subprovider["rmfile.json"] = &HttpFilesystem::rmfile_json;
     subprovider["mklink.xml"] = &HttpFilesystem::mklink;
     subprovider["mv.xml"] = &HttpFilesystem::mv;
     subprovider["download.html"] = &HttpFilesystem::download;
@@ -606,23 +609,20 @@ void HttpFilesystem::mkdir(HttpHeader *h)
 
 
 }
-void HttpFilesystem::rmdir(HttpHeader *h)
+
+int HttpFilesystem::rmdir(HttpHeader *h)
 {
     std::string name = check_path(h, "", 0);
 
     if (  name == "" )
-    {
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
-    }
+        return -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     SetFileAttributes(name.c_str(), FILE_ATTRIBUTE_NORMAL);
     if ( ! RemoveDirectory(name.c_str()) )
     {
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 #else
     if ( ::rmdir(name.c_str()) != 0 )
@@ -631,12 +631,24 @@ void HttpFilesystem::rmdir(HttpHeader *h)
         msg.perror(E_DELFILE, "Fehler während des Löschen eines Ordners");
         msg.line("%s %s", name.c_str(), str.c_str());
 
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 #endif
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    return 0;
 }
+
+void HttpFilesystem::rmdir_xml ( HttpHeader *h)
+{
+    h->content_type == "text/xml";
+    add_content(h, ( this->rmdir( h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
+}
+
+void HttpFilesystem::rmdir_json (  HttpHeader *h)
+{
+    h->content_type = "text/json";
+    add_content(h, ( this->rmdir(h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
+}
+
 
 void HttpFilesystem::mv(HttpHeader *h)
 {
@@ -676,17 +688,15 @@ void HttpFilesystem::mv(HttpHeader *h)
 
 }
 
-void HttpFilesystem::mkfile(HttpHeader *h)
+std::string HttpFilesystem::mkfile(HttpHeader *h)
 {
     std::string str;
 
-    h->status = 200;
-    h->content_type = "text/html";
 
     str = h->vars.getFile("dataInput");
     if ( str == "" )
     {
-        str = msg.get("Keine Daten gefunden");
+        return msg.get("Keine Daten gefunden");
     }
     else
     {
@@ -694,19 +704,18 @@ void HttpFilesystem::mkfile(HttpHeader *h)
         std::string name = h->vars["filenameInput"];
         if ( getDir(h) == "" || name == "" )
         {
-            str = msg.get("Benötige einen Dateinamen");
+            return = msg.get("Benötige einen Dateinamen");
         }
 
         if ( ! CopyFile(str.c_str(), (path + DIRSEP + name).c_str(), FALSE) )
         {
             str = msg.getSystemerror(errno);
         }
-        str = "ok";
 #else
         int file1;
         if ( ( file1 = open(str.c_str(), O_RDONLY)) < 0 )
         {
-            str = msg.getSystemerror(errno);
+            return msg.getSystemerror(errno);
         }
         else
         {
@@ -714,15 +723,14 @@ void HttpFilesystem::mkfile(HttpHeader *h)
 
             if ( getDir(h) == "" || name == "" )
             {
-                str = msg.get("Benötige einen Dateinamen");
+                return msg.get("Benötige einen Dateinamen");
             }
             else
             {
                 std::string file = path + DIRSEP + name;
                 if ( access( file.c_str() , F_OK ) == 0 && ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "1" ) )
                 {
-                    msg.perror(E_FILEEXISTS, "Datei existiert und wird nicht überschrieben");
-                    return;
+                    return msg.get("Datei existiert und wird nicht überschrieben");
                 }
                 ::unlink(file.c_str());
                 int file2 = open(file.c_str(), O_WRONLY | O_CREAT, 0666 );
@@ -730,9 +738,11 @@ void HttpFilesystem::mkfile(HttpHeader *h)
                 {
                     str = msg.getSystemerror(errno);
                     close(file1);
+                    return str;
                 }
                 else
                 {
+                    str = "";
                     mode_t mask;
                     mask = umask(0);
                     umask(mask);
@@ -750,13 +760,21 @@ void HttpFilesystem::mkfile(HttpHeader *h)
                     }
                     close(file1);
                     close(file2);
-                    str = "ok";
+                    if ( str != "" ) return str;
                 }
             }
         }
 #endif
     }
+    return "ok";
+}
 
+void HttpFilesystem::mkfile_xml(HttpHeader *h)
+{
+    h->status = 200;
+    h->content_type = "text/html";
+
+    std::string str = mkfile(h);
     if ( h->vars["script"] != "" )
     {
         add_content(h, "<script type=\"text/javascript\">\n");
@@ -769,22 +787,40 @@ void HttpFilesystem::mkfile(HttpHeader *h)
     add_content(h,  "%s", str.c_str());
 }
 
-void HttpFilesystem::rmfile(HttpHeader *h)
+void HttpFilesystem::mkfile_json(HttpHeader *h)
+{
+    h->status = 200;
+    h->content_type = "text/json";
+
+    std::string str = mkfile(h);
+    if ( str != "ok" )
+    {
+        msg.ignore_lang = 1;
+        msg.perror(E_FILENOTFOUND, str.c_str());
+        msg.ignore_lang = 0;
+
+        add_content(h, "{ \"result\" : \"error\"");
+    }
+    else
+    {
+        add_content(h, "{ \"result\" : \"ok\"");
+    }
+
+
+}
+
+int HttpFilesystem::rmfile(HttpHeader *h)
 {
     std::string name = check_path(h, h->vars["filenameInput.old"]);
 
     if (  name == "" )
-    {
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
-    }
+        return -1;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( ! DeleteFile(name.c_str()) )
     {
         msg.perror(E_DELFILE, "Fehler während des Löschen einer Datei");
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 #else
     if ( ::unlink(name.c_str()) != 0 )
@@ -793,11 +829,22 @@ void HttpFilesystem::rmfile(HttpHeader *h)
         msg.perror(E_DELFILE, "Fehler während des Löschen einer Datei");
         msg.line("%s %s", name.c_str(), str.c_str());
 
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 #endif
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    return 0;
+}
+
+void HttpFilesystem::rmfile_xml ( HttpHeader *h)
+{
+    h->content_type == "text/xml";
+    add_content(h, ( this->rmfile( h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
+}
+
+void HttpFilesystem::rmfile_json (  HttpHeader *h)
+{
+    h->content_type = "text/json";
+    add_content(h, ( this->rmfile(h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
 void HttpFilesystem::mklink(HttpHeader *h)

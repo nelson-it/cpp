@@ -149,6 +149,8 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
         else
             h->content_type = "mneprint/pdf";
     }
+    else
+        h->status = 404;
 
     if (h->vars["sqlend"] != "")
         db->p_getConnect()->end();
@@ -167,10 +169,17 @@ void DbHttpReport::header_html( Database *db, HttpHeader *h)
     char buffer[1024];
 
     h->content_type = "text/plain";
+    h->status = 200;
 
     if ( ! h->vars.exists("companyownprefix") )
     {
         add_content(h,  "kein companyownprefix angegeben");
+        return;
+    }
+
+    if ( h->vars["data"].length() < 10 )
+    {
+        add_content(h,  "kein file angegeben");
         return;
     }
 

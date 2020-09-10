@@ -14,52 +14,40 @@ XmlTextHtml::XmlTextHtml(std::string size,
 
 	sscanf(size.c_str(), "%d", &this->size);
 
-	if (classmap.find("mne_font") == classmap.end() || classmap["mne_font"]
-			== "")
+	if (classmap.find("mne_font") == classmap.end() || classmap["mne_font"] == "")
 		classmap["mne_font"] = "mne_font";
 
-	if (classmap.find("mne_bold") == classmap.end() || classmap["mne_bold"]
-			== "")
+	if (classmap.find("mne_bold") == classmap.end() || classmap["mne_bold"] == "")
 		classmap["mne_bold"] = "mne_bold";
 
-	if (classmap.find("mne_italic") == classmap.end() || classmap["mne_italic"]
-			== "")
+	if (classmap.find("mne_italic") == classmap.end() || classmap["mne_italic"] == "")
 		classmap["mne_italic"] = "mne_italic";
 
-	if (classmap.find("mne_alignc") == classmap.end() || classmap["mne_alignc"]
-			== "")
+	if (classmap.find("mne_alignc") == classmap.end() || classmap["mne_alignc"] == "")
 		classmap["mne_alignc"] = "mne_alignc";
 
-	if (classmap.find("mne_alignl") == classmap.end() || classmap["mne_alignl"]
-			== "")
+	if (classmap.find("mne_alignl") == classmap.end() || classmap["mne_alignl"] == "")
 		classmap["mne_alignl"] = "mne_alignl";
 
-	if (classmap.find("mne_alignr") == classmap.end() || classmap["mne_alignr"]
-			== "")
+	if (classmap.find("mne_alignr") == classmap.end() || classmap["mne_alignr"] == "")
 		classmap["mne_alignr"] = "mne_alignr";
 
-	if (classmap.find("mne_alignj") == classmap.end() || classmap["mne_alignj"]
-			== "")
+	if (classmap.find("mne_alignj") == classmap.end() || classmap["mne_alignj"] == "")
 		classmap["mne_alignj"] = "mne_alignj";
 
-	if (classmap.find("mne_padding") == classmap.end()
-			|| classmap["mne_padding"] == "")
+	if (classmap.find("mne_padding") == classmap.end() || classmap["mne_padding"] == "")
 		classmap["mne_padding"] = "mne_padding";
 
-	if (classmap.find("mne_border") == classmap.end() || classmap["mne_border"]
-			== "")
+	if (classmap.find("mne_border") == classmap.end() || classmap["mne_border"] == "")
 		classmap["mne_border"] = "mne_border";
 
-	if (classmap.find("mne_valignt") == classmap.end()
-			|| classmap["mne_valignt"] == "")
+	if (classmap.find("mne_valignt") == classmap.end() || classmap["mne_valignt"] == "")
 		classmap["mne_valignt"] = "mne_valignt";
 
-	if (classmap.find("mne_valignb") == classmap.end()
-			|| classmap["mne_valignb"] == "")
+	if (classmap.find("mne_valignb") == classmap.end() || classmap["mne_valignb"] == "")
 		classmap["mne_valignb"] = "mne_valignb";
 
-	if (classmap.find("mne_valignm") == classmap.end()
-			|| classmap["mne_valignm"] == "")
+	if (classmap.find("mne_valignm") == classmap.end() || classmap["mne_valignm"] == "")
 		classmap["mne_valignm"] = "mne_valignm";
 
 	this->classmap = classmap;
@@ -165,13 +153,9 @@ void XmlTextHtml::mk_table(XmlParseNode *node, int num)
 
 	if (node->getAttr("padding") == "1")
 		html += " " + classmap["mne_padding"] + " ";
-	else
-		html += " " + classmap["mne_padding"] + "no ";
 
 	if (node->getAttr("border") == "1")
 		html += " " + classmap["mne_border"] + " ";
-	else
-		html += " " + classmap["mne_border"] + "no ";
 
 	html += "\"><tbody>";
 }
@@ -193,7 +177,6 @@ void XmlTextHtml::mk_tabrow_end(XmlParseNode *node, int num)
 
 void XmlTextHtml::mk_tabcol(XmlParseNode *node, int num)
 {
-	int i;
 	std::string e;
 
 	html += "<td class=\"";
@@ -202,11 +185,6 @@ void XmlTextHtml::mk_tabcol(XmlParseNode *node, int num)
 		html += classmap["mne_padding"] + " ";
 	else
 		html += classmap["mne_padding"] + "no ";
-
-	if (act_tab->getAttr("border") == "1")
-		html += " " + classmap["mne_border"] + " ";
-	else
-	    html += " " + classmap["mne_border"] + "no ";
 
 	e = node->getAttr("valign");
 	if (e == "top")
@@ -218,13 +196,8 @@ void XmlTextHtml::mk_tabcol(XmlParseNode *node, int num)
 
 	html += "\"";
 
-	if (node->getAttr("relwidth") != "")
-	{
-		char str[128];
-		sscanf(node->getAttr("relwidth").c_str(), "%d", &i);
-		snprintf(str, sizeof(str), "%dpx", (int)(((double)i/100.0) * size));
-		html = html + " style=\"width: " + str + "\"";
-	}
+	if ( ( e = node->getAttr("relwidth")) != "")
+		html = html + " aria-relwidth=\"" + e + "\"";
 
 	html += ">";
 }

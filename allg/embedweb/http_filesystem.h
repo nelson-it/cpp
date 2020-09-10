@@ -84,12 +84,21 @@ protected:
 
     virtual void readdir(HttpHeader *h);
 
+    std::string mkfile ( HttpHeader *h);
+    void mkfile_xml    (HttpHeader *h);
+    void mkfile_json   (HttpHeader *h);
+
     void ls     ( HttpHeader *h);
     void mkdir  ( HttpHeader *h);
-    void rmdir  ( HttpHeader *h);
 
-    void mkfile  ( HttpHeader *h);
-    void rmfile  ( HttpHeader *h);
+    int  rmdir      ( HttpHeader *h);
+    void rmdir_xml  ( HttpHeader *h);
+    void rmdir_json ( HttpHeader *h);
+
+    int  rmfile      ( HttpHeader *h);
+    void rmfile_xml  ( HttpHeader *h);
+    void rmfile_json ( HttpHeader *h);
+
     void mklink ( HttpHeader *h);
 
     void mv     ( HttpHeader *h);

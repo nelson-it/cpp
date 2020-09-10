@@ -17,7 +17,8 @@ class DbHttpUtilsTrust : public DbHttpProvider
 
         E_TYPE = 100,
         E_NOFUNC,
-        E_PERM
+        E_PERM,
+        E_EXEC
 
     };
 

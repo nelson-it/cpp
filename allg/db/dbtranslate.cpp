@@ -24,7 +24,7 @@ DbTranslate::FormatMap DbTranslate::intervals;
 
 Database *DbTranslate::db = NULL;
 pthread_mutex_t DbTranslate::mutex;
-std::map<void*, int>DbTranslate::inget;
+pthread_mutexattr_t DbTranslate::mutexattr;
 
 DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
 {
@@ -78,7 +78,8 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
     this->lang = lang;
     this->setRegion(region);
 
-    pthread_mutex_init(&mutex,NULL);
+    pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE_NP );
+    pthread_mutex_init(&mutex,&mutexattr);
 }
 
 DbTranslate::~DbTranslate()
@@ -172,24 +173,9 @@ void DbTranslate::setRegion(std::string region)
 
 }
 
-int *DbTranslate::p_getInget()
-{
-    std::map<void *, int>::iterator i;
-    void *tid =  PTHREADID;
-
-    if ( ( i = inget.find(tid)) == inget.end() )
-    {
-        inget[tid] = 0;
-        i = inget.find(tid);
-    }
-    return &i->second;
-}
-
-
 std::string DbTranslate::get(const char *str, const char *kategorie)
 {
 
-    int *in_get;
     std::string stm, s;
     char *c;
     int result;
@@ -213,11 +199,11 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
         il = cache.find(this->lang);
     }
 
-    in_get = this->p_getInget();
-
-    if ( *in_get || !db->have_connection()) return str;
-
-    *in_get = 1;
+    if ( !db->have_connection())
+    {
+        pthread_mutex_unlock(&mutex);
+        return str;
+    }
 
     s = str;
     db->p_getConnect()->mk_string(s);
@@ -227,7 +213,6 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
     if (db->p_getConnect()->have_result())
     {
         c = (char *) (*db->p_getConnect()->p_get_first_result())[0];
-        *in_get = 0;
         if (*c == '\0')
         {
             il->second[str] = str;
@@ -253,8 +238,6 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
         tab->insert(&vals, 1);
         db->release(tab);
     }
-
-    *in_get = 0;
 
     pthread_mutex_unlock(&mutex);
     return str;

@@ -22,7 +22,6 @@ class HttpXmlText : public HttpProvider
     SubProviderMap subprovider;
 
     void html ( HttpHeader *h);
-    void htmledit ( HttpHeader *h);
 
 public:
     HttpXmlText( Http *h );

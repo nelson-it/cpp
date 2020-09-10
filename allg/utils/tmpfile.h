@@ -11,7 +11,7 @@ class TmpFile
     FILE *fp;
 
 public:
-    TmpFile(const char *tmpl, int need_file = 0 );
+    TmpFile(const char *tmpl, int needopen = 0 );
     virtual ~TmpFile();
 
     char *get_name() { return filename; }

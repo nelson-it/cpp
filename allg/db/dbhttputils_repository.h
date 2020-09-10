@@ -51,31 +51,55 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
 
     int exec(const CsList *cmd, const char *workdir);
 
-    void insert_xml (Database *db, HttpHeader *h);
-    void modify_xml (Database *db, HttpHeader *h);
-    void delete_xml (Database *db, HttpHeader *h);
+    void insert_xml  (Database *db, HttpHeader *h);
+    void modify_xml  (Database *db, HttpHeader *h);
+    void delete_xml  (Database *db, HttpHeader *h);
+    void data_xml    (Database *db, HttpHeader *h);
+    void ls_xml      (Database *db, HttpHeader *h);
+    void addfile_xml (Database *db, HttpHeader *h);
+    void  mkfile_xml (Database *db, HttpHeader *h);
+    void  rmfile_xml (Database *db, HttpHeader *h);
+    void      mv_xml (Database *db, HttpHeader *h);
+    void   mkdir_xml (Database *db, HttpHeader *h);
+    void   rmdir_xml (Database *db, HttpHeader *h);
+    void  commit_xml (Database *db, HttpHeader *h);
+    void   dblog_xml ( Database *db, HttpHeader *h);
 
-    void data_xml   (Database *db, HttpHeader *h);
+    void insert_json  (Database *db, HttpHeader *h);
+    void modify_json  (Database *db, HttpHeader *h);
+    void delete_json  (Database *db, HttpHeader *h);
+    void data_json    (Database *db, HttpHeader *h);
+    void ls_json      (Database *db, HttpHeader *h);
+    void addfile_json (Database *db, HttpHeader *h);
+    void  mkfile_json (Database *db, HttpHeader *h);
+    void  rmfile_json (Database *db, HttpHeader *h);
+    void      mv_json (Database *db, HttpHeader *h);
+    void  mkdir_json  (Database *db, HttpHeader *h);
+    void  rmdir_json  (Database *db, HttpHeader *h);
+    void commit_json  (Database *db, HttpHeader *h);
+    void  dblog_json  ( Database *db, HttpHeader *h);
 
-    void ls       ( Database *db, HttpHeader *h);
+    int insert (Database *db, HttpHeader *h);
+    int modify (Database *db, HttpHeader *h);
+    int del    (Database *db, HttpHeader *h);
+    int ls     ( Database *db, HttpHeader *h, std::map<std::string, std::string> &status);
+
     void log      ( Database *db, HttpHeader *h);
     void download ( Database *db, HttpHeader *h);
     void downall  ( Database *db, HttpHeader *h);
 
-    void mkdir  ( Database *db, HttpHeader *h);
-    void rmdir  ( Database *db, HttpHeader *h);
+    int mkdir  ( Database *db, HttpHeader *h);
+    int rmdir  ( Database *db, HttpHeader *h);
 
-    void addfile ( Database *db, HttpHeader *h);
-    void mkfile  ( Database *db, HttpHeader *h);
-    void rmfile  ( Database *db, HttpHeader *h);
+    int  addfile ( Database *db, HttpHeader *h);
+    int rmfile  ( Database *db, HttpHeader *h);
 
-    void mv     ( Database *db, HttpHeader *h);
+    int mv     ( Database *db, HttpHeader *h);
 
-    void commit(Database *db, HttpHeader *h);
+    int commit(Database *db, HttpHeader *h);
 
     void dbdata_update ( Database *db, HttpHeader *h);
     void dblog_update ( Database *db, HttpHeader *h);
-    void dblog        ( Database *db, HttpHeader *h);
 
 
 public:

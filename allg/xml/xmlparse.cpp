@@ -110,6 +110,10 @@ int XmlParseNode::setXml( std::string stag, std::string content)
 
         content = content.substr(pos2);
     }
+
+    if ( childs.size() )
+        childs[childs.size() -1 ]->attrs["lastchild"] = "1";
+
     return 0;
 }
 
@@ -132,8 +136,7 @@ int XmlParseNode::parse_attr(std::string stag)
         pos1 = stag.find_first_not_of(" \t\r\n", pos2 );
         if ( pos1 == std::string::npos )
         {
-            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
-                    "ist fehlerhaft", id.c_str());
+            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> ist fehlerhaft", id.c_str());
             return -E_ARGUMENT;
         }
 
@@ -142,8 +145,7 @@ int XmlParseNode::parse_attr(std::string stag)
 
         if ( pos2 == std::string::npos )
         {
-            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> "
-                    "ist fehlerhaft", id.c_str());
+            msg->perror(E_ARGUMENT, "Argumentenliste in Element <%s> ist fehlerhaft", id.c_str());
             return -E_ARGUMENT;
         }
 
@@ -152,28 +154,19 @@ int XmlParseNode::parse_attr(std::string stag)
 
         if ( stag[pos1] != '\'' && stag[pos1] != '"' )
         {
-            msg->perror(E_DELIMITER,
-                    "Attributwert von Attribut <%s> in Element <%s> "
-                    "begin nicht mit einem erlaubten Begrenzer",
-                    attr.c_str(), id.c_str());
+            msg->perror(E_DELIMITER, "Attributwert von Attribut <%s> in Element <%s> begin nicht mit einem erlaubten Begrenzer", attr.c_str(), id.c_str());
             return -E_DELIMITER;
         }
 
         pos2 = stag.find(stag[pos1], pos1 + 1);
         if ( pos2 == std::string::npos )
         {
-            msg->perror(E_DELIMITER,
-                    "Attributwert von Attribut <%s> in Element <%s> "
-                    "endet nicht mit dem richtigen Begrenzer",
-                    attr.c_str(), id.c_str());
+            msg->perror(E_DELIMITER, "Attributwert von Attribut <%s> in Element <%s> endet nicht mit dem richtigen Begrenzer", attr.c_str(), id.c_str());
             return -E_DELIMITER;
         }
         if ( stag.find_first_of(" \t\r\n>", pos2 ) != (pos2 + 1) )
         {
-            msg->perror(E_DELIMITER,
-                    "Attributwert von Attribut <%s> in Element <%s> "
-                    "beinhaltet seinen Begrenzer",
-                    attr.c_str(), id.c_str());
+            msg->perror(E_DELIMITER, "Attributwert von Attribut <%s> in Element <%s> beinhaltet seinen Begrenzer", attr.c_str(), id.c_str());
             return -E_DELIMITER;
         }
 

@@ -49,6 +49,8 @@ public:
 
         h->dirname = "/";
         h->filename = this->path + ".html";
+        h->translate = 1;
+
         for (i=0; i<h->serverpath.size(); i++)
         {
             str = h->serverpath[i] + "/" + h->dirname + "/" + h->filename;

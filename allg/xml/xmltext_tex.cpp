@@ -103,7 +103,7 @@ void XmlTextTex::mk_part_end(XmlParseNode *node, int num)
 	   if ( node->getAttr("align") == "right" )
 	    	add_content("%s", rightend.c_str());
 
-       if ( emptytext == 1 )
+       if ( emptytext == 1 || node->getAttr("lastchild") == "1" )
        {
            add_content("}");
            emptytext = -1;
@@ -180,6 +180,7 @@ void XmlTextTex::mk_table(XmlParseNode *node, int num)
 
     max_cols = strtoul(node->getAttr("colcount").c_str(), NULL, 10 );
     border = node->getAttr("border") == "1";
+    fprintf(stderr, "border %d", border);
 
     if ( node->getAttr("padding") != "0" ) padding = "";
 

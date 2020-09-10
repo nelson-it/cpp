@@ -10,8 +10,7 @@ class Database;
 class DbTranslate : public MessageTranslator
 {
     static pthread_mutex_t mutex;
-    static std::map<void *, int> inget;
-    int *p_getInget();
+    static pthread_mutexattr_t mutexattr;
 
     static Database *db;
     std::string lang;
