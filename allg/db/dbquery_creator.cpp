@@ -220,7 +220,7 @@ int DbQueryCreator::add_select(std::string tabnum, std::string field,
 				transform(id.begin(), id.end(), id.begin(), tolower);
 			}
 
-			s_lines.push_back(SelectLine(tab, field, id, c->second.typ, l,
+			s_lines.push_back(SelectLine(tab, field, id, ( c->second.dpytyp != -1 ) ? c->second.dpytyp : c->second.typ, l,
 					format, groupby,  c->second.can_null
 							& DbTable::Column::DBNULL, musthaving, text_de, text_en));
 			return (s_lines.size() - 1);
