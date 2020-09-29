@@ -855,6 +855,8 @@ void DbHttpUtilsQuery::data_json(Database *db, HttpHeader *h)
 
         add_content(h,  "\n ]");
     }
+    else if (h->vars["lastquery"] != "" )
+        msg.pmessage(0,"Letze Abfrage: keine werte angefordert");
 
     add_content(h,"\n" );
 
