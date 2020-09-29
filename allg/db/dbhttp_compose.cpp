@@ -90,7 +90,7 @@ void DbHttpCompose::select_json(Database *db, HttpHeader *h)
     h->vars.clear();
     h->vars.setVar("schema", "mne_application");
     h->vars.setVar("query", "weblet_select");
-    h->vars.setVar("cols", "element,schema,query,tab,wcol,wop,wval,cols,scols,showcols,showalias,weblet,selval,type");
+    h->vars.setVar("cols", "element,schema,query,tab,wcol,wop,wval,cols,scols,showcols,showids,weblet,selval,type");
     h->vars.setVar("wcol", wcol + "htmlcomposeid");
     h->vars.setVar("wop", wop + "=");
     h->vars.setVar("wval", wval +  htmlcomposeid );
