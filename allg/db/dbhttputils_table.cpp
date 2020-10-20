@@ -414,7 +414,6 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
     else if ( r->size() == 0 )
     {
         h->status = 404;
-        return;
     }
     else
     {
