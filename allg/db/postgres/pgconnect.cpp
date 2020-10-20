@@ -802,6 +802,7 @@ void PgConnect::notice(const char*message)
 
 void PgConnect::commit()
 {
+    msg.pdebug(1, "commit");
     I_MES(execute("COMMIT", 0, 1));
     connections[con].in_transaction = "";
     start();
@@ -809,6 +810,7 @@ void PgConnect::commit()
 
 void PgConnect::rollback()
 {
+    msg.pdebug(1, "rollback");
     I_MES(execute("ROLLBACK", 0, 1));
     connections[con].in_transaction = "";
     start();
