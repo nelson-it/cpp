@@ -149,8 +149,6 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
         else
             h->content_type = "mneprint/pdf";
     }
-    else
-        h->status = 404;
 
     if (h->vars["sqlend"] != "")
         db->p_getConnect()->end();

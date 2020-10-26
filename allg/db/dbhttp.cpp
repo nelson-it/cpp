@@ -121,7 +121,7 @@ void DbHttp::make_answer()
         {
             if ( (p = (DbHttpProvider *)find_provider(&dbprovider)) != NULL )
             {
-                if ( act_h->vars["sqlstart"] != "")
+                if ( act_h->vars["sqlstart"] != "" && act_h->vars["sqlstart"] != "0" && act_h->vars["sqlstart"] != "false" )
                     if ( act_client->db->p_getConnect()->start() )
                         if ( act_h->vars["rollback"] != "" ) act_client->db->p_getConnect()->rollback();
 
