@@ -60,11 +60,13 @@ void DbHttpCompose::subweblets_json(Database *db, HttpHeader *h)
     h->vars.clear();
     h->vars.setVar("schema", "mne_application");
     h->vars.setVar("query", "weblet_tabs");
-    h->vars.setVar("cols", "htmlcomposetabid,id,position,path,initpar,depend,label");
-    h->vars.setVar("scols","position,subposition");
+    h->vars.setVar("cols", "htmlcomposetabid,id,position,subposition,loadpos,path,initpar,depend,label");
+    h->vars.setVar("scols","position,loadpos,subposition");
     h->vars.setVar("wcol", "htmlcomposeid,groupexists");
     h->vars.setVar("wop", "=,=");
     h->vars.setVar("wval", htmlcomposeid + ",1" );
+    h->vars.setVar("distinct", "1" );
+
     h->vars.setVar("sqlend", "1" );
 
     DbHttpUtilsQuery::data_json(db, h);
@@ -90,7 +92,7 @@ void DbHttpCompose::select_json(Database *db, HttpHeader *h)
     h->vars.clear();
     h->vars.setVar("schema", "mne_application");
     h->vars.setVar("query", "weblet_select");
-    h->vars.setVar("cols", "element,schema,query,tab,wcol,wop,wval,cols,scols,showcols,showids,weblet,selval,type");
+    h->vars.setVar("cols", "element,schema,query,tab,wcol,wop,wval,cols,scols,showcols,showids,showalias,weblet,selval,type");
     h->vars.setVar("wcol", wcol + "htmlcomposeid");
     h->vars.setVar("wop", wop + "=");
     h->vars.setVar("wval", wval +  htmlcomposeid );

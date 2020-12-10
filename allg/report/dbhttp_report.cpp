@@ -116,10 +116,9 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
 
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
+        db->p_getConnect()->start();
         (this->*(i->second))(db, h);
-        if (h->vars["sqlend"] != "")
-            db->p_getConnect()->end();
-
+        db->p_getConnect()->end();
         return 1;
     }
 
@@ -137,6 +136,7 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
 
     h->content_type = "text/plain";
 
+    db->p_getConnect()->start();
     if ( str == "autoreport" )
         mk_auto(db, h);
     else
@@ -150,8 +150,7 @@ int DbHttpReport::request(Database *db, HttpHeader *h)
             h->content_type = "mneprint/pdf";
     }
 
-    if (h->vars["sqlend"] != "")
-        db->p_getConnect()->end();
+    db->p_getConnect()->end();
 
     return 1;
 }

@@ -377,7 +377,7 @@ std::string DbConnect::getValue(int typ, std::string value)
     {
         str = "'" + mk_unique_id() + "'";
     }
-    else if (typ == DbConnect::CHAR || typ == DbConnect::EMAIL || typ == DbConnect::LINK )
+    else if (typ == DbConnect::CHAR || typ == DbConnect::EMAIL || typ == DbConnect::LINK || typ == DbConnect::CDATETIME || typ == DbConnect::CDATE || typ == DbConnect::CTIME )
     {
         str = value;
         mk_string(str);
