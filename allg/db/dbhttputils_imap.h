@@ -26,6 +26,9 @@ class DbHttpUtilsImap : public DbHttpProvider
     void folder_xml     (Database *db, HttpHeader *h);
     void rescan_xml     (Database *db, HttpHeader *h);
 
+    void folder_json    (Database *db, HttpHeader *h);
+    void rescan_json    (Database *db, HttpHeader *h);
+
 public:
     DbHttpUtilsImap( DbHttp *h );
     virtual ~DbHttpUtilsImap();
