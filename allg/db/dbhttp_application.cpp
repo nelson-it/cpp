@@ -91,7 +91,7 @@ public:
 
                  size_t pos = 0;
                  while ((pos = str.find("####Appl####", pos)) != std::string::npos) {
-                      str.replace(pos, 12, this->appl);
+                      str.replace(pos, 12, this->path);
                       pos += this->appl.length();
                  }
 
@@ -116,10 +116,10 @@ DbHttpApplication::DbHttpApplication( DbHttp *h, Database *db )
 
     if ( c != NULL )
     {
-        c->execute("SELECT DISTINCT menuname FROM mne_application.menu", 1 );
+        c->execute("SELECT DISTINCT applicationsid, menuname FROM mne_application.applications", 1 );
         r = c->p_get_result();
         for ( i = r->begin(); i != r->end(); ++i )
-            this->appls.push_back( new DbHttpApplicationSingle(h, (std::string)((*i)[0]), (std::string)((*i)[0])) );
+            this->appls.push_back( new DbHttpApplicationSingle(h, (std::string)((*i)[0]), (std::string)((*i)[1])) );
 
     }
 

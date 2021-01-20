@@ -94,7 +94,6 @@ ServerSocket::Client::Client( ServerSocket *s, SocketProvider *p, int fd, struct
     }
 
     this->host = host;
-    this->port = port;
     memcpy(&this->sin, sin, addrlen);
 
     need_close = 0;
@@ -130,7 +129,6 @@ ServerSocket::Client::Client( const Client &in)
     }
 
     host = in.host;
-    port = in.port;
     memcpy(&sin, &in.sin, sizeof(in.sin));
 
     need_close = in.need_close;
@@ -156,7 +154,6 @@ ServerSocket::Client &ServerSocket::Client::operator=( const Client &in)
     }
 
     host = in.host;
-    port = in.port;
     memcpy(&sin, &in.sin, sizeof(in.sin));
 
     need_close = in.need_close;
@@ -267,12 +264,11 @@ void ServerSocket::Client::write_all()
         this->write();
 }
 
-void ServerSocket::Client::setAddr(std::string host, std::string port)
+void ServerSocket::Client::setAddr(std::string host)
 {
     int found = 0;
 
     if ( host != "-" && host != "" ) { this->host = host; found = 1; }
-    if ( port != "-" && port != "" ) { this->port = port; found = 1; }
 
     if ( !found ) return;
 
@@ -281,7 +277,7 @@ void ServerSocket::Client::setAddr(std::string host, std::string port)
         struct sockaddr_in6 s;
         memset(&s, 0, sizeof(s));
         s.sin6_family = AF_INET6;
-        s.sin6_port = atoi(this->port.c_str());
+        s.sin6_port = 0;
         inet_pton(AF_INET6, this->host.c_str(), &(s.sin6_addr));
         memcpy(&this->sin, &s, sizeof(s));
     }
@@ -290,7 +286,7 @@ void ServerSocket::Client::setAddr(std::string host, std::string port)
         struct sockaddr_in s;
         memset(&s, 0, sizeof(s));
         s.sin_family = AF_INET;
-        s.sin_port = atoi(port.c_str());
+        s.sin_port = 0;
         inet_aton(host.c_str(), &(s.sin_addr));
         memcpy(&this->sin, &s, sizeof(s));
     }
@@ -840,7 +836,7 @@ void ServerSocket::loop()
                 if ( ( p = get_provider("Http")) != NULL )
                 {
                     clients[rval] = Client(this, p, rval, &c, size);
-                    msg.pdebug(D_CON, "client %d connected: addr %s, port %s", rval, clients[rval].getHost().c_str(), clients[rval].getPort().c_str());
+                    msg.pdebug(D_CON, "client %d connected: addr %s", rval, clients[rval].getHost().c_str());
                 }
                 else
                 {

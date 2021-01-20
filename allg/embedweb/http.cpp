@@ -438,7 +438,8 @@ void Http::write_header()
 
 	for (i = act_h->set_cookies.begin(); i != act_h->set_cookies.end(); ++i)
 	{
-		sprintf(buffer, "Set-Cookie: %s=%s; path=/; sameSite=Strict\r\n", i->first.c_str(), i->second.c_str());
+		sprintf(buffer, "Set-Cookie: %s=%s; path=/; SameSite=Strict\r\n", i->first.c_str(), i->second.c_str());
+	    msg.pdebug(D_HEADER, "%s", buffer);
 		s->write(act_h->client, buffer, strlen(buffer));
 	}
 

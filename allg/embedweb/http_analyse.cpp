@@ -150,6 +150,7 @@ void HttpAnalyse::read_postvalues()
 	{
 		std::string::size_type npos;
 
+		msg.pdebug(D_POSTDATA, "%s", act_h->post_data);
 		if ( ( npos = act_h->post_type.find("boundary=")) != std::string::npos )
 			act_h->vars.setMultipart( "--" + act_h->post_type.substr(npos + 9), act_h->post_data);
 	}
@@ -243,7 +244,6 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 				act_h->client = client;
 				act_h->client_host = this->serversocket->getHost(client);
-				act_h->client_port = this->serversocket->getPort(client);
 
 				read_header();
 				act_h->needed_postdata = act_h->post_length;

@@ -54,7 +54,7 @@ typedef signed int int32;
 	"a1.atttypmod,"\
 	"a1.attnotnull,"\
 	"a1.atthasdef,"\
-	"a2.adsrc,"\
+	"pg_get_expr(a2.adbin, a2.adrelid),"\
 	"a3.blobnum,"\
     "c.relkind,"\
     "COALESCE( NULLIF(a4.text_de,''), NULLIF(a6.text_de,''), a1.attname),"\

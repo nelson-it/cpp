@@ -168,19 +168,20 @@ void HttpUtils::iconv(HttpHeader *h)
     std::string str;
 
     h->status = 200;
-    h->content_type = "text/plain";
+    h->content_type = ( h->vars["content_type"] != "" ) ? h->vars["content_type"] : "text/plain";
 
     str = h->vars["data"];
 
     if ( h->vars["iconv"] != "" )
     {
+        h->charset = h->vars["iconv"];
         ci = inbuf = (char *)str.c_str();
         innum = str.length();
 
         co = outbuf = new char[str.size() * 4];
         outnum = ( str.size() * 4 - 1);
 
-        if ( ( iv = iconv_open("utf-8//TRANSLIT", h->vars["iconv"].c_str()) ) != (iconv_t)(-1))
+        if ( ( iv = iconv_open((h->vars["iconv"] + "//TRANSLIT").c_str(), "utf-8") ) != (iconv_t)(-1))
         {
             ::iconv (iv, &ci, &innum, &co, &outnum);
             iconv_close(iv);

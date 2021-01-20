@@ -146,10 +146,9 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
 
 	    msg.pdebug(D_CLIENT, "prüfe auf Gleichheit %d", client);
 		msg.pdebug(D_CLIENT, "host %s:%s", a1.c_str(), a2.c_str());
-		msg.pdebug(D_CLIENT, "base %s:%s", ic->second.base.c_str(), h->base.c_str());
 		msg.pdebug(D_CLIENT, "connection %d", ic->second.db->have_connection());
 
-		if (   ic->second.host == s->getHost(client) && ic->second.base == h->base && ( ic->second.db->have_connection() ) )
+		if ( ic->second.host == s->getHost(client) && ( ic->second.db->have_connection() ) )
 		{
 		    msg.pdebug(D_CLIENT, "clients sind gleich %d", client);
 			if ( ic->second.last_connect < time(NULL)) ic->second.last_connect = time(NULL);

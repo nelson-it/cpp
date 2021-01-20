@@ -94,7 +94,8 @@ protected:
         D_HEADER = 4,
         D_RAWHEADER = 4,
         D_HTTP = 5,
-        D_EXEC = 5
+        D_EXEC = 5,
+        D_POSTDATA
     };
 
     virtual void read_header();

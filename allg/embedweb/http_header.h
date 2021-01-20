@@ -42,9 +42,7 @@ public:
     std::string dataroot;
 
     int client;
-
     std::string client_host;
-    std::string client_port;
 
     // Wird gesendet
     // =============
@@ -122,7 +120,6 @@ public:
     {
         client = -1;
         client_host = "";
-        client_port = "";
 
         header.clear();
         serverpath.clear();

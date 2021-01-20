@@ -74,7 +74,6 @@ class ServerSocket
         int length;
 
         std::string host;
-        std::string port;
         struct sockaddr_storage sin;
 
 
@@ -97,11 +96,10 @@ class ServerSocket
         ~Client();
 
         std::string getHost() { return host; }
-        std::string getPort() { return port; }
 
         struct sockaddr_storage *getAddr() { return &sin; }
 
-        void setAddr(std::string host, std::string port);
+        void setAddr(std::string host);
         void setProvider(std::string name)
         {
             this->p = this->s->get_provider(name);
@@ -169,10 +167,9 @@ public:
     void close( int client);
 
     std::string getHost(int client ) { return clients[client].getHost(); }
-    std::string getPort(int client)  { return clients[client].getPort(); }
 
     struct sockaddr_storage *getAddr(int client) { return clients[client].getAddr(); }
-    void setAddr(int client, std::string host, std::string port) { clients[client].setAddr(host, port); }
+    void setAddr(int client, std::string host) { clients[client].setAddr(host); }
     void setProvider(int client, std::string name ) { clients[client].setProvider(name); }
 
     void loop();

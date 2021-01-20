@@ -20,9 +20,6 @@ HttpRequest::HttpRequest(ServerSocket *s)
 
 	this->serversocket = s;
 
-    port = std::to_string((long)a["port"]);
-    sport = std::to_string((long)a["sport"]);
-
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 	spath.setString(a["EmbedwebHttpServerpath"], '!');
 #else
@@ -253,7 +250,6 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
 	std::string name;
 	std::string arg;
 	std::string::size_type n,k;
-	std::string forward_addr("-"), forward_host("-"), forward_port("-"), forward_proto("-");
 
 	if ( h->size() < 2 )
 	{
@@ -325,24 +321,10 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
 	        analyse_authline( arg, act_h );
 			msg.pdebug(D_HEADER, "user: \"%s\"", act_h->user.c_str());
 		}
-        else if ( name == "x-forwarded-server")
-        {
-            CsList l(arg);
-            forward_host = l[0];
-        }
+        else if ( name == "x-forwarded-base")
+            act_h->base = arg;
         else if ( name == "x-forwarded-for")
-        {
-                forward_addr = arg;
-		        act_h->client_host = arg;
-        }
-		else if ( name == "x-forwarded-proto")
-		{
-		        forward_proto = arg;
-		}
-		else if ( name == "x-forwarded-port")
-		{
-		        forward_port = arg;
-		}
+		    act_h->client_host = arg;
 
 		else if  ( name == "sec-websocket-key" && this->serversocket != NULL )
 		{
@@ -372,11 +354,10 @@ void HttpRequest::analyse_header(Header *h, HttpHeader *act_h)
 	h->push_back("");
 
 	if ( this->serversocket != 0 )
-	    this->serversocket->setAddr(act_h->client, forward_addr, forward_port );
+	    this->serversocket->setAddr(act_h->client, act_h->client_host);
 
-	act_h->base = (( forward_proto == "-" ) ? (( act_h->port == sport ) ? "https" : "http") : forward_proto ) + "://";
-	act_h->base = act_h->base + (( forward_host == "-" ) ? act_h->hostname : forward_host);
-	act_h->base = act_h->base + (( forward_port == "-" ) ? ((act_h->port != "80" ) ? ( ":" + act_h->port ) : "" )  : ( forward_port != "" ) ? ( ":" + forward_port ) : "" );
-	if ( act_h->base[act_h->base.length() - 1] == '/') act_h->base = act_h->base.substr(0,act_h->base.length() - 1 );
+	if ( act_h->base.length() == 0 )
+	    act_h->base = "http://" + act_h->hostname + ( (act_h->port.length() ) ? ( ":" + act_h->port ) : "" );
+
 	msg.pdebug(D_HEADER, "base: \"%s\"", act_h->base.c_str());
 }
