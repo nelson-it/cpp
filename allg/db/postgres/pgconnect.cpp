@@ -71,7 +71,6 @@ PgConnect::PgConnect(const PgConnect *con)
     else
         this->con = last_con;
 
-    this->extension = connections[this->con].extension;
     connections[this->con].anzahl_connect++;
     msg.pdebug(D_CONCOUNT, "neue Verbindung %x %d", this->con, connections[this->con].anzahl_connect);
 
@@ -84,7 +83,6 @@ PgConnect::PgConnect()
 {
     con = last_con;
 
-    this->extension = connections[this->con].extension;
     connections[this->con].anzahl_connect++;
     msg.pdebug(D_CONCOUNT, "neue Verbindung %x %d", this->con, connections[this->con].anzahl_connect);
 
@@ -210,17 +208,6 @@ void PgConnect::open_connection(const char *dbname, const char *user, const char
         unsigned int i;
         end();
 
-        execute("select relname "
-                "from pg_catalog.pg_class c, pg_catalog.pg_namespace n "
-                "where c.relnamespace = n.oid "
-                "and n.nspname = 'mne_catalog' "
-                "and c.relname = 'blobcols' "
-                "and c.relkind = 'r'");
-
-        extension = (!result.empty());
-        connections[con].extension = extension;
-        end();
-
         if ( pgbasetypes.empty() )
         {
             execute("select oid, typbasetype from pg_catalog.pg_type where typbasetype != 0");
@@ -228,10 +215,8 @@ void PgConnect::open_connection(const char *dbname, const char *user, const char
             {
                 pgbasetypes[result[i][0]] = result[i][1];
             }
-
             end();
         }
-
     }
 }
 

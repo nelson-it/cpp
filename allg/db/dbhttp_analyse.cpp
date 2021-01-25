@@ -22,16 +22,8 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
     std::string dbuser,dbpasswd;
     Database *dbwait;
 
-    if ( (std::string)a["DbSystemUser"] == "" )
-    {
-        dbuser = (std::string)a["DbTranslateUser"];
-        dbpasswd = (std::string)a["DbTranslatePasswd"];
-    }
-    else
-    {
-        dbuser = (std::string)a["DbSystemUser"];
-        dbpasswd = (std::string)a["DbSystemPasswd"];
-    }
+    dbuser = (std::string)a["DbCheckUser"];
+    dbpasswd = (std::string)a["DbCheckPasswd"];
 
 	this->s = s;
 	this->dbtimeout = (long)a["DbHttpTimeout"];
@@ -170,7 +162,7 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
     std::string passwd = h->vars["mneuserpasswd"];
     h->location = h->vars["location"];
 
-    if ( user != "" && user.substr(0,6) != "mneerp")
+    if ( user != "" && user.substr(0,6) != "mne_")
     {
         std::string a;
 

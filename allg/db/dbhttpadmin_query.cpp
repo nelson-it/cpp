@@ -237,5 +237,5 @@ void DbHttpAdminQuery::del_xml(Database *db, HttpHeader *h)
 void DbHttpAdminQuery::del_json(Database *db, HttpHeader *h)
 {
 	h->content_type = "text/json";
-	add_content(h,  "{ \"result\" : \"%s\"\n", this->del(db,h));
+	add_content(h,  "{ \"result\" : \"%s\"\n", this->del(db,h).c_str());
 }

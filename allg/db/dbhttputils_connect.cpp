@@ -97,9 +97,10 @@ void DbHttpUtilsConnect::reload_xml(Database *db, HttpHeader *h)
     db->release(tab);
 
     this->analyse->read_datadir();
+    db->p_getConnect()->end();
 
     msg.pmessage(0, "ok");
-    add_content(h, "{ \"result\" : \"ok\"");
+    add_content(h, "<body>ok</body>");
 }
 
 void DbHttpUtilsConnect::start_json( Database *db, HttpHeader *h)
@@ -121,14 +122,16 @@ void DbHttpUtilsConnect::end_json( Database *db, HttpHeader *h)
 
 void DbHttpUtilsConnect::reload_json(Database *db, HttpHeader *h)
 {
+
     DbTable *tab = db->p_getTable(db->getApplschema(), "update");
     tab->del_allcolumns();
     db->release(tab);
 
     this->analyse->read_datadir();
+    db->p_getConnect()->end();
 
     msg.pmessage(0, "ok");
-    add_content(h, "<body>ok</body>");
+    add_content(h, "{ \"result\" : \"ok\"");
 }
 
 

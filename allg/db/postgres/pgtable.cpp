@@ -16,58 +16,25 @@ typedef signed int int32;
 #include "pgtypes.h"
 
 #define TAB_SEL "SELECT "\
-	"a.attrelid, "   \
-	"a.attnum, "   \
-	"a.attname, "   \
-	"a.atttypid, "\
-	"a.atttypmod, "\
-	"a.attnotnull, "\
-	"a.atthasdef, "\
-	"a.adsrc, "\
-	"NULL, " \
-	"c.relkind, " \
-	"a.attname," \
-	"a.attname," \
-	"''," \
-	"''," \
-	"''," \
-	"-1" \
-    "from "\
-	"( pg_catalog.pg_attribute a1 LEFT JOIN pg_catalog.pg_attrdef a2 " \
-	"  ON a1.attrelid = a2.adrelid and a1.attnum = a2.adnum ) a, " \
-	"pg_catalog.pg_class c, "\
-	"pg_catalog.pg_namespace n "\
-    "where "\
-    "    a.attrelid = c.oid "\
-    "and a.attnum > 0::pg_catalog.int2 "\
-    "and a.attisdropped  = false "\
-    "and ( c.relkind  = 'r' OR c.relkind = 'v' )"\
-    "and c.relnamespace  = n.oid "\
-    "and n.nspname  = '" + this->schema + "' "\
-    "and c.relname = '" + this->name + "' ";\
-
-#define TAB_SEL_EX "SELECT "\
-	"a1.attrelid,"\
-	"a1.attnum,"\
-	"a1.attname,"\
-	"a1.atttypid,"\
-	"a1.atttypmod,"\
-	"a1.attnotnull,"\
-	"a1.atthasdef,"\
-	"pg_get_expr(a2.adbin, a2.adrelid),"\
-	"a3.blobnum,"\
+    "a1.attrelid,"\
+    "a1.attnum,"\
+    "a1.attname,"\
+    "a1.atttypid,"\
+    "a1.atttypmod,"\
+    "a1.attnotnull,"\
+    "a1.atthasdef,"\
+    "pg_get_expr(a2.adbin, a2.adrelid),"\
     "c.relkind,"\
     "COALESCE( NULLIF(a4.text_de,''), NULLIF(a6.text_de,''), a1.attname),"\
     "COALESCE( NULLIF(a4.text_en,''), NULLIF(a6.text_en,''), a1.attname),"\
     "COALESCE( NULLIF(a5.regexp,''),  NULLIF(a4.regexp,''), NULLIF(a7.regexp,''), NULLIF(a6.regexp,'') ),"\
-	"COALESCE( NULLIF(ta5.text_de,''), NULLIF(ta4.text_de,''), NULLIF(ta7.text_de,''), NULLIF(ta6.text_de,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_de," \
-	"COALESCE( NULLIF(ta5.text_en,''), NULLIF(ta4.text_en,''), NULLIF(ta7.text_en,''), NULLIF(ta6.text_en,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_en," \
+    "COALESCE( NULLIF(ta5.text_de,''), NULLIF(ta4.text_de,''), NULLIF(ta7.text_de,''), NULLIF(ta6.text_de,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_de," \
+    "COALESCE( NULLIF(ta5.text_en,''), NULLIF(ta4.text_en,''), NULLIF(ta7.text_en,''), NULLIF(ta6.text_en,''), NULLIF(a5.regexphelp,''), NULLIF(a4.regexphelp,''), NULLIF(a7.regexphelp,''), NULLIF(a6.regexphelp,''), '' ) as regexphelp_en," \
     "COALESCE( NULLIF(a5.regexpmod,''),  NULLIF(a4.regexpmod,''), NULLIF(a7.regexpmod,''), NULLIF(a6.regexpmod,'') ),"\
     "COALESCE( NULLIF(a4.dpytype,-1), NULLIF(a6.dpytype,-1), -1 ) "\
   "from "\
-  "((((((( "\
+  "(((((( "\
    "( pg_catalog.pg_attribute a1 LEFT JOIN pg_catalog.pg_attrdef a2  ON a1.attrelid = a2.adrelid and a1.attnum = a2.adnum )  "\
-   " LEFT JOIN mne_catalog.blobcols a3 ON a1.attrelid = a3.blobrelid and a1.attnum = a3.blobnum )   "\
    " LEFT JOIN  " + this->getApplschema() + ".tablecolnames a4  ON  a4.schema = '" + this->schema + "' AND  a4.tab = '" + this->name + "' AND a4.colname = a1.attname "\
    "       LEFT JOIN " + this->getApplschema() + ".translate ta4 ON a4.regexphelp = ta4.id ) "\
    "       LEFT JOIN " + this->getApplschema() + ".tableregexp a5 ON a4.regexp = a5.tableregexpid  "\
@@ -231,10 +198,7 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 	{
 		ignore_oid = 1;
 
-		if (have_extension())
-			stm = TAB_SEL_EX
-		else
-			stm = TAB_SEL
+		stm = TAB_SEL
 
 		relid = -1;
 		cols.clear();
@@ -255,7 +219,7 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 
 		if (!result.empty())
 		{
-			this->typ = *((char*) result[0][9]);
+			this->typ = *((char*) result[0][8]);
 		}
 
 		for (r = result.begin(); r != result.end(); ++r)
@@ -285,13 +249,13 @@ void PgTable::setName(std::string schema, std::string name, int ready)
 				c.size = 0;
 
 			c.name = (char *) (*r)[2].value;
-			c.text["de"] = (char *) (*r)[10].value;
-			c.text["en"] = (char *) (*r)[11].value;
-			c.regexp  = (char *) (*r)[12].value;
-			c.regexphelp["de"]  = (char *) (*r)[13].value;
-			c.regexphelp["en"]  = (char *) (*r)[14].value;
-			c.regexpmod  = (char*)(*r)[15].value;
-			c.dpytyp  = *(long *)(*r)[16].value;
+			c.text["de"] = (char *) (*r)[9].value;
+			c.text["en"] = (char *) (*r)[10].value;
+			c.regexp  = (char *) (*r)[11].value;
+			c.regexphelp["de"]  = (char *) (*r)[12].value;
+			c.regexphelp["en"]  = (char *) (*r)[13].value;
+			c.regexpmod  = (char*)(*r)[14].value;
+			c.dpytyp  = *(long *)(*r)[15].value;
 			cols[c.name] = c;
 			if (error_found == 0)
 			{

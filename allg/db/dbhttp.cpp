@@ -230,7 +230,7 @@ int  DbHttp::check_sysaccess(HttpHeader *h)
                   "LEFT JOIN pg_roles t2 ON ( t1.roleid = t2.oid ) "
                   "JOIN mne_system.access t3 ON ( ( t0.rolname = t3.access OR t2.rolname = t3.access OR t3.access = 'user' ) "
                                                "AND t0.rolcanlogin = true "
-                                               "AND NOT t0.rolname like 'mneerp%' "
+                                               "AND NOT t0.rolname like 'mne_%' "
                                                "AND  t0.rolname = '" + h->user + "' "
                                                "AND  t3.command = '" + h->dirname + "') ";
 

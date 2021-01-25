@@ -15,7 +15,6 @@ class PgConnect : public DbConnect
         friend class PgConnect;
 
         int anzahl_connect;
-        int extension;
         int ignore_message;
         int error_found;
         int warning_found;
@@ -27,7 +26,6 @@ class PgConnect : public DbConnect
         Connections()
         {
             anzahl_connect = 0;
-            extension = 0;
             ignore_message = 0;
             error_found = 0;
             warning_found = 0;
@@ -40,8 +38,6 @@ class PgConnect : public DbConnect
     static PGconn* last_con;
 
     PGconn *con;
-
-    int extension;
 
     char *errstr;
     char *p_errstr;
@@ -123,8 +119,6 @@ public:
     void notice( const char *message);
     int start(int check_status = 1);
     void end();
-
-    int have_extension() { return extension > 0; }
 
     int add_schema(std::string schema, int ready = 0);
     int del_schema(std::string schema, int ready = 0);

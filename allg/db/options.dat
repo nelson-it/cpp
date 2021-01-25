@@ -8,13 +8,16 @@ liste["DbApplSchema"]       = Argument::Liste("-dbas", 'c', 1,"mne_application")
 liste["DbHttpTimeout"]      = Argument::Liste("-dbtime", 'l', 1, "300");
 liste["DbHttpRealm"]        = Argument::Liste("-dbrealm", 'c', 1, "Nelson technische Informatik");
 
-liste["DbTranslateUser"]    = Argument::Liste("-dbtruser", 'c', 1, "mneerptranslate");
+liste["DbTranslateUser"]    = Argument::Liste("-dbtruser", 'c', 1, "mne_translate");
 liste["DbTranslatePasswd"]  = Argument::Liste("-dbtrpasswd", 'c', 1, "");
 
-liste["DbRepositoryUser"]    = Argument::Liste("-dbrepuser", 'c', 1, "mneerprepository");
+liste["DbRepositoryUser"]    = Argument::Liste("-dbrepuser", 'c', 1, "mne_repository");
 liste["DbRepositoryPasswd"]  = Argument::Liste("-dbreppasswd", 'c', 1, "");
 
-liste["DbSystemUser"]    = Argument::Liste("-dbsysuser", 'c', 1, "mneerpsystem");
+liste["DbSystemUser"]    = Argument::Liste("-dbsysuser", 'c', 1, "mne_system");
 liste["DbSystemPasswd"]  = Argument::Liste("-dbsyspasswd", 'c', 1, "");
+
+liste["DbCheckUser"]    = Argument::Liste("-dbcheckuser", 'c', 1, "mne_translate");
+liste["DbCheckPasswd"]  = Argument::Liste("-dbcheckasswd", 'c', 1, "");
 
 liste["DbTrustCheckUserip"]  = Argument::Liste("-dbcuip", 'c', -100, "127.0.0.1/32");
