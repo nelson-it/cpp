@@ -22,6 +22,7 @@ TmpFile::TmpFile(const char *tmpl, int needopen) :
 {
     *filename = '\0';
     fp = NULL;
+    buffer = NULL;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( getenv ("TEMP") != NULL)
@@ -78,7 +79,33 @@ TmpFile::~TmpFile()
 void TmpFile::close()
 {
     if (fp != NULL) ::fclose(fp);
+    if (buffer != NULL) delete[] buffer;
     fp = NULL;
+}
+
+std::string TmpFile::get_content()
+{
+    int length;
+
+    if ( fp == NULL )
+        fp = fopen(filename, "rb+");
+
+    if ( fp == NULL ) return "";
+
+    fseek (fp, 0, SEEK_END);
+    length = ftell (fp);
+    fseek (fp, 0, SEEK_SET);
+
+    if ( buffer ) delete buffer;
+    buffer = new char[length + 1];
+
+    if (buffer)
+    {
+        fread (buffer, 1, length, fp);
+        buffer[length] = '\0';
+        return buffer;
+    }
+    return "";
 }
 
 

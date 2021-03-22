@@ -19,6 +19,7 @@ class HttpSysexec : public HttpProvider
 
     enum WarningType
     {
+        W_WARNINGFOUND = 1,
         W_MAX = 1000
     };
 
@@ -29,6 +30,7 @@ class HttpSysexec : public HttpProvider
 
     Message msg;
     std::string font;
+    std::string rexec;
 
     void execute ( HttpHeader *h);
 

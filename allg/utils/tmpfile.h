@@ -10,6 +10,8 @@ class TmpFile
     char filename[256];
     FILE *fp;
 
+    char *buffer;
+
 public:
     TmpFile(const char *tmpl, int needopen = 0 );
     virtual ~TmpFile();
@@ -17,6 +19,7 @@ public:
     char *get_name() { return filename; }
     FILE *get_fp() { return fp; }
 
+    std::string get_content();
     void close();
 
 };
