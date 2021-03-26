@@ -46,75 +46,12 @@ DbHttpAnalyse::DbHttpAnalyse(ServerSocket *s, Database *db) :
          dbwait->p_getConnect("", dbuser, dbpasswd);
      }
 
-    read_datadir();
     user_count = 0;
     pthread_mutex_init(&cl_mutex, NULL);
 }
 
 DbHttpAnalyse::~DbHttpAnalyse()
 {
-}
-
-void DbHttpAnalyse::read_datadir()
-{
-    Argument a;
-	Database *db;
-	CsList cols;
-	DbTable *tab;
-	DbTable::ValueMap values;
-	DbTable::ValueMap where;
-	DbConnect::ResultMat *r;
-    DbConnect::ResultMat::iterator ri;
-    char *str;
-
-    db = this->db->getDatabase();
-
-    if ( (std::string)a["DbSystemUser"] == "" )
-    {
-        datapath.clear();
-        return;
-    }
-    db->p_getConnect("", a["DbSystemUser"], a["DbSystemPasswd"]);
-    tab = db->p_getTable(db->getApplschema(), "folder");
-
-    cols.setString("name,location");
-    r = tab->select(&cols, &where);
-    tab->end();
-
-    datapath.clear();
-    for ( ri = r->begin(); ri != r->end(); ri++ )
-    datapath[((char*)(*ri)[0])] = (char*)((*ri)[1]);
-
-
-    db->release(tab);
-
-    tab = db->p_getTable(db->getApplschema(), "server");
-    tab->del(&where);
-
-#if defined(Darwin) || defined(__MINGW32__) || defined(__CYGWIN__)
-    str = (char *)malloc(10240);
-    gethostname( str, 10240);
-    values["serverid"] = str;
-    where["serverid"] = str;
-
-    getcwd(str, 10240);
-    values["pwd"] = str;
-    free(str);
-#else
-    struct utsname utsname;
-    uname(&utsname);
-    values["serverid"] = utsname.nodename;
-    values["pwd"] = str = get_current_dir_name();
-    where["serverid"] = utsname.nodename;
-#endif
-
-
-    r = tab->select(&values, &where);
-    ( r->empty() ) ? tab->insert(&values) : tab->modify(&values, &where);
-    tab->end();
-    db->release(tab);
-
-    delete db;
 }
 
 void DbHttpAnalyse::check_user(HttpHeader *h)

@@ -146,8 +146,6 @@ public:
 	        return &(i->second);
 	    }
 	}
-
-	void read_datadir();
 };
 
 #endif /* dbhttp_analyse_mne */

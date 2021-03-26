@@ -280,19 +280,16 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
         if ( m->first == root ) break;
     }
 
-    if ( m == h->datapath.end() )
+    if ( m->second[0] == '/' )
     {
-        if ( ( h->user == "admindb" || http->check_group(h, "adminsystem") ) && root == "admin" )
-        {
-            msg.pdebug(D_ROOTDIRS, "found %s", this->dataroot.c_str());
-            return this->dataroot;
-        }
-        msg.pdebug(D_ROOTDIRS, "found <>" );
-        return "";
+        msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+        return  m->second;
     }
-
-    msg.pdebug(D_ROOTDIRS, "found %s", (this->dataroot + m->second).c_str());
-    return this->dataroot + m->second;
+    else
+    {
+        msg.pdebug(D_ROOTDIRS, "found %s", (this->dataroot + m->second).c_str());
+        return this->dataroot + m->second;
+    }
 
 }
 
@@ -317,7 +314,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h, int errormsg )
          || ( resolvpath = realpath((root + dir).c_str(), rpath)) == NULL
          || strstr(rpath, root.c_str()) == NULL )
     {
-    	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s", rpath, root.c_str());
+    	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s, dir: %s", rpath, root.c_str(), dir.c_str());
         if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
         return "";
     }

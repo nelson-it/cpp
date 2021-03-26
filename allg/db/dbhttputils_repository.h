@@ -42,6 +42,7 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
     SubProviderMap subprovider;
 
     std::string getRoot(HttpHeader *h);
+    std::string getDir(HttpHeader *h, int errormsg = 1);
 
     void read_name(Database *db, HttpHeader *h);
 

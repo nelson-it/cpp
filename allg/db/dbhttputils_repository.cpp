@@ -168,6 +168,15 @@ std::string DbHttpUtilsRepository::getRoot(HttpHeader *h)
     return dir + DIRSEP + rep;
 }
 
+std::string DbHttpUtilsRepository::getDir(HttpHeader *h, int errormsg )
+{
+    std::string retval = HttpFilesystem::getDir(h, 0);
+
+    if ( errormsg && retval == "" )
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + h->vars["nameInput.old"]).c_str());
+    return retval;
+}
+
 int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
 {
     std::string str;

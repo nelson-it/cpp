@@ -14,9 +14,6 @@ liste["DbTranslatePasswd"]  = Argument::Liste("-dbtrpasswd", 'c', 1, "");
 liste["DbRepositoryUser"]    = Argument::Liste("-dbrepuser", 'c', 1, "mne_repository");
 liste["DbRepositoryPasswd"]  = Argument::Liste("-dbreppasswd", 'c', 1, "");
 
-liste["DbSystemUser"]    = Argument::Liste("-dbsysuser", 'c', 1, "mne_system");
-liste["DbSystemPasswd"]  = Argument::Liste("-dbsyspasswd", 'c', 1, "");
-
 liste["DbCheckUser"]    = Argument::Liste("-dbcheckuser", 'c', 1, "mne_translate");
 liste["DbCheckPasswd"]  = Argument::Liste("-dbcheckasswd", 'c', 1, "");
 

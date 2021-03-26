@@ -96,7 +96,6 @@ void DbHttpUtilsConnect::reload_xml(Database *db, HttpHeader *h)
     tab->del_allcolumns();
     db->release(tab);
 
-    this->analyse->read_datadir();
     db->p_getConnect()->end();
 
     msg.pmessage(0, "ok");
@@ -127,7 +126,6 @@ void DbHttpUtilsConnect::reload_json(Database *db, HttpHeader *h)
     tab->del_allcolumns();
     db->release(tab);
 
-    this->analyse->read_datadir();
     db->p_getConnect()->end();
 
     msg.pmessage(0, "ok");
