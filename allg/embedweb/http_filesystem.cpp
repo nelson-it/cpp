@@ -160,14 +160,6 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
     Argument a;
     qs_type = FD_NAME;
 
-    this->dataroot = (std::string)a["EmbedwebHttpDataroot"];
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    if (this->dataroot[1] != ':')
-#else
-    if ( this->dataroot[0] != '/' )
-#endif
-        this->dataroot = (std::string)a["projectroot"] + "/" + this->dataroot;
-
     this->cacheroot = (std::string)a["EmbedwebHttpFileCacheroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if (this->cacheroot[1] != ':')
@@ -287,8 +279,8 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     }
     else
     {
-        msg.pdebug(D_ROOTDIRS, "found %s", (this->dataroot + m->second).c_str());
-        return this->dataroot + m->second;
+        msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
+        return h->dataroot + "/" + m->second;
     }
 
 }

@@ -51,7 +51,7 @@ protected:
 
     virtual int findfile(HttpHeader *h);
 
-    std::string dataroot;
+    //std::string dataroot;
     std::string root;
     std::string dir;
 
