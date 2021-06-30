@@ -272,7 +272,12 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
         if ( m->first == root ) break;
     }
 
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( m->second[1] == ':' )
+#else
     if ( m->second[0] == '/' )
+#endif
+
     {
         msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
         return  m->second;
@@ -693,7 +698,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
         std::string name = h->vars["filenameInput"];
         if ( getDir(h) == "" || name == "" )
         {
-            return = msg.get("Benötige einen Dateinamen");
+            str = msg.get("Benötige einen Dateinamen");
         }
 
         if ( ! CopyFile(str.c_str(), (path + DIRSEP + name).c_str(), FALSE) )

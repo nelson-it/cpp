@@ -86,6 +86,14 @@ DbHttpUtilsRepository::~DbHttpUtilsRepository()
 
 int DbHttpUtilsRepository::request(Database *db, HttpHeader *h)
 {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    h->status = 200;
+    h->content_type = "text/json";
+    msg.pwarning(10000, "Repository in Windows nicht möglich");
+    DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
+    return 1;
+#endif
+
     SubProviderMap::iterator i;
     if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
     {
