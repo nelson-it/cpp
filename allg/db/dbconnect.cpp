@@ -388,6 +388,8 @@ std::string DbConnect::getValue(int typ, std::string value)
     }
     else if ( typ == DbConnect::SHORT || typ == DbConnect::LONG )
     {
+        return value;
+/*
         long v = 0;
         std::string::size_type i;
         char dval[1024];
@@ -418,9 +420,12 @@ std::string DbConnect::getValue(int typ, std::string value)
         freelocale(loc);
 #endif
         return dval;
+*/
     }
     else if ( typ == DbConnect::DOUBLE || typ == DbConnect::FLOAT )
     {
+        return value;
+/*
         double v = 0;
         std::string::size_type i;
         char fval[1024];
@@ -451,6 +456,7 @@ std::string DbConnect::getValue(int typ, std::string value)
         freelocale(loc);
 #endif
         return fval;
+*/
     }
     else if (typ == DbConnect::BOOL)
     {

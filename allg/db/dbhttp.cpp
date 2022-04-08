@@ -70,7 +70,8 @@ void DbHttp::setLocale()
         this->loc[lstr] = newlocale(LC_ALL_MASK, lstr.c_str(), NULL);
         l = this->loc.find(lstr);
     }
-    uselocale(this->stdloc);
+    //uselocale(this->stdloc);
+    uselocale(l->second);
 #endif
 }
 
