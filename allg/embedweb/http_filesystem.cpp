@@ -311,7 +311,7 @@ std::string HttpFilesystem::getDir(HttpHeader *h, int errormsg )
          || ( resolvpath = realpath((root + dir).c_str(), rpath)) == NULL
          || strstr(rpath, root.c_str()) == NULL )
     {
-    	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s, dir: %s", rpath, root.c_str(), dir.c_str());
+    	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s, dir: %s error: %s", rpath, root.c_str(), dir.c_str(), strerror(errno));
         if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
         return "";
     }

@@ -74,7 +74,6 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
     subprovider["commit.json"]   = &DbHttpUtilsRepository::commit_json;
     subprovider["dblog.json"]    = &DbHttpUtilsRepository::dblog_json;
 
-    need_root = 0;
     gitcmd = std::string(a["gitcmd"]);
 
     h->add_provider(this);
@@ -161,11 +160,8 @@ std::string DbHttpUtilsRepository::getRoot(HttpHeader *h)
     std::string dir = HttpFilesystem::getRoot(h);
     std::string rep = h->vars["nameInput.old"];
 
-    if ( dir == "" || need_root )
-    {
-        need_root = 0;
+    if ( dir == "" )
         return dir;
-    }
 
     if ( rep == "")
     {
@@ -252,18 +248,13 @@ int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
         }
         else
         {
-            cmd.setString("");
-            cmd.add("touch");
-            cmd.add(".gitignore");
-
-            p.start(cmd, NULL, ( root + DIRSEP + h->vars["nameInput"]).c_str());
-            result = p.wait();
-
-            if ( result != 0 )
-            {
-                msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens eines Aktenordners");
-                return -1;
-            }
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            int file = open((root + DIRSEP + h->vars["nameInput"] + DIRSEP + ".gitignore").c_str(), O_WRONLY | O_CREAT, 0666 );
+#else
+            int file = open((root + DIRSEP + h->vars["nameInput"]+ DIRSEP + ".gitignore").c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
+#endif
+            write(file, (std::string("# ") + h->vars["nameInput"] + "\n").c_str(), h->vars["nameInput"].length() + 3);
+            close(file);
         }
 
         cmd.setString("");
@@ -522,14 +513,44 @@ void DbHttpUtilsRepository::delete_json (Database *db, HttpHeader *h)
 
 }
 
+void DbHttpUtilsRepository::dbdata_checkdir(HttpHeader *h, std::string dir)
+{
+    HttpVars vars = h->vars;
+    std::vector<FileData>::iterator is;
+    std::vector<FileData> dirs;
+    std::string root;
+    int f;
+    root = getRoot(h);
+
+    if ( dir != "" )
+        (*h->vars.p_getVars())["dirInput.old"] = (*h->vars.p_getVars())["dirInput.old"] + DIRSEP + dir;
+
+    std::string file = ( h->vars["dirInput.old"] + DIRSEP + ".gitignore");
+    if ( check_path(root.c_str(), file.c_str(), 1, 0) == "" )
+    {
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        f = open((root + DIRSEP + file).c_str(), O_WRONLY | O_CREAT, 0666 );
+#else
+        f = open((root + DIRSEP + file).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
+#endif
+        write(f, (std::string("# ") + file + "\n").c_str(), file.length() + 3);
+        close(f);
+    }
+
+    HttpFilesystem::readdir(h);
+    dirs = this->dirs;
+    for ( is = dirs.begin(); is != dirs.end(); ++is )
+        dbdata_checkdir(h, (*is).name);
+
+    h->vars = vars;
+}
+
 void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
 {
-    std::vector<FileData>::iterator is;
     DbTable *tab;
     DbTable::ValueMap where,vals;
     DbConnect::ResultMat *r;
     std::string root;
-
 
     std::string schema;
     std::string table;
@@ -556,66 +577,54 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
     table = h->vars["table"];
     tab = db->p_getTable(schema, table);
 
-    root = HttpFilesystem::getRoot(h);
 
-    need_root = 1;
-    HttpFilesystem::readdir(h);
-    for ( is = dirs.begin(); is != dirs.end(); ++is )
-    {
-        vals["repositoryid"] = "################";
-        where["root"] = vals["root"] = h->vars["rootInput.old"];
-        where["name"] = vals["name"] = (*is).name;
+    vals["repositoryid"] = "################";
+    where["root"] = vals["root"] = h->vars["rootInput.old"];
+    where["name"] = vals["name"] = h->vars["nameInput.old"];
 
-        r = tab->select(&vals, &where);
-         if (r->empty() )
-             tab->insert(&vals);
-
-         if ( check_path(root.c_str(), ((*is).name + "/.git").c_str(), 1, 0) == "" )
-         {
-             CsList cmd;
-             int result;
-
-             HttpVars vars = h->vars;
-
-             cmd.add(gitcmd.c_str());
-             cmd.add("init");
-             cmd.add("--quiet");
-             cmd.add("--shared=group");
-             cmd.add((*is).name);
-
-             Process p;
-             p.start(cmd, NULL, root.c_str());
-             result = p.wait();
-
-             if ( result != 0 )
-                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
-
-             cmd.clear();
-             cmd.add(gitcmd.c_str());
-             cmd.add("add");
-             cmd.add(".");
-
-             p.start(cmd, NULL, ( root + DIRSEP + (*is).name).c_str());
-             result = p.wait();
-
-             if ( result != 0 )
-             {
-                 msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
-                 return;
-             }
-
-             (*h->vars.p_getVars())["autocommitInput"] = "1";
-             (*h->vars.p_getVars())["commitmessageInput"] = "Initialversion";
-             (*h->vars.p_getVars())["nameInput.old"] = (*is).name;
-
-             commit(db, h);
-             h->vars = vars;
-         }
-    }
-
+    r = tab->select(&vals, &where);
+    if (r->empty() )
+        tab->insert(&vals);
     db->release(tab);
 
+    root = getRoot(h);
+    if ( check_path(root.c_str(), (std::string(DIRSEP) + ".git").c_str(), 1, 0) == "" )
+    {
+        CsList cmd;
+        int result;
 
+        dbdata_checkdir(h, "");
+
+        cmd.add(gitcmd.c_str());
+        cmd.add("init");
+        cmd.add("--quiet");
+        cmd.add("--shared=group");
+        cmd.add(h->vars["nameInput.old"]);
+
+        Process p;
+        p.start(cmd, NULL, HttpFilesystem::getRoot(h).c_str());
+        result = p.wait();
+
+        if ( result != 0 )
+            msg.perror(E_MKREPOSITORY,"Fehler während des Erzeugens der Versionsverwaltung");
+
+        cmd.clear();
+        cmd.add(gitcmd.c_str());
+        cmd.add("add");
+        cmd.add(".");
+
+        p.start(cmd, NULL, root.c_str());
+        result = p.wait();
+
+        if ( result != 0 )
+        {
+            msg.perror(E_MKREPOSITORY,"Fehler während des Hinzufügens der Ignoredateien der Versionsverwaltung");
+            return;
+        }
+        (*h->vars.p_getVars())["autocommitInput"] = "1";
+        (*h->vars.p_getVars())["commitmessageInput"] = "Initialversion";
+        commit(db, h);
+    }
 }
 
 void DbHttpUtilsRepository::data_xml(Database *db, HttpHeader *h)
@@ -1276,6 +1285,7 @@ int DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 #else
         int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
 #endif
+        write(file, (std::string("# ") + name + "\n").c_str(), name.length() + 3);
         close(file);
         return 0;
 }
@@ -1621,7 +1631,7 @@ int DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
     cmd.add("--author=\"" + userprefs["fullname"] + " <" + userprefs["email"] + ">\"" );
 
     if ( ( result = exec(&cmd, getRoot(h).c_str())) == 0 ) execlog = "";
-    if ( result != 0 )
+    if ( result != 0  && result != 1 )
     {
         msg.perror(E_COMMIT,"Fehler während des Akzeptierens der Änderungen");
         msg.line("%s", execlog.c_str());

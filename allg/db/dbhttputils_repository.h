@@ -46,7 +46,6 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
 
     void read_name(Database *db, HttpHeader *h);
 
-    int need_root;
     std::string execlog;
     std::string gitcmd;
 
@@ -102,6 +101,7 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
     void dbdata_update ( Database *db, HttpHeader *h);
     void dblog_update ( Database *db, HttpHeader *h);
 
+    void dbdata_checkdir(HttpHeader *h, std::string dir);
 
 public:
     DbHttpUtilsRepository( DbHttp *h );
