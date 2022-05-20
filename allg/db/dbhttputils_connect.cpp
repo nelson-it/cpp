@@ -157,15 +157,15 @@ std::string DbHttpUtilsConnect::func_execute(Database *db, HttpHeader *h)
         + "'";
     else if ( h->vars[typ] == "double" )
     {
-        stm += komma + db->p_getConnect()->getValue(DbConnect::DOUBLE, h->vars[str]);
+        stm += komma + ((h->vars[str] == "" ) ? "null" : db->p_getConnect()->getValue(DbConnect::DOUBLE, h->vars[str]));
     }
     else if ( h->vars[typ] == "bool" )
     {
-        stm += komma + db->p_getConnect()->getValue(DbConnect::BOOL, h->vars[str]);
+        stm += komma + ((h->vars[str] == "" ) ? "null" : db->p_getConnect()->getValue(DbConnect::BOOL, h->vars[str]));
     }
     else if ( h->vars[typ] == "long" )
     {
-        stm += komma + db->p_getConnect()->getValue(DbConnect::LONG, h->vars[str]);
+        stm += komma + ((h->vars[str] == "" ) ? "null" : db->p_getConnect()->getValue(DbConnect::LONG, h->vars[str]));
     }
     else if ( h->vars[typ] == "array" )
     {
