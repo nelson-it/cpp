@@ -51,20 +51,6 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
 
     int exec(const CsList *cmd, const char *workdir);
 
-    void insert_xml  (Database *db, HttpHeader *h);
-    void modify_xml  (Database *db, HttpHeader *h);
-    void delete_xml  (Database *db, HttpHeader *h);
-    void data_xml    (Database *db, HttpHeader *h);
-    void ls_xml      (Database *db, HttpHeader *h);
-    void addfile_xml (Database *db, HttpHeader *h);
-    void  mkfile_xml (Database *db, HttpHeader *h);
-    void  rmfile_xml (Database *db, HttpHeader *h);
-    void      mv_xml (Database *db, HttpHeader *h);
-    void   mkdir_xml (Database *db, HttpHeader *h);
-    void   rmdir_xml (Database *db, HttpHeader *h);
-    void  commit_xml (Database *db, HttpHeader *h);
-    void   dblog_xml ( Database *db, HttpHeader *h);
-
     void insert_json  (Database *db, HttpHeader *h);
     void modify_json  (Database *db, HttpHeader *h);
     void delete_json  (Database *db, HttpHeader *h);

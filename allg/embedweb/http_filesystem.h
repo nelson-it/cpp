@@ -83,25 +83,24 @@ protected:
     virtual void quicksort(std::vector<FileData> &sort, int left, int right);
 
     virtual void readdir(HttpHeader *h);
+    virtual int hassubdirs(std::string path, int pointdir);
 
     std::string mkfile ( HttpHeader *h);
-    void mkfile_xml    (HttpHeader *h);
     void mkfile_json   (HttpHeader *h);
 
     void ls     ( HttpHeader *h);
     void mkdir  ( HttpHeader *h);
 
     int  rmdir      ( HttpHeader *h);
-    void rmdir_xml  ( HttpHeader *h);
     void rmdir_json ( HttpHeader *h);
 
     int  rmfile      ( HttpHeader *h);
-    void rmfile_xml  ( HttpHeader *h);
     void rmfile_json ( HttpHeader *h);
 
     void mklink ( HttpHeader *h);
 
-    void mv     ( HttpHeader *h);
+    int  mv      ( HttpHeader *h);
+    void mv_json ( HttpHeader *h);
 
     void download ( HttpHeader *h);
 

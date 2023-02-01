@@ -2,6 +2,7 @@
                  CC  := gcc
               
              OPT_STD := -g -Wall -pedantic -std=c++11
+             OPT_ADD := $($(TARGET).OPT_ADD)
 	          LD_STD := -g
 	      
 	      OPT_SHARED :=
@@ -193,7 +194,7 @@ endif
           INC_FLAGS := $(INC_ADD) $(INC_STD) \
                        $(INC_PTH) $(INC_PGSQL) $(INC_PG) $(INC_GD)
           
-          OPT_FLAGS := $(OPT_STD) $(OPT_SHARED)
+          OPT_FLAGS := $(OPT_ADD) $(OPT_STD) $(OPT_SHARED)
           
 
 SOURCES := $($(TARGET).SOURCES) $(LIBSOURCES)

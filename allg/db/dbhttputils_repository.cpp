@@ -35,28 +35,8 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
                        table(h, 1)
 {
     Argument a;
-    subprovider["log.xml"]      = &DbHttpUtilsRepository::log;
     subprovider["download.dat"]     = &DbHttpUtilsRepository::download;
     subprovider["downloadall.html"] = &DbHttpUtilsRepository::downall;
-
-
-    subprovider["insert.xml"]   = &DbHttpUtilsRepository::insert_xml;
-    subprovider["modify.xml"]   = &DbHttpUtilsRepository::modify_xml;
-    subprovider["delete.xml"]   = &DbHttpUtilsRepository::delete_xml;
-    subprovider["data.xml"]     = &DbHttpUtilsRepository::data_xml;
-
-    subprovider["ls.xml"]       = &DbHttpUtilsRepository::ls_xml;
-    subprovider["addfile.xml"]  = &DbHttpUtilsRepository::addfile_xml;
-    subprovider["mkfile.html"]  = &DbHttpUtilsRepository::mkfile_xml;
-    subprovider["rmfile.xml"]   = &DbHttpUtilsRepository::rmfile_xml;
-    subprovider["mv.xml"]       = &DbHttpUtilsRepository::mv_xml;
-    subprovider["mkdir.xml"]    = &DbHttpUtilsRepository::mkdir_xml;
-    subprovider["rmdir.xml"]    = &DbHttpUtilsRepository::rmdir_xml;
-
-    subprovider["commit.xml"]   = &DbHttpUtilsRepository::commit_xml;
-    subprovider["dblog.xml"]        = &DbHttpUtilsRepository::dblog_xml;
-
-    subprovider["dblog_update.xml"] = &DbHttpUtilsRepository::dblog_update;
 
     subprovider["insert.json"]   = &DbHttpUtilsRepository::insert_json;
     subprovider["modify.json"]   = &DbHttpUtilsRepository::modify_json;
@@ -325,15 +305,6 @@ int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
     return 0;
 
 }
-void DbHttpUtilsRepository::insert_xml (Database *db, HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/xml";
-    if ( this->insert(db, h) != 0 )
-        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-    else
-        table.insert_xml(db, h);
-}
 
 void DbHttpUtilsRepository::insert_json (Database *db, HttpHeader *h)
 {
@@ -395,15 +366,6 @@ int DbHttpUtilsRepository::modify (Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::modify_xml (Database *db, HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/xml";
-    if ( this->modify(db, h) != 0 )
-        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-    else
-        table.modify_xml(db, h);
-}
 
 void DbHttpUtilsRepository::modify_json (Database *db, HttpHeader *h)
 {
@@ -470,26 +432,6 @@ int DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
     (*h->vars.p_getVars()).erase("nameInput.old");
 
     return 0;
-}
-
-void DbHttpUtilsRepository::delete_xml (Database *db, HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/xml";
-    if ( this->del(db, h) != 0 )
-        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-    else
-    {
-        (*h->vars.p_getVars())["table"] = "filedata";
-        table.delete_xml(db,h);
-
-        (*h->vars.p_getVars())["table"] = "fileinterests";
-        table.delete_xml(db,h);
-
-        DbHttpProvider::del_content(h);
-        (*h->vars.p_getVars())["table"] = "repository";
-        table.delete_xml(db,h);
-    }
 }
 
 void DbHttpUtilsRepository::delete_json (Database *db, HttpHeader *h)
@@ -627,12 +569,6 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
     }
 }
 
-void DbHttpUtilsRepository::data_xml(Database *db, HttpHeader *h)
-{
-    dbdata_update(db,h);
-    query.data_xml(db, h);
-}
-
 void DbHttpUtilsRepository::data_json(Database *db, HttpHeader *h)
 {
     dbdata_update(db,h);
@@ -716,71 +652,6 @@ int DbHttpUtilsRepository::ls(Database *db, HttpHeader *h, std::map<std::string,
     return 0;
 }
 
-void DbHttpUtilsRepository::ls_xml(Database *db, HttpHeader *h)
-{
-    int i;
-    std::vector<FileData>::iterator is;
-    std::map<std::string, std::string> status;
-    std::string dir;
-
-    h->content_type = "text/xml";
-    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
-
-    if ( this->ls(db, h, status) < 0 )
-    {
-        DbHttpProvider::add_content(h,  "error");
-       return;
-    }
-
-    int onlydir = ( h->vars["noleaf"] != "" );
-    int singledir = ( h->vars["singledir"] != "" );
-
-    std::string rootname = h->vars["rootname"];
-    std::string idname = h->vars["idname"];
-
-    idname = ( idname == "" ) ? "name" : idname;
-    rootname = ( rootname == "" ) ? "root" : rootname;
-
-    DbHttpProvider::add_content(h, "<head>");
-
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "status",  "status");
-    DbHttpProvider::add_content(h, "</head><body>");
-
-    dir = this->dir;
-    if ( dir != "" && dir.substr(dir.length() - 2) != DIRSEP )
-        dir = dir + DIRSEP;
-
-    i = 0;
-    for ( is= dirs.begin(); is != dirs.end(); ++is )
-    {
-        std::string fullname = dir + (*is).name;
-        std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
-        fullname = ToString::substitute(fullname, DIRSEP, "/");
-
-        if ( singledir )
-            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "', " + idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
-        else
-            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), "submenu", "", i++, st.c_str() );
-    }
-
-    for ( is= files.begin(); !onlydir && is != files.end(); ++is )
-    {
-        std::string fullname = dir + (*is).name;
-        std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
-        fullname = ToString::substitute(fullname, DIRSEP, "/");
-        DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v><v>%s</v></r>", fullname.c_str(), (*is).name.c_str(), ("setValue( \"repositoryid : '" + h->vars["repositoryidInput.old"] + "'," + rootname + " : '" + root + "'," +  idname + ": '" + ToString::mascarade(fullname.c_str(),"'") + "', status : '" + st + "'\")").c_str(), "leaf", i++, st.c_str() );
-    }
-
-    DbHttpProvider::add_content(h, "</body>");
-    return;
-
-}
-
 void DbHttpUtilsRepository::ls_json(Database *db, HttpHeader *h)
 {
     int i;
@@ -843,66 +714,6 @@ void DbHttpUtilsRepository::ls_json(Database *db, HttpHeader *h)
 
     DbHttpProvider::add_content(h, "]");
 
-}
-
-void DbHttpUtilsRepository::log(Database *db, HttpHeader *h)
-{
-    unsigned int i;
-    std::string str;
-    CsList cmd;
-    int result;
-
-    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
-    if ( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )
-    {
-
-        if ( getDir(h) == "" )
-        {
-            DbHttpProvider::add_content(h,  "<body>error</body>");
-            return;
-        }
-
-        cmd.add(gitcmd.c_str());
-        cmd.add("log");
-        cmd.add("--pretty=%H@%an@%at@%s");
-        cmd.add(path + DIRSEP + h->vars["filenameInput.old"]);
-
-        result = exec(&cmd, getRoot(h).c_str());
-
-        if ( result != 0 )
-        {
-            msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
-            msg.line("%s", execlog.c_str());
-            DbHttpProvider::add_content(h,  "<body>error</body>");
-            return;
-        }
-    }
-    else
-        execlog = "";
-
-    DbHttpProvider::add_content(h, "<head>");
-
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "author", msg.get("geändert von").c_str());
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>1000</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "comitdate", msg.get("geändert am").c_str());
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "notiz",    msg.get("Änderungsnotiz").c_str());
-    DbHttpProvider::add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "hash",   "hash");
-
-    DbHttpProvider::add_content(h, "</head><body>");
-
-    if ( h->vars["status"] != "" )
-        DbHttpProvider::add_content(h, "<r><v>%s</v><v>%ld</v><v>%s</v><v>%s</v></r>", "",time(NULL), h->vars["status"].c_str(), "" );
-
-    CsList l(execlog, '\n');
-    for ( i=0; i<l.size(); ++i )
-    {
-        if ( l[i] != "" )
-        {
-            CsList ele(l[i],'@');
-            DbHttpProvider::add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v></r>", ele[1].c_str(),ele[2].c_str(),ele[3].c_str(),ele[0].c_str() );
-        }
-    }
-
-    DbHttpProvider::add_content(h,  "</body>");
 }
 
 void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
@@ -1061,25 +872,6 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
     tab->end();
     db->release(tab);
-}
-
-void DbHttpUtilsRepository::dblog_xml(Database *db, HttpHeader *h)
-{
-    DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
-
-    if ( h->vars["repositoryidInput.old"] != "" )
-        dblog_update(db, h);
-
-    if ( h->error_found == 0 )
-    {
-        DbHttpProvider::del_content(h);
-        query.data_xml(db, h);
-    }
-    else
-    {
-        DbHttpProvider::add_content(h,  "<body>error</body>");
-    }
-
 }
 
 void DbHttpUtilsRepository::dblog_json(Database *db, HttpHeader *h)
@@ -1272,8 +1064,6 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
 
 int DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 {
-    if ( h->vars["filenameInput.old"] != "" )
-        (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"];
     HttpFilesystem::mkdir(h);
     DbHttpProvider::del_content(h);
 
@@ -1288,12 +1078,6 @@ int DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
         write(file, (std::string("# ") + name + "\n").c_str(), name.length() + 3);
         close(file);
         return 0;
-}
-
-void DbHttpUtilsRepository::mkdir_xml ( Database *db, HttpHeader *h)
-{
-    this->mkdir(db, h);
-    this->addfile_xml(db, h);
 }
 
 void DbHttpUtilsRepository::mkdir_json ( Database *db, HttpHeader *h)
@@ -1355,12 +1139,6 @@ int DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::rmdir_xml ( Database *db, HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    DbHttpProvider::add_content(h, ( this->rmdir(db, h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
-}
-
 void DbHttpUtilsRepository::rmdir_json ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
@@ -1406,23 +1184,6 @@ int DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::addfile_xml ( Database *db, HttpHeader *h)
-{
-    if ( h->content_type == "text/xml")
-        DbHttpProvider::add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
-
-    if ( this->addfile(db, h) < 0 )
-    {
-        if ( h->content_type == "text/xml")
-            DbHttpProvider::add_content(h, "<body>error</body>");
-    }
-    else
-    {
-        if ( h->content_type == "text/xml")
-            DbHttpProvider::add_content(h, "<body>ok</body>");
-    }
-}
-
 void DbHttpUtilsRepository::addfile_json ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
@@ -1431,17 +1192,6 @@ void DbHttpUtilsRepository::addfile_json ( Database *db, HttpHeader *h)
         DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
     else
         DbHttpProvider::add_content(h, "{ \"result\" : \"ok\"");
-}
-
-void DbHttpUtilsRepository::mkfile_xml ( Database *db, HttpHeader *h)
-{
-    HttpFilesystem::mkfile_xml(h);
-    if ( msg.getErrorfound())
-        return;
-
-    h->content_type = "text/plain";
-    addfile_xml(db, h);
-    h->content_type = "text/html";
 }
 
 void DbHttpUtilsRepository::mkfile_json ( Database *db, HttpHeader *h)
@@ -1532,12 +1282,6 @@ int DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::rmfile_xml ( Database *db, HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    DbHttpProvider::add_content(h, ( this->rmfile(db, h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
-}
-
 void DbHttpUtilsRepository::rmfile_json ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
@@ -1600,12 +1344,6 @@ int DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::mv_xml ( Database *db, HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    DbHttpProvider::add_content(h, ( this->mv(db, h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
-}
-
 void DbHttpUtilsRepository::mv_json ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
@@ -1638,12 +1376,6 @@ int DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
         return -1;
     }
     return 0;
-}
-
-void DbHttpUtilsRepository::commit_xml ( Database *db, HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    DbHttpProvider::add_content(h, ( this->commit(db, h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
 }
 
 void DbHttpUtilsRepository::commit_json ( Database *db, HttpHeader *h)

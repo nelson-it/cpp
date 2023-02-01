@@ -11,7 +11,10 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <utils/tostring.h>
 #include <utils/php_exec.h>
+
+#include <string>
 
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -168,16 +171,12 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
 #endif
         this->cacheroot = (std::string)a["projectroot"] + "/" + this->cacheroot;
 
-    subprovider["ls.xml"]     = &HttpFilesystem::ls;
-    subprovider["mkdir.xml"]  = &HttpFilesystem::mkdir;
-    subprovider["rmdir.xml"]  = &HttpFilesystem::rmdir_xml;
+    subprovider["ls.json"]     = &HttpFilesystem::ls;
+    subprovider["mkdir.json"]  = &HttpFilesystem::mkdir;
     subprovider["rmdir.json"]  = &HttpFilesystem::rmdir_json;
-    subprovider["mkfile.html"] = &HttpFilesystem::mkfile_xml;
     subprovider["mkfile.json"] = &HttpFilesystem::mkfile_json;
-    subprovider["rmfile.xml"] = &HttpFilesystem::rmfile_xml;
     subprovider["rmfile.json"] = &HttpFilesystem::rmfile_json;
-    subprovider["mklink.xml"] = &HttpFilesystem::mklink;
-    subprovider["mv.xml"] = &HttpFilesystem::mv;
+    subprovider["mv.json"] = &HttpFilesystem::mv_json;
     subprovider["download.html"] = &HttpFilesystem::download;
     subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
 
@@ -248,7 +247,7 @@ int HttpFilesystem::request(HttpHeader *h)
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
         h->status = 200;
-        h->content_type = "text/xml";
+        h->content_type = "text/json";
 
         (this->*(i->second))(h);
         return 1;
@@ -256,6 +255,14 @@ int HttpFilesystem::request(HttpHeader *h)
 
     (*(h->vars.p_getExtraVars()))["root"] = this->getRoot(h);
     (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
+
+    if ( h->error_messages.size() )
+    {
+        h->status = 200;
+        h->content_type = "text/json";
+        add_content(h, "{ \"result\" : \"error\"");
+        return 1;
+    }
 
     return findfile(h);
 
@@ -272,21 +279,26 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
         if ( m->first == root ) break;
     }
 
+    if ( m != h->datapath.end() )
+    {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-    if ( m->second[1] == ':' )
+        if ( m->second[1] == ':' )
 #else
-    if ( m->second[0] == '/' )
+        if ( m->second[0] == '/' )
 #endif
 
-    {
-        msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
-        return  m->second;
+        {
+           msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+           return  m->second;
+        }
+        else
+        {
+           msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
+           return h->dataroot + "/" + m->second;
+        }
     }
-    else
-    {
-        msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
-        return h->dataroot + "/" + m->second;
-    }
+
+    return "";
 
 }
 
@@ -458,7 +470,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
 
     while (( dirp = ::readdir(dp) ) != NULL )
     {
-        if ( ( !pointdir && (std::string(dirp->d_name))[0] == '.' )|| (std::string(dirp->d_name)) == "." || (std::string(dirp->d_name)) == ".." ) continue;
+        if ( ( !pointdir && (std::string(dirp->d_name))[0] == '.' ) || (std::string(dirp->d_name)) == "." || (std::string(dirp->d_name)) == ".." ) continue;
         {
         FileData data;
         data.name = dirp->d_name;
@@ -482,6 +494,64 @@ void HttpFilesystem::readdir(HttpHeader *h)
 #endif
 }
 
+int HttpFilesystem::hassubdirs(std::string path, int pointdir)
+{
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    HANDLE hh;
+    WIN32_FIND_DATA d;
+    std::string str;
+
+    str = path + "\\*";
+    hh = FindFirstFile(str.c_str(), &d);
+    if (hh == INVALID_HANDLE_VALUE)
+    {
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + h->vars["dirInput.old"] ).c_str());
+        return 0;
+    }
+
+    do
+    {
+        if ( ( !pointdir && (std::string(d.cFileName))[0] == '.' )|| (std::string(d.cFileName)) == "." || (std::string(d.cFileName)) == ".." ) continue;
+        if ( d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
+        {
+            FindClose(hh);
+            return 1;
+        }
+    }
+    while (FindNextFile(hh, &d) );
+    FindClose(hh);
+    return 0;
+#else
+    DIR *dp;
+    struct dirent *dirp;
+    std::string dir;
+
+    if((dp  = opendir(path.c_str())) == NULL)
+    {
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", path.c_str());
+        return 0;
+    }
+
+    dir = path;
+    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
+        dir = dir + DIRSEP;
+
+    while (( dirp = ::readdir(dp) ) != NULL )
+    {
+        if ( ( !pointdir && (std::string(dirp->d_name))[0] == '.' ) || (std::string(dirp->d_name)) == "." || (std::string(dirp->d_name)) == ".." ) continue;
+        if ( dirp->d_type == DT_DIR )
+        {
+            closedir(dp);
+            return 1;
+        }
+    }
+
+    closedir(dp);
+    return 0;
+#endif
+}
+
 void HttpFilesystem::ls(HttpHeader *h)
 {
     unsigned int i;
@@ -494,7 +564,6 @@ void HttpFilesystem::ls(HttpHeader *h)
     std::string idname = h->vars["idname"];
 
     int onlydir = ( h->vars["noleaf"] != "" );
-    int singledir = ( h->vars["singledir"] != "" );
 
     std::string dir;
     std::string root = getRoot(h);
@@ -505,38 +574,45 @@ void HttpFilesystem::ls(HttpHeader *h)
     idname = ( idname == "" ) ? "fullname" : idname;
     rootname = ( rootname == "" ) ? "root" : rootname;
 
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    h->content_type = "text/json";
 
     readdir(h);
     if ( h->error_found )
     {
-        add_content(h,  "<body>error</body>");
+        add_content(h, "{ \"result\" : \"error\"");
         return;
     }
 
-    add_content(h, "<head>");
-
-    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "menuid",   "menuid");
-    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "item",   "item");
-    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "action", "action");
-    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "typ",    "typ");
-    add_content(h, "<d><id>%s</id><typ>2</typ><format></format><name>%s</name><regexp><reg></reg><help></help><mod></mod></regexp></d>\n", "pos",    "pos");
-    add_content(h, "</head><body>");
+    add_content(h, "{  \"ids\" : [\"menuid\", \"item\", \"action\", \"typ\", \"pos\" ],\n"
+                   "  \"typs\" : [ 2, 2, 2, 2, 2 ],\n"
+                   "  \"labels\" : [\"menuid\", \"item\", \"action\", \"typ\", \"pos\" ],\n"
+                   "  \"formats\" : [ \"\",\"\",\"\",\"\",\"\" ],\n"
+                   "  \"values\" : [\n");
 
     dir = this->dir;
     if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
         dir = dir + DIRSEP;
+
+    const char* format = "[\"%s\", \"%s\",\"%s\",\"%s\",\"%d\" ]";
+    std::string komma; komma = "";
 
     i = 0;
     for ( is= dirs.begin(); is != dirs.end(); ++is )
     {
         char str[1024];
         str[sizeof(str) - 1] =  '\0';
-        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : false, createtime : %ld, modifytime : %ld, accesstime : %ld })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
-        if ( singledir )
-            add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
-        else
-            add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), "submenu", "", i++ );
+        std::string fullname = dir + (*is).name;
+        const char *action = "submenu";
+        const char *leaf = "";
+
+        if ( onlydir && hassubdirs(root + "/" +  fullname, 0) == 0 )
+            leaf = "leaf";
+
+        snprintf(str, sizeof(str) - 1, "\"%s\" : \"%s\", \"%s\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\"", rootname.c_str(), hroot.c_str(), idname.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
+        add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"" + std::string(action) + "\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), leaf, i++);
+
+        komma = ',';
+
     }
 
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
@@ -556,23 +632,31 @@ void HttpFilesystem::ls(HttpHeader *h)
 #endif
          default:       ft = "file";   break;
          }
-        snprintf(str, sizeof(str) - 1, "setValue({ %s : \"%s\", %s : \"%s\", name : \"%s\", leaf : true, createtime : %ld, modifytime : %ld, accesstime : %ld, filetype : \"%s\" })", rootname.c_str(), hroot.c_str(), idname.c_str(), ( dir + (*is).name).c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
-        add_content(h, "<r><v>%s</v><v>%s</v><v>%s</v><v>%s</v><v>%d</v></r>", (dir + (*is).name).c_str(), (*is).name.c_str(), str, "leaf", i++ );
+        std::string fullname = dir + (*is).name;
+        snprintf(str, sizeof(str) - 1, "\"%s\" : \"%s\", \"%s\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\"", rootname.c_str(), hroot.c_str(), idname.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
+        add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), "leaf", i++ );
+
+        komma = ',';
     }
 
-    add_content(h, "</body>");
+    add_content(h, "]");
     return;
 
 }
 
 void HttpFilesystem::mkdir(HttpHeader *h)
 {
-    std::string dir = check_path(h, "", 0);
+    if ( h->vars["filenameInput.old"] != "" )
+         (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"];
+
+    std::string dir = check_path(h, "", 0); // @suppress("Invalid arguments")
     std::string name = h->vars["filenameInput"];
+
+    h->content_type = "text/json";
 
     if ( dir == "" || name == "" )
     {
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h, "{ \"result\" : \"error\"");
         return;
     }
 
@@ -580,7 +664,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     if ( ! CreateDirectory((dir + DIRSEP + name).c_str(), NULL) )
     {
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h, "{ \"result\" : \"error\"");
         return;
     }
 #else
@@ -589,7 +673,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
         msg.line("%s %s", (dir + DIRSEP + name).c_str(), str.c_str());
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
+        add_content(h, "{ \"result\" : \"error\"");
         return;
     }
 
@@ -599,9 +683,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     chmod((dir + DIRSEP + name).c_str(), (0777 & ~ mask) );
 
 #endif
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
-
-
+    add_content(h, "{ \"result\" : \"ok\"");
 }
 
 int HttpFilesystem::rmdir(HttpHeader *h)
@@ -631,12 +713,6 @@ int HttpFilesystem::rmdir(HttpHeader *h)
     return 0;
 }
 
-void HttpFilesystem::rmdir_xml ( HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    add_content(h, ( this->rmdir( h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
-}
-
 void HttpFilesystem::rmdir_json (  HttpHeader *h)
 {
     h->content_type = "text/json";
@@ -644,42 +720,51 @@ void HttpFilesystem::rmdir_json (  HttpHeader *h)
 }
 
 
-void HttpFilesystem::mv(HttpHeader *h)
+int HttpFilesystem::mv(HttpHeader *h)
 {
     std::string oldname = h->vars["filenameInput.old"];
     std::string newname = h->vars["filenameInput"];
+    int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
 
     if ( oldname == "" || newname == "" )
     {
         msg.perror(E_NEEDNAME, "Der Name der Datei darf nicht leer sein");
+        return -1;
     }
 
     if ( getDir(h) == "" || oldname == "" || newname == "" )
     {
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     if ( ! MoveFile((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) )
      {
          msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
-         add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-         return;
+         return-1;
      }
 #else
+   if ( !overwrite && access((path + DIRSEP + newname).c_str(), F_OK) == 0 )
+   {
+        msg.perror(E_CREATEFILE, "Datei existiert");
+        return -1;
+   }
+
    if ( ::rename((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
         msg.line("%s", str.c_str());
-        add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>error</body>", h->charset.c_str());
-        return;
+        return -1;
     }
 #endif
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result><body>ok</body>", h->charset.c_str());
+    return 0;
+}
 
-
+void HttpFilesystem::mv_json (  HttpHeader *h)
+{
+    h->content_type = "text/json";
+    add_content(h, ( this->mv(h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
 std::string HttpFilesystem::mkfile(HttpHeader *h)
@@ -714,6 +799,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
         else
         {
             std::string name = h->vars["filenameInput"];
+            int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
 
             if ( getDir(h) == "" || name == "" )
             {
@@ -722,7 +808,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
             else
             {
                 std::string file = path + DIRSEP + name;
-                if ( access( file.c_str() , F_OK ) == 0 && ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "1" ) )
+                if ( !overwrite && access( file.c_str() , F_OK ) == 0 )
                 {
                     return msg.get("Datei existiert und wird nicht überschrieben");
                 }
@@ -761,24 +847,6 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
 #endif
     }
     return "ok";
-}
-
-void HttpFilesystem::mkfile_xml(HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/html";
-
-    std::string str = mkfile(h);
-    if ( h->vars["script"] != "" )
-    {
-        add_content(h, "<script type=\"text/javascript\">\n");
-        add_content(h, "<!--\n");
-        add_content(h, "%s\n", h->vars["script"].c_str());
-        add_content(h, "//-->\n");
-        add_content(h, "</script>\n");
-    }
-
-    add_content(h,  "%s", str.c_str());
 }
 
 void HttpFilesystem::mkfile_json(HttpHeader *h)
@@ -827,12 +895,6 @@ int HttpFilesystem::rmfile(HttpHeader *h)
     }
 #endif
     return 0;
-}
-
-void HttpFilesystem::rmfile_xml ( HttpHeader *h)
-{
-    h->content_type == "text/xml";
-    add_content(h, ( this->rmfile( h) < 0 ) ?  "<body>error</body>" : "<body>ok</body>");
 }
 
 void HttpFilesystem::rmfile_json (  HttpHeader *h)

@@ -16,7 +16,9 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#ifndef NO_XMLFORMAT
 #include <xml/xmltext_html.h>
+#endif
 
 #include "dbconnect.h"
 #include "dbtable.h"
@@ -243,6 +245,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
             if ( *format == '\'' && *(char *) value == '\0')
                 return ((char*)"''");
 
+#ifndef NO_XMLFORMAT
             if ( *format == 'x' && strcmp(format, "xml") != 0 )
             {
                 std::map<std::string,std::string> classmap;
@@ -254,6 +257,7 @@ char *DbConnect::Result::format(Message *msg, char *str, int length, const char 
                 strcpy((char*)rbuff, xml.getHtml().c_str());
                 return (char*)rbuff;
             }
+#endif
         }
 
         if (str == NULL)

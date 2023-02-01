@@ -124,8 +124,6 @@ $(SHLIB_PRE)mnedb.$(SHLIB).SOURCES := \
                 $(PROJECT_ROOT)/allg/db/postgres/pgjoin.cpp \
                 \
                 $(PROJECT_ROOT)/allg/db/dbws_http.cpp \
-                \
-                $(PROJECT_ROOT)/allg/report/report_tex.cpp \
 
 $(SHLIB_PRE)mnedbhttp.$(SHLIB).ISDLL := TRUE
 $(SHLIB_PRE)mnedbhttp.$(SHLIB).WITH_GD := FALSE
@@ -148,9 +146,17 @@ $(SHLIB_PRE)mnedbhttp.$(SHLIB).SOURCES := \
                 \
                 $(PROJECT_ROOT)/allg/db/dbhttpadmin_table.cpp \
                 $(PROJECT_ROOT)/allg/db/dbhttpadmin_query.cpp \
-                \
-                $(PROJECT_ROOT)/allg/report/dbhttp_report.cpp \
 
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).ISDLL := TRUE
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).WITH_GD := FALSE
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).WITH_POSTGRES := TRUE
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).LIBS    := mnebase mnexml mnehttp mnedb mnedbhttp
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).LIBMAJOR := 1
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).LIBMINOR := 0
+$(SHLIB_PRE)mnedbhttpreport.$(SHLIB).SOURCES := \
+                $(PROJECT_ROOT)/allg/report/report_tex.cpp \
+                $(PROJECT_ROOT)/allg/report/dbhttp_report.cpp \
+  
 $(SHLIB_PRE)mnedbhttpmail.$(SHLIB).ISDLL := TRUE
 $(SHLIB_PRE)mnedbhttpmail.$(SHLIB).WITH_GD := FALSE
 $(SHLIB_PRE)mnedbhttpmail.$(SHLIB).WITH_POSTGRES := FALSE
