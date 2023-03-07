@@ -21,6 +21,7 @@ protected:
     enum ErrorType
     {
         E_FILENOTFOUND = 1,
+        E_ROOT,
         E_NEEDNAME,
 
         E_CREATEFILE,
@@ -29,6 +30,8 @@ protected:
 
         E_FILEEXISTS,
         E_FILE_OPEN,
+
+        E_WRONGNAME,
 
         E_MAX = 1000
     };
@@ -44,21 +47,18 @@ protected:
     };
 
     virtual std::string getRoot(HttpHeader *h);
-    virtual std::string getDir(HttpHeader *h, int errormsg = 1);
+    virtual std::string getDir(std::string dir, int errormsg = 1 );
 
-    virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1, std::string *result = NULL );
-    virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1 , std::string *result = NULL );
+    //virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1, std::string *result = NULL );
+    //virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1 , std::string *result = NULL );
 
     virtual int findfile(HttpHeader *h);
 
-    //std::string dataroot;
     std::string root;
-    std::string dir;
-
+    std::string rootpath;
     std::string cacheroot;
 
-    std::string path;
-    struct stat statbuf;
+    //struct stat statbuf;
 
     struct FileData
     {
@@ -77,12 +77,10 @@ protected:
     std::vector<FileData> dirs;
     std::vector<FileData> files;
 
-    FileDataSort qs_type;
+    virtual int  quicksort_check(FileData *data1, FileData *data2, FileDataSort qs_type);
+    virtual void quicksort(std::vector<FileData> &sort, FileDataSort qs_type, int left, int right);
 
-    virtual int  quicksort_check(FileData *data1, FileData *data2);
-    virtual void quicksort(std::vector<FileData> &sort, int left, int right);
-
-    virtual void readdir(HttpHeader *h);
+    virtual void readdir(std::string dirname, int pointdir );
     virtual int hassubdirs(std::string path, int pointdir);
 
     std::string mkfile ( HttpHeader *h);

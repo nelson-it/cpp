@@ -176,7 +176,7 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
         {
             cmd.add("-datapath");
             cmd.add(m->first);
-            cmd.add(ToString::substitute(ToString::substitute(h->dataroot + m->second.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
+            cmd.add(ToString::substitute(ToString::substitute(m->second.c_str(), "\\", "/"), "C:", "/cygdrive/c"));
         }
 
         cmd.add("-db");
@@ -196,6 +196,9 @@ void DbHttpUtilsTrust::execute(Database *db, HttpHeader *h, std::string name, in
 
         cmd.add("-r");
         cmd.add(a["projectroot"]);
+
+        cmd.add("-url");
+        cmd.add(h->base);
 
 
         for ( i= h->vars.p_getVars()->begin(); i != h->vars.p_getVars()->end(); ++i )

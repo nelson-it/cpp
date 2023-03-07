@@ -39,20 +39,20 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
     subprovider["downloadall.html"] = &DbHttpUtilsRepository::downall;
 
     subprovider["insert.json"]   = &DbHttpUtilsRepository::insert_json;
-    subprovider["modify.json"]   = &DbHttpUtilsRepository::modify_json;
+    subprovider["modify.json"]   = &DbHttpUtilsRepository::modify;
     subprovider["delete.json"]   = &DbHttpUtilsRepository::delete_json;
-    subprovider["data.json"]     = &DbHttpUtilsRepository::data_json;
+    subprovider["data.json"]     = &DbHttpUtilsRepository::data;
 
-    subprovider["ls.json"]       = &DbHttpUtilsRepository::ls_json;
-    subprovider["addfile.json"]  = &DbHttpUtilsRepository::addfile_json;
-    subprovider["mkfile.json"]   = &DbHttpUtilsRepository::mkfile_json;
-    subprovider["rmfile.json"]   = &DbHttpUtilsRepository::rmfile_json;
-    subprovider["mv.json"]       = &DbHttpUtilsRepository::mv_json;
-    subprovider["mkdir.json"]    = &DbHttpUtilsRepository::mkdir_json;
-    subprovider["rmdir.json"]    = &DbHttpUtilsRepository::rmdir_json;
+    subprovider["ls.json"]       = &DbHttpUtilsRepository::ls;
+    subprovider["addfile.json"]  = &DbHttpUtilsRepository::addfile;
+    subprovider["mkfile.json"]   = &DbHttpUtilsRepository::mkfile;
+    subprovider["rmfile.json"]   = &DbHttpUtilsRepository::rmfile;
+    subprovider["mv.json"]       = &DbHttpUtilsRepository::mv;
+    subprovider["mkdir.json"]    = &DbHttpUtilsRepository::mkdir;
+    subprovider["rmdir.json"]    = &DbHttpUtilsRepository::rmdir;
 
-    subprovider["commit.json"]   = &DbHttpUtilsRepository::commit_json;
-    subprovider["dblog.json"]    = &DbHttpUtilsRepository::dblog_json;
+    subprovider["commit.json"]   = &DbHttpUtilsRepository::commit;
+    subprovider["dblog.json"]    = &DbHttpUtilsRepository::dblog;
 
     gitcmd = std::string(a["gitcmd"]);
 
@@ -77,7 +77,24 @@ int DbHttpUtilsRepository::request(Database *db, HttpHeader *h)
     if ( ( i = subprovider.find(h->filename)) != subprovider.end() )
     {
         h->status = 200;
+
         read_name(db, h);
+
+        this->rootpath = getRoot(h);
+        if ( this->rootpath == "" )
+        {
+            msg.perror(E_ROOT, "Wurzel unbekannt");
+            DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
+            return 1;
+        }
+
+        if ( h->vars["filenameInput"].find(DIRSEP) != std::string::npos || h->vars["filenameInput.old"].find(DIRSEP) != std::string::npos )
+        {
+            msg.perror(E_WRONGNAME, "Dateinamen sind im falschen Format");
+            DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
+            return 1;
+        }
+
         (this->*(i->second))(db, h);
 
         if (h->vars["sqlend"] != "")
@@ -129,36 +146,28 @@ void DbHttpUtilsRepository::read_name(Database *db, HttpHeader *h)
 
     if ( ! r->empty() )
     {
+        msg.pdebug(1, "found");
         (*h->vars.p_getVars())["rootInput.old"] = (char*)((*r)[0][0]);
         (*h->vars.p_getVars())["nameInput.old"] = (char*)((*r)[0][1]);
     }
 
+    repository = h->vars["nameInput.old"];
 }
 
-std::string DbHttpUtilsRepository::getRoot(HttpHeader *h)
+std::string DbHttpUtilsRepository::getRepositoryRoot()
 {
-    std::string dir = HttpFilesystem::getRoot(h);
-    std::string rep = h->vars["nameInput.old"];
-
-    if ( dir == "" )
-        return dir;
-
-    if ( rep == "")
+    if ( repository == "")
     {
         msg.perror(E_REPOSITORY, "Der Aktenordner muss einen Namen haben");
         return "";
     }
 
-    return dir + DIRSEP + rep;
+    return rootpath + repository + DIRSEP;
 }
 
-std::string DbHttpUtilsRepository::getDir(HttpHeader *h, int errormsg )
+std::string DbHttpUtilsRepository::getDir(std::string dir, int errormsg )
 {
-    std::string retval = HttpFilesystem::getDir(h, 0);
-
-    if ( errormsg && retval == "" )
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + h->vars["nameInput.old"]).c_str());
-    return retval;
+    return HttpFilesystem::getDir(repository + DIRSEP + dir, errormsg);
 }
 
 int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
@@ -176,6 +185,8 @@ int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
     DbTable::ValueMap where;
     DbTable::ValueMap::iterator wi;
 
+    struct stat statbuf;
+
     (*h->vars.p_getVars())["rootInput.old"] = h->vars["rootInput"];
     if ( (root = HttpFilesystem::getRoot(h)) == "" )
     {
@@ -183,7 +194,7 @@ int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
         return -1;
     }
 
-    if ( check_path(root.c_str(), h->vars["nameInput"].c_str(), 1, 0) != "" )
+    if ( lstat((root + DIRSEP + h->vars["nameInput"]).c_str(), &statbuf) == 0 )
     {
         msg.pwarning(E_MKREPOSITORY,"Der Aktenordner <%s> existiert schon", h->vars["nameInput"].c_str());
     }
@@ -210,7 +221,7 @@ int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)
         chmod( (root + DIRSEP + h->vars["nameInput"]).c_str(), (02777 & ~ mask) );
 
         templ = msg.get("RepositoryVorlage");
-        if ( check_path(root.c_str(), templ.c_str(), 1, 0) != "" && h->vars["nameInput"] != templ && templ != "" )
+        if ( lstat((root + DIRSEP + templ).c_str(), &statbuf) == 0 && h->vars["nameInput"] != templ && templ != "" )
         {
             cmd.setString("");
             cmd.add("sh");
@@ -317,45 +328,44 @@ void DbHttpUtilsRepository::insert_json (Database *db, HttpHeader *h)
 
 }
 
-int DbHttpUtilsRepository::modify (Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::modify (Database *db, HttpHeader *h)
 {
-    std::string root;
     std::string name;
-
     CsList cmd;
-    int result;
+    int result = 0;
+    struct stat statbuf;
 
-    root = h->vars["rootInput.old"];
+    h->status = 200;
+    h->content_type = "text/json";
+
     name = h->vars["nameInput.old"];
 
-    if ( HttpFilesystem::getRoot(h) == "" || check_path(HttpFilesystem::getRoot(h).c_str(), name.c_str()) == "" )
+    if ( lstat((rootpath + DIRSEP + name).c_str(), &statbuf) != 0 )
     {
         msg.perror(E_MKREPOSITORY,"Der Aktenordner <%s> existiert nicht", (root + ":" + name).c_str());
-        return -1;
+        result = -1;
     }
 
     if ( name == "" || h->vars["nameInput"] == "" )
     {
         msg.perror(E_MKREPOSITORY,"Die Aktenordner müssen eine Namen haben");
-        return -1;
+        result = -1;
     }
 
-    if ( name != h->vars["nameInput"] )
+    if ( result == 0 && name != h->vars["nameInput"] )
     {
         cmd.add("mv");
         cmd.add(name);
         cmd.add(h->vars["nameInput"]);
 
         Process p;
-        p.start(cmd, NULL, HttpFilesystem::getRoot(h).c_str());
-        result = p.wait();
-
-        if ( result != 0 )
+        p.start(cmd, NULL, rootpath.c_str());
+        if ( p.wait() != 0 )
         {
             std::string str = msg.getSystemerror(errno);
             msg.perror(E_MKREPOSITORY,"Fehler während des Umbenennen eines Aktenordners");
             msg.line("%s", str.c_str());
-            return -1;
+            result = -1;
         }
     }
 
@@ -363,20 +373,11 @@ int DbHttpUtilsRepository::modify (Database *db, HttpHeader *h)
     (*h->vars.p_getVars()).erase("nameInput.old");
 
     DbHttpProvider::del_content(h);
-    return 0;
-}
-
-
-void DbHttpUtilsRepository::modify_json (Database *db, HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/json";
-    if ( this->modify(db, h) != 0 )
-        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
-    else
+    if ( result == 0 )
         table.modify_json(db, h);
+    else
+        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
 }
-
 
 int DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
 {
@@ -385,6 +386,7 @@ int DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
      time_t rawtime;
      struct tm * timeinfo;
      char buffer [80];
+     struct stat statbuf;
 
      time (&rawtime);
      timeinfo = gmtime (&rawtime);
@@ -403,7 +405,7 @@ int DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
          return -1;
      }
 
-    if ( check_path(root.c_str(), h->vars["nameInput.old"].c_str(), 1, 0) == "" )
+    if ( lstat((rootpath + DIRSEP + h->vars["nameInput.old"]).c_str(), &statbuf) == 0 )
     {
         msg.pwarning(E_DELREPOSITORY,"Der Aktenordner <%s> existiert nicht", h->vars["nameInput.old"].c_str());
     }
@@ -455,36 +457,29 @@ void DbHttpUtilsRepository::delete_json (Database *db, HttpHeader *h)
 
 }
 
-void DbHttpUtilsRepository::dbdata_checkdir(HttpHeader *h, std::string dir)
+void DbHttpUtilsRepository::dbdata_checkdir(std::string dir)
 {
-    HttpVars vars = h->vars;
     std::vector<FileData>::iterator is;
     std::vector<FileData> dirs;
-    std::string root;
     int f;
-    root = getRoot(h);
+    struct stat statbuf;
 
-    if ( dir != "" )
-        (*h->vars.p_getVars())["dirInput.old"] = (*h->vars.p_getVars())["dirInput.old"] + DIRSEP + dir;
-
-    std::string file = ( h->vars["dirInput.old"] + DIRSEP + ".gitignore");
-    if ( check_path(root.c_str(), file.c_str(), 1, 0) == "" )
+    std::string file = ( dir + DIRSEP + ".gitignore");
+    if ( lstat((rootpath + DIRSEP + file).c_str(), &statbuf) == 0 )
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        f = open((root + DIRSEP + file).c_str(), O_WRONLY | O_CREAT, 0666 );
+        f = open((rootpath + DIRSEP + file).c_str(), O_WRONLY | O_CREAT, 0666 );
 #else
-        f = open((root + DIRSEP + file).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
+        f = open((rootpath + DIRSEP + file).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
 #endif
         write(f, (std::string("# ") + file + "\n").c_str(), file.length() + 3);
         close(f);
+
+        HttpFilesystem::readdir(dir , 0 );
+        dirs = this->dirs;
+        for ( is = dirs.begin(); is != dirs.end(); ++is )
+            dbdata_checkdir( (*is).name);
     }
-
-    HttpFilesystem::readdir(h);
-    dirs = this->dirs;
-    for ( is = dirs.begin(); is != dirs.end(); ++is )
-        dbdata_checkdir(h, (*is).name);
-
-    h->vars = vars;
 }
 
 void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
@@ -492,36 +487,20 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
     DbTable *tab;
     DbTable::ValueMap where,vals;
     DbConnect::ResultMat *r;
-    std::string root;
+    std::string repository;
+    struct stat statbuf;
 
     std::string schema;
     std::string table;
 
-    if ( h->vars["wcol"] != "" )
-    {
-        CsList wcol(h->vars["wcol"]);
-        CsList wval(h->vars["wval"]);
-        unsigned int i;
-        for ( i = 0; i< wcol.size(); i++)
-        {
-            if ( wcol[i] == "root")
-            {
-                (*h->vars.p_getVars())["rootInput.old"] = wval[i];
-                break;
-            }
-        }
-    }
-
-    if ( h->vars["rootInput.old"] == "" )
-        return;
+    if ( h->vars["nameInput.old"] ==  "" ) return;
 
     schema = h->vars["schema"];
     table = h->vars["table"];
     tab = db->p_getTable(schema, table);
 
-
     vals["repositoryid"] = "################";
-    where["root"] = vals["root"] = h->vars["rootInput.old"];
+    where["root"] = vals["root"] = root;
     where["name"] = vals["name"] = h->vars["nameInput.old"];
 
     r = tab->select(&vals, &where);
@@ -529,13 +508,13 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
         tab->insert(&vals);
     db->release(tab);
 
-    root = getRoot(h);
-    if ( check_path(root.c_str(), (std::string(DIRSEP) + ".git").c_str(), 1, 0) == "" )
+    repository = getRepositoryRoot();
+    if ( lstat((repository + ".git").c_str(), &statbuf) != 0 )
     {
         CsList cmd;
         int result;
 
-        dbdata_checkdir(h, "");
+        dbdata_checkdir(repository);
 
         cmd.add(gitcmd.c_str());
         cmd.add("init");
@@ -544,7 +523,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
         cmd.add(h->vars["nameInput.old"]);
 
         Process p;
-        p.start(cmd, NULL, HttpFilesystem::getRoot(h).c_str());
+        p.start(cmd, NULL, rootpath.c_str());
         result = p.wait();
 
         if ( result != 0 )
@@ -555,7 +534,7 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
         cmd.add("add");
         cmd.add(".");
 
-        p.start(cmd, NULL, root.c_str());
+        p.start(cmd, NULL, repository.c_str());
         result = p.wait();
 
         if ( result != 0 )
@@ -565,116 +544,119 @@ void DbHttpUtilsRepository::dbdata_update ( Database *db, HttpHeader *h)
         }
         (*h->vars.p_getVars())["autocommitInput"] = "1";
         (*h->vars.p_getVars())["commitmessageInput"] = "Initialversion";
-        commit(db, h);
+        data_commit(db, h);
     }
 }
 
-void DbHttpUtilsRepository::data_json(Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::data(Database *db, HttpHeader *h)
 {
     dbdata_update(db,h);
     query.data_json(db, h);
 }
 
-int DbHttpUtilsRepository::ls(Database *db, HttpHeader *h, std::map<std::string, std::string> &status)
+void DbHttpUtilsRepository::read_status( std::string dir, std::map<std::string, std::string> &status)
 {
     unsigned int i;
     std::string str;
     CsList cmd;
     int result;
-    int first;
-    std::string dir;
     std::vector<FileData>::iterator is;
-
-
-    readdir(h);
-    if ( h->error_found )
-    {
-        return -1;
-    }
 
     cmd.add(gitcmd.c_str());
     cmd.add("status");
     cmd.add("-s");
+    cmd.add(".");
 
-    result = exec(&cmd, getRoot(h).c_str());
+    result = exec(&cmd, dir.c_str());
 
     if ( result != 0 )
     {
         msg.perror(E_MKREPOSITORY,"Fehler während des Listens eines Ordners");
         msg.line("%s", execlog.c_str());
-        return -1;
+        return;
     }
 
     CsList s(execlog, '\n', 1);
-    ;
+
     for ( i = 0; i<s.size(); ++i)
     {
         std::string name = s[i].substr(3);
         std::string st = s[i].substr(0,2);
+        int deleted = (s[i].substr(1,1) == "D" );
+
         std::string::size_type n;
 
         if ( (n = name.find(" -> ")) != std::string::npos ) name = name.substr(n + 4);
         if ( name[0] == '"') name = name.substr(1,name.find('"', 1) - 1);
+        if ( name[name.size() - 1] == '/') name = name.substr(0,name.size() - 1);
 
         if ( st == "??" ) st = "Y";
         st.erase( std::remove_if( st.begin(), st.end(), ::isspace ), st.end() );
 
-        status.insert(std::make_pair(name, st));
-
-        dir = name;
-        first = 1;
-        while ( ( n = dir.rfind('/') ) != std::string::npos )
+        if ( name == "." )
         {
-            name = dir.substr(n + 1);
-            dir = dir.substr(0,n);
-
-            if ( status.find(dir) == status.end() )
-                status.insert(std::make_pair(dir, "M"));
-
-
-            for ( is = files.begin(); is != files.end(); ++is) if ( (*is).name == name ) break;
-            if ( first && dir == this->dir && is == files.end() && st == "D" )
-            {
-                FileData d;
-                d.name = name;
-                files.push_back(d);
-            }
-            first = 0;
+            for ( is = files.begin(); is != files.end(); ++is) status.insert(std::make_pair((*is).name, ( deleted ) ? "D" : st));
         }
-        for ( is = files.begin(); is != files.end(); ++is) if ( (*is).name == name ) break;
-        if ( first == 1 && this->dir == "" && is == files.end() && st == "D" )
+        else
+        {
+        status.insert(std::make_pair(name, ( deleted ) ? "D" : st));
+        }
+
+        if ( deleted && name.find('/') == std::string::npos )
         {
             FileData d;
             d.name = name;
             files.push_back(d);
         }
+
+        if ( ( n = name.find('/')) != std::string::npos )
+        {
+            name = name.substr(0, n);
+            for ( is = dirs.begin(); is != dirs.end(); ++is) if ( (*is).name == name ) break;
+            if ( is != dirs.end() )
+                status.insert(std::make_pair(name, "M"));
+        }
     }
-    return 0;
+    return;
 }
 
-void DbHttpUtilsRepository::ls_json(Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::ls(Database *db, HttpHeader *h)
 {
-    int i;
+    unsigned int i;
+    std::string str;
+    std::string dir,fdir;
+
     std::vector<FileData>::iterator is;
     std::map<std::string, std::string> status;
-    std::string dir;
 
-    h->content_type = "text/json";
 
-    if ( this->ls(db, h, status) < 0 )
+    int onlydir          = ( h->vars["noleaf"] != "" && h->vars["noleaf"] != "0" );
+    FileDataSort qs_type = (FileDataSort)atoi(h->vars["sorttyp"].c_str());
+
+    dir = getDir(h->vars["dirInput.old"]);
+
+    if ( ! h->error_found )
     {
-       DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
-       return;
+        fdir = dir.substr(( rootpath + repository).size() + 1);
+        readdir( dir, h->vars["pointdirInput.old"] == "1");
     }
 
-    int onlydir = ( h->vars["noleaf"] != "" );
-    int singledir = ( h->vars["singledir"] != "" );
+    if ( ! h->error_found )
+        read_status(dir, status);
 
-    std::string rootname = h->vars["rootname"];
-    std::string idname = h->vars["idname"];
+    if ( ! h->error_found )
+    {
+        quicksort( dirs,  qs_type, 0,  dirs.size() - 1);
+        quicksort( files, qs_type, 0, files.size() - 1);
+    }
 
-    idname = ( idname == "" ) ? "name" : idname;
-    rootname = ( rootname == "" ) ? "root" : rootname;
+    if ( h->error_found )
+    {
+        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
+        return;
+    }
+
+    h->content_type = "text/json";
 
     DbHttpProvider::add_content(h, "{  \"ids\" : [\"menuid\", \"item\", \"action\", \"typ\", \"pos\", \"status\" ],\n"
                                    "  \"typs\" : [ 2, 2, 2, 2, 2, 2 ],\n"
@@ -682,57 +664,81 @@ void DbHttpUtilsRepository::ls_json(Database *db, HttpHeader *h)
                                    "  \"formats\" : [ \"\",\"\",\"\",\"\",\"\",\"\" ],\n"
                                    "  \"values\" : [\n");
 
-    dir = this->dir;
-    if ( dir != "" && dir.substr(dir.length() - 2) != DIRSEP )
+    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
         dir = dir + DIRSEP;
 
+    const char* format = "[\"%s\", \"%s\",\"%s\",\"%s\",\"%d\", \"%s\" ]";
+    std::string komma; komma = "";
+
     i = 0;
-    const char* format = "[\"%s\", \"%s\",\"%s\",\"%s\",\"%d\",\"%s\" ]";
-    std::string komma = "";
     for ( is= dirs.begin(); is != dirs.end(); ++is )
     {
-        std::string fullname = dir + (*is).name;
-        std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
-        fullname = ToString::substitute(fullname, DIRSEP, "/");
+        char str[1024];
+        str[sizeof(str) - 1] =  '\0';
+        std::string fullname = fdir + (*is).name;
+        const char *action = "submenu";
+        const char *leaf = "";
+        std::string st =  ((status.find((*is).name) != status.end()) ? status.find((*is).name)->second : "");
 
-        if ( singledir )
-            DbHttpProvider::add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\", \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { \"repositoryid\" : \"" +  h->vars["repositoryidInput.old"] + "\", \"" + rootname + "\" : \"" + root + "\", \"" + idname + "\" : \"" +  ToString::mkjson(fullname.c_str()) + "\", \"status\" : \"" + st + "\"} ] }").c_str(), "leaf", i++, st.c_str() );
-        else
-            DbHttpProvider::add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"submenu\", \"parameter\" : \"\" }").c_str(), "", i++, st.c_str() );
+        if ( onlydir && hassubdirs(rootpath + fullname, 0) == 0 )
+            leaf = "leaf";
+
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
+        DbHttpProvider::add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"" + std::string(action) + "\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), leaf, i++, st.c_str());
 
         komma = ',';
+
     }
+
     for ( is= files.begin(); !onlydir && is != files.end(); ++is )
     {
-        std::string fullname = dir + (*is).name;
-        std::string st =  ((status.find(fullname) != status.end()) ? status.find(fullname)->second : "");
-        fullname = ToString::substitute(fullname, DIRSEP, "/");
-        DbHttpProvider::add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\", \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { \"repositoryid\" : \"" +  h->vars["repositoryidInput.old"] + "\", \"" + rootname + "\" : \"" + root + "\", \"" + idname + "\" : \"" +  ToString::mkjson(fullname.c_str()) + "\", \"status\" : \"" + st + "\"} ] }").c_str(), "leaf", i++, st.c_str() );
+        char str[1024];
+        const char *ft;
+        str[sizeof(str) - 1] =  '\0';
+
+        switch ((*is).statbuf.st_mode & S_IFMT) {
+         case S_IFREG:  ft = "file";   break;
+         case S_IFBLK:  ft = "bdev";   break;
+         case S_IFCHR:  ft = "cdev";   break;
+         case S_IFIFO:  ft = "fifo";   break;
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
+         case S_IFLNK:  ft = "slink";  break;
+         case S_IFSOCK: ft = "socket"; break;
+#endif
+         default:       ft = "file";   break;
+         }
+        std::string fullname = fdir + (*is).name;
+        std::string st =  ((status.find((*is).name) != status.end()) ? status.find((*is).name)->second : "");
+
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
+        DbHttpProvider::add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), "leaf", i++, st.c_str());
 
         komma = ',';
     }
 
     DbHttpProvider::add_content(h, "]");
+    return;
 
 }
 
 void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 {
     unsigned int i;
-    std::string str;
     CsList cmd;
-    int result;
+    CsList log;
+    std::string filename;
+    std::string lasthash;
+
     DbTable *tab;
     DbTable::ValueMap where, vals;
     DbConnect::ResultMat *r;
-    std::string lasthash;
-    CsList l;
 
     execlog = "";
     if (( h->vars["no_vals"] == "" || h->vars["no_vals"] == "false" )  )
     {
+        filename = h->vars["filenameInput.old"];
 
-        if ( getRoot(h) == "" )
+        if ( h->error_found )
             return;
 
         cmd.add(gitcmd.c_str());
@@ -740,18 +746,17 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
         cmd.add("log");
         cmd.add("--pretty=%H");
 
-        result = exec(&cmd, getRoot(h).c_str());
-
-        if ( result != 0 )
+        if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
         {
             msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
             msg.line("%s", execlog.c_str());
             return;
         }
-        l.setString(execlog, '\n');
-        lasthash = l[0];
+        log.setString(execlog, '\n');
+        lasthash = log[0];
 
-        if ( check_path(h, h->vars["filenameInput.old"], 0, 0 ) != "" && S_ISREG(statbuf.st_mode))
+        struct stat statbuf;
+        if ( lstat((getRepositoryRoot() + filename).c_str(), &statbuf) == 0 && S_ISREG(statbuf.st_mode) )
         {
             cmd.setString(gitcmd.c_str());
 
@@ -759,11 +764,9 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             cmd.add("--name-only");
             cmd.add("--follow");
             cmd.add("--pretty=%H@%an@%at@%s");
-            cmd.add(ToString::substitute(h->vars["filenameInput.old"].c_str(), "/", DIRSEP));
+            cmd.add(filename.c_str());
 
-            result = exec(&cmd, getRoot(h).c_str());
-
-            if ( result != 0 )
+            if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
             {
                 msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
                 msg.line("%s", execlog.c_str());
@@ -778,7 +781,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
     tab = db->p_getTable("mne_repository", "filedata");
     where["repositoryid"] = vals["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = vals["filename"] = h->vars["filenameInput.old"];
+    where["filename"] = vals["filename"] = filename;
     where["hash"] = vals["hash"] = "";
 
     vals["repauthor"] = "";
@@ -792,14 +795,14 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
 
     where.clear();
     where["repositoryid"] = vals["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = vals["filename"] = h->vars["filenameInput.old"];
+    where["filename"] = vals["filename"] = filename;
 
-    l.setString (execlog, '\n');
-    for ( i=0; i<l.size(); i = i+3 )
+    log.setString (execlog, '\n');
+    for ( i=0; i<log.size(); i = i+3 )
     {
-        if ( l[i] != "" )
+        if ( log[i] != "" )
         {
-            CsList ele(l[i],'@');
+            CsList ele(log[i],'@');
             CsList svals("hash,repnote,shortrev");
 
             vals["hash"] = ele[0];
@@ -807,7 +810,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
             vals["repdate"] = ele[2];
             vals["repnote"] = ele[3];
             vals["shortrev"] = "";
-            vals["origname"] = l[i+2];
+            vals["origname"] = log[i+2];
 
             where["repdate"] = ele[2];
 
@@ -830,8 +833,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                     cmd.add("-m");
                     cmd.add(repnote.c_str());
 
-                    exec(&cmd, getRoot(h).c_str());
-                    if ( result != 0 )
+                    if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
                     {
                         msg.perror(E_MKREPOSITORY,"Fehler während des Korrigierens der Änderungsnotiz");
                         msg.line("%s", execlog.c_str());
@@ -844,9 +846,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                     cmd.add("log");
                     cmd.add("--pretty=%H");
 
-                    result = exec(&cmd, getRoot(h).c_str());
-
-                    if ( result != 0 )
+                    if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
                     {
                         msg.perror(E_MKREPOSITORY,"Fehler während des Listens der Änderungsnotizen");
                         msg.line("%s", execlog.c_str());
@@ -862,7 +862,7 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
                     vals["hash"] = hash;
                     vals["repnote"] = repnote;
                     vals["shortrev"] = shortrev;
-                    vals["origname"] = l[i+2];
+                    vals["origname"] = log[i+2];
                     tab->modify(&vals, &where);
                 }
 
@@ -874,18 +874,18 @@ void DbHttpUtilsRepository::dblog_update(Database *db, HttpHeader *h)
     db->release(tab);
 }
 
-void DbHttpUtilsRepository::dblog_json(Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::dblog(Database *db, HttpHeader *h)
 {
-    if ( h->vars["repositoryidInput.old"] != "" )
-        dblog_update(db, h);
+    (*h->vars.p_getVars())["filenameInput.old"] = (getDir(h->vars["dirInput.old"]) + h->vars["filenameInput.old"]).substr(getRepositoryRoot().size());
 
     if ( h->error_found == 0 )
-    {
-        DbHttpProvider::del_content(h);
-        query.data_json(db, h);
-    }
+        dblog_update(db, h);
     else
         DbHttpProvider::add_content(h, "{ \"result\" : \"error\"" );
+
+    if ( h->error_found == 0 )
+        query.data_json(db, h);
+
 }
 
 void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
@@ -895,6 +895,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
     int file;
     std::string name;
     std::string origname;
+    std::string path;
 
     Process p;
 
@@ -904,7 +905,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
     h->content_type = "application/octet-stream";
 
-    if ( getDir(h) == "" )
+    if ( (path = getDir(h->vars["dirnameInput.old"])) == "" )
     {
         h->status = 404;
         return;
@@ -960,7 +961,7 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
 
         h->content[0] = '\0';
         h->content_length = 0;
-        p.start(cmd, "pipe", getRoot(h).c_str());
+        p.start(cmd, "pipe", getRepositoryRoot().c_str());
         while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
         {
             if ( rlen > 0 )
@@ -991,12 +992,12 @@ void DbHttpUtilsRepository::download(Database *db, HttpHeader *h)
             cmd.add(tmpfile.get_name());
 
             h->content_type = "";
-            p.start(cmd, "pipe", getRoot(h).c_str());
+            p.start(cmd, "pipe", getRepositoryRoot().c_str());
             while ( ( rlen = p.read(buffer, sizeof(buffer))) > 0 )
             {
                 if ( rlen > 0 )
                 {
-                    buffer[rlen] = '\0';
+                    buffer[rlen - 1] = '\0';
                     h->content_type += std::string(buffer);
                 }
                 else
@@ -1062,139 +1063,102 @@ void DbHttpUtilsRepository::downall(Database *db, HttpHeader *h)
 
 }
 
-int DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
 {
-    HttpFilesystem::mkdir(h);
-    DbHttpProvider::del_content(h);
+    std::string filename = (getDir(h->vars["dirInput.old"]) + h->vars["filenameInput"]);
+    struct stat statbuf;
 
-    (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
-    std::string name = h->vars["filenameInput"];
+    if ( lstat(filename.c_str(), &statbuf) != 0 )
+    {
+      HttpFilesystem::mkdir(h);
+      DbHttpProvider::del_content(h);
+    }
+
+    (*h->vars.p_getVars())["filenameInput.old"] = h->vars["filenameInput"] + DIRSEP + ".gitignore";
+    filename = filename + DIRSEP + ".gitignore";
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT, 0666 );
+        int file = open(filenamename.c_str(), O_WRONLY | O_CREAT, 0666 );
 #else
-        int file = open((path + DIRSEP + name).c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
+        int file = open(filename.c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
 #endif
-        write(file, (std::string("# ") + name + "\n").c_str(), name.length() + 3);
+        write(file, (std::string("# ") + filename + "\n").c_str(), filename.length() + 3);
         close(file);
-        return 0;
+
+        addfile(db, h);
 }
 
-void DbHttpUtilsRepository::mkdir_json ( Database *db, HttpHeader *h)
-{
-    this->mkdir(db, h);
-    this->addfile_json(db, h);
-}
-
-
-int DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::rmdir  ( Database *db, HttpHeader *h)
 {
     int n = 0;
     DIR *d;
+    std::string path;
 
-    if ( getDir(h) == "" )
-    {
-        return -1;
-    }
-
-    d = opendir(( path + + DIRSEP + h->vars["filenameInput.old"]).c_str() );
-    if (d == NULL)
-    {
-        std::string e = msg.getSystemerror(errno);
-        msg.perror(E_DEL, "Fehler während des Löschen eines Ordners");
-        msg.line("%s", e.c_str());
-        return -1;
-    }
-
-    while (::readdir(d) != NULL)
-      if(++n > 3) break;
-    closedir(d);
-
-    if (n == 4)
-    {
-        msg.perror(E_DEL, "Ordner nicht leer");
-        return -1;
-    }
-
-    std::string hdir = h->vars["dirInput.old"];
-    std::string hname = h->vars["filenameInput.old"];
-
-    (*h->vars.p_getVars())["dirInput.old"] = h->vars["dirInput.old"] + DIRSEP + h->vars["filenameInput.old"];
-    (*h->vars.p_getVars())["filenameInput.old"] = ".gitignore";
-    DbHttpProvider::del_content(h);
-
-    if ( rmfile(db, h) < 0 )
-        return -1;
-
-    std::string name = check_path(h, "", 0, 0);
-    if (  name != "" )
-    {
-        DbHttpProvider::del_content(h);
-        h->error_found = 0;
-        h->error_messages.clear();
-
-       HttpFilesystem::rmdir(h);
-    }
-
-    return 0;
-}
-
-void DbHttpUtilsRepository::rmdir_json ( Database *db, HttpHeader *h)
-{
     h->content_type = "text/json";
-    DbHttpProvider::add_content(h, ( this->rmdir(db, h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
+    path = getDir(h->vars["dirInput.old"]);
+    (*h->vars.p_getVars())["filenameInput.old"] = ".gitignore";
+
+    if ( ! h->error_found )
+    {
+        d = opendir( path.c_str() );
+        if (d == NULL)
+        {
+            std::string e = msg.getSystemerror(errno);
+            msg.perror(E_DEL, "Fehler während des Löschen eines Ordners");
+            msg.line("%s", e.c_str());
+        }
+
+        while (::readdir(d) != NULL)
+            if(++n > 3) break;
+        closedir(d);
+
+        if (n == 4)
+            msg.perror(E_DEL, "Ordner nicht leer");
+    }
+
+    if ( ! h->error_found )
+        rmfile(db, h);
+    else
+        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
 }
 
-
-int DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::addfile ( Database *db, HttpHeader *h)
 {
     CsList cmd;
-    int result;
+    int result = 0;
+    std::string path;
 
-    if ( getDir(h) == "" )
-        return -1;
-
-    std::string filename = path + DIRSEP + h->vars["filenameInput"];
+    h->content_type = "text/json";
+    std::string filename = (getDir(h->vars["dirInput.old"]) + h->vars["filenameInput.old"]).substr(getRepositoryRoot().size());
 
     cmd.add(gitcmd.c_str());
     cmd.add("add");
     cmd.add(filename.c_str());
 
-    result = exec(&cmd, getRoot(h).c_str());
-
-    if ( result != 0 )
+    if ( h->error_found == 0 && exec(&cmd, getRepositoryRoot().c_str()) != 0 )
     {
         msg.perror(E_MKREPOSITORY,"Fehler während des Hinzufügen einer Datei");
         msg.line("%s", execlog.c_str());
-        return -1;
+        result = -1;
     }
 
     if ( h->error_found == 0 && h->vars["autocommitInput"] != "" )
     {
         if ( h->vars["commitmessageInput"] == "" )
             (*h->vars.p_getVars())["commitmessageInput"] = msg.get("Neue Version hinzugefügt");
-        commit(db, h);
+        data_commit(db, h);
     }
 
     (*h->vars.p_getVars())["dirInput.old"] = "";
-    (*h->vars.p_getVars())["filenameInput.old"] = ToString::substitute(filename.substr(getRoot(h).size() + 1), DIRSEP, "/");
+    (*h->vars.p_getVars())["filenameInput.old"] = filename;
 
     dblog_update(db,h);
 
-    return 0;
+    ( result < 0 ) ? DbHttpProvider::add_content(h, "{ \"result\" : \"error\"") : DbHttpProvider::add_content(h, "{ \"result\" : \"ok\"");
+    return;
 }
 
-void DbHttpUtilsRepository::addfile_json ( Database *db, HttpHeader *h)
-{
-    h->content_type = "text/json";
-
-    if ( this->addfile(db, h) < 0 )
-        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
-    else
-        DbHttpProvider::add_content(h, "{ \"result\" : \"ok\"");
-}
-
-void DbHttpUtilsRepository::mkfile_json ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::mkfile ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
 
@@ -1209,148 +1173,150 @@ void DbHttpUtilsRepository::mkfile_json ( Database *db, HttpHeader *h)
     }
     else
     {
-        addfile_json(db, h);
+        (*h->vars.p_getVars())["filenameInput.old"] = h->vars["filenameInput"];
+        addfile(db, h);
     }
 }
 
-int DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::rmfile ( Database *db, HttpHeader *h)
 {
     CsList cmd;
-    int result;
+    int result = 0;
+    std::string path;
+    struct stat statbuf;
 
     DbTable *tab;
     DbTable::ValueMap where, vals;
 
-    if ( getDir(h) == "" )
-        return -1;
+    h->content_type = "text/json";
 
-    if ( check_path(path, h->vars["filenameInput.old"], true, false ) == "" )
-        return 0;
+    std::string filename = (getDir(h->vars["dirInput.old"]) + h->vars["filenameInput.old"]);
 
-    if ( h->vars["statusInput.old"] == "Y" )
+    if ( h->error_found == 0 && lstat(filename.c_str(), &statbuf) == 0 )
     {
-        cmd.add("rm");
-        cmd.add("-f");
-        cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
-    }
-    else
-    {
-        cmd.add(gitcmd.c_str());
-        cmd.add("rm");
-        cmd.add("--force");
-        cmd.add("--quiet");
-        cmd.add((path + DIRSEP + h->vars["filenameInput.old"]).c_str());
-    }
-
-    result = exec(&cmd, getRoot(h).c_str());
-
-    if ( result != 0 )
-    {
-        msg.perror(E_MKREPOSITORY,"Fehler während des Löschens einer Datei");
-        msg.line("%s", execlog.c_str());
-        return -1;
-    }
-
-    if ( h->vars["autocommitInput"] != "" )
-    {
-        if ( h->vars["commitmessageInput"] == "" )
-            (*h->vars.p_getVars())["commitmessageInput"] = msg.get("gelöscht");
-
-        commit(db, h);
-        if ( execlog != "" )
+        filename = filename.substr(getRepositoryRoot().size());
+        if ( h->vars["statusInput.old"] == "Y" )
         {
-            msg.pwarning(W_COMMIT,"Keine Änderungen gefunden");
+            cmd.add("rm");
+            cmd.add("-f");
+            cmd.add(filename.c_str());
+        }
+        else
+        {
+            cmd.add(gitcmd.c_str());
+            cmd.add("rm");
+            cmd.add("--force");
+            cmd.add("--quiet");
+            cmd.add(filename.c_str());
+        }
+
+        if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
+        {
+            msg.perror(E_MKREPOSITORY,"Fehler während des Löschens einer Datei");
             msg.line("%s", execlog.c_str());
-            return -1;
+            result = -1;
+        }
+
+        if ( h->vars["autocommitInput"] != "" )
+        {
+            if ( h->vars["commitmessageInput"] == "" )
+                (*h->vars.p_getVars())["commitmessageInput"] = msg.get("gelöscht");
+
+            data_commit(db, h);
+            if ( execlog != "" )
+            {
+                msg.pwarning(W_COMMIT,"Keine Änderungen gefunden");
+                msg.line("%s", execlog.c_str());
+                result = -1;
+            }
+        }
+
+        if ( h->error_found == 0 )
+        {
+            tab = db->p_getTable("mne_repository", "filedata");
+            where["repositoryid"] = h->vars["repositoryidInput.old"];
+            where["filename"] = filename;
+
+            tab->del(&where,1);
+            db->release(tab);
+
+            tab = db->p_getTable("mne_repository", "fileinterests");
+            where["repositoryid"] = h->vars["repositoryidInput.old"];
+            where["filename"] = filename;
+
+            tab->del(&where,1);
+            db->release(tab);
         }
     }
 
-    tab = db->p_getTable("mne_repository", "filedata");
-    where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
-
-    tab->del(&where,1);
-    db->release(tab);
-
-    tab = db->p_getTable("mne_repository", "fileinterests");
-    where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
-
-    tab->del(&where,1);
-    db->release(tab);
-
-    return 0;
+    DbHttpProvider::add_content(h, ( result < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
-void DbHttpUtilsRepository::rmfile_json ( Database *db, HttpHeader *h)
-{
-    h->content_type = "text/json";
-    DbHttpProvider::add_content(h, ( this->rmfile(db, h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
-}
-
-int DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::mv ( Database *db, HttpHeader *h)
 {
     CsList cmd;
-    int result;
     DbTable *tab;
     DbTable::ValueMap where, vals;
+    std::string path;
+
+    std::string dirold = getDir(h->vars["dirInput.old"]);
+    std::string dirnew = getDir(h->vars["dirInput"]);
 
     std::string oldname = h->vars["filenameInput.old"];
     std::string newname = h->vars["filenameInput"];
 
-    if ( oldname == "" || newname == "" )
+    h->content_type = "text/json";
+
+    if ( ( dirold == "" && oldname == "" ) || ( dirnew == "" && newname == "" ) )
         msg.perror(E_NEEDNAME, "Der Name der Datei darf nicht leer sein");
 
-    if ( getDir(h) == "" || oldname == "" || newname == "" )
-        return -1;
-
-    cmd.add(gitcmd.c_str());
-    cmd.add("mv");
-    cmd.add((path + DIRSEP + oldname));
-    cmd.add((path + DIRSEP + newname).c_str());
-
-    result = exec(&cmd, getRoot(h).c_str());
-
-    if ( result != 0 )
+    if ( ! h->error_found )
     {
-        msg.perror(E_MKREPOSITORY,"Fehler während des Umbenenens einer Datei");
-        msg.line("%s", execlog.c_str());
-        return -1;
+        cmd.add(gitcmd.c_str());
+        cmd.add("mv");
+        cmd.add((dirold + DIRSEP + oldname).c_str());
+        cmd.add((dirnew + DIRSEP + newname).c_str());
+
+        if ( exec(&cmd, getRepositoryRoot().c_str()) != 0 )
+        {
+            msg.perror(E_MKREPOSITORY,"Fehler während des Umbenenens einer Datei");
+            msg.line("%s", execlog.c_str());
+        }
     }
 
-    if ( h->vars["autocommitInput"] != "" )
+    if ( ! h->error_found )
     {
-        if ( h->vars["commitmessageInput"] == "" )
-            (*h->vars.p_getVars())["commitmessageInput"] = msg.get("umbenannt von: ") + h->vars["filenameInput.old"];
+        if ( h->vars["autocommitInput"] != "" )
+        {
+            if ( h->vars["commitmessageInput"] == "" )
+                (*h->vars.p_getVars())["commitmessageInput"] = msg.get("umbenannt von: ") + h->vars["filenameInput.old"];
 
-        commit(db, h);
+            data_commit(db, h);
+        }
     }
 
-    where["repositoryid"] = h->vars["repositoryidInput.old"];
-    where["filename"] = ToString::substitute((path + "/" + h->vars["filenameInput.old"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
-    vals["filename"]  = ToString::substitute((path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
+    if ( ! h->error_found )
+    {
+        where["repositoryid"] = h->vars["repositoryidInput.old"];
+        where["filename"] = dirold + DIRSEP + oldname;
+        vals["filename"]  = dirnew + DIRSEP + newname;
 
-    tab = db->p_getTable("mne_repository", "filedata");
-    tab->modify(&vals, &where, 1);
-    db->release(tab);
+        tab = db->p_getTable("mne_repository", "filedata");
+        tab->modify(&vals, &where, 1);
+        db->release(tab);
 
-    tab = db->p_getTable("mne_repository", "fileinterests");
-    tab->modify(&vals, &where, 1);
-    db->release(tab);
+        tab = db->p_getTable("mne_repository", "fileinterests");
+        tab->modify(&vals, &where, 1);
+        db->release(tab);
 
-    (*h->vars.p_getVars())["filenameInput.old"] = ToString::substitute((path + "/" + h->vars["filenameInput"]).substr(getRoot(h).size() + 1), DIRSEP, "/");
-    dblog_update(db, h);
+        (*h->vars.p_getVars())["filenameInput.old"] = dirnew + DIRSEP + newname;
+        dblog_update(db, h);
+    }
 
-    return 0;
+    DbHttpProvider::add_content(h, ( h->error_found ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
-void DbHttpUtilsRepository::mv_json ( Database *db, HttpHeader *h)
-{
-    h->content_type = "text/json";
-    DbHttpProvider::add_content(h, ( this->mv(db, h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
-}
-
-int DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
+int DbHttpUtilsRepository::data_commit(Database *db, HttpHeader *h)
 {
     CsList cmd;
     int result;
@@ -1368,7 +1334,7 @@ int DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
 #endif
     cmd.add("--author=\"" + userprefs["fullname"] + " <" + userprefs["email"] + ">\"" );
 
-    if ( ( result = exec(&cmd, getRoot(h).c_str())) == 0 ) execlog = "";
+    if ( ( result = exec(&cmd, getRepositoryRoot().c_str())) == 0 ) execlog = "";
     if ( result != 0  && result != 1 )
     {
         msg.perror(E_COMMIT,"Fehler während des Akzeptierens der Änderungen");
@@ -1378,10 +1344,10 @@ int DbHttpUtilsRepository::commit(Database *db, HttpHeader *h)
     return 0;
 }
 
-void DbHttpUtilsRepository::commit_json ( Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::commit ( Database *db, HttpHeader *h)
 {
     h->content_type = "text/json";
-    DbHttpProvider::add_content(h, ( this->commit(db, h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
+    DbHttpProvider::add_content(h, ( this->data_commit(db, h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
 

@@ -127,9 +127,7 @@ HttpVars::setVars(std::string vars)
 
     Vars::iterator v;
     for (v = this->vars.begin(); v != this->vars.end(); ++v)
-        msg.pdebug(5, "name: \"%s\" wert: \"%s\"", v->first.c_str(),
-                v->second.c_str());
-
+        msg.pdebug(5, "name: \"%s\" wert: \"%s\"", v->first.c_str(), v->second.c_str());
 }
 
 void
@@ -168,7 +166,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
         }
         else if (str == boundary + "--")
         {
-            return;
+            break;
         }
         else if (str == "") // ab hier beginnen die Daten
         {
@@ -223,7 +221,7 @@ HttpVars::setMultipart(std::string boundary, char *data)
                 strncpy(tmpstr, c_old, c - c_old - 2);
                 tmpstr[c - c_old - 2] = '\0';
                 vars[name] = url_decode(tmpstr);
-                delete tmpstr;
+                delete [] tmpstr;
 
             }
         }
@@ -259,6 +257,11 @@ HttpVars::setMultipart(std::string boundary, char *data)
                 c++;
         }
     }
+
+    Vars::iterator v;
+    for (v = this->vars.begin(); v != this->vars.end(); ++v)
+        msg.pdebug(5, "name: \"%s\" wert: \"%s\"", v->first.c_str(), v->second.c_str());
+
 }
 
 std::string HttpVars::operator[](const char *name )
@@ -316,8 +319,8 @@ std::string HttpVars::data(const char *name, int raw)
             out[base64.encode(in, out, size)] = '\0';
             std::string retval((char*)out);
 
-            delete in;
-            delete out;
+            delete [] in;
+            delete [] out;
 
             return retval;
         }
@@ -334,7 +337,7 @@ std::string HttpVars::data(const char *name, int raw)
 
             in[size] = '\0';
             std::string retval((char*)in);
-            delete in;
+            delete [] in;
 
             return retval;
         }

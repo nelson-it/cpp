@@ -16,7 +16,6 @@
 
 #include <string>
 
-
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <winsock2.h>
 #include <windows.h>
@@ -52,6 +51,7 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
         {
           size_t new_size;
 
+    return result;
           free(return_path);
           return_path = (char *)malloc(size);
 
@@ -155,13 +155,11 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
 #include "http_filesystem.h"
 
 
-HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
-
-    HttpProvider(h),
-    msg("HttpFilesystem")
+HttpFilesystem::HttpFilesystem(Http *h, int noadd )
+               : HttpProvider(h),
+                 msg("HttpFilesystem")
 {
     Argument a;
-    qs_type = FD_NAME;
 
     this->cacheroot = (std::string)a["EmbedwebHttpFileCacheroot"];
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -176,6 +174,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd ) :
     subprovider["rmdir.json"]  = &HttpFilesystem::rmdir_json;
     subprovider["mkfile.json"] = &HttpFilesystem::mkfile_json;
     subprovider["rmfile.json"] = &HttpFilesystem::rmfile_json;
+    subprovider["mklink.json"] = &HttpFilesystem::mklink;
     subprovider["mv.json"] = &HttpFilesystem::mv_json;
     subprovider["download.html"] = &HttpFilesystem::download;
     subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
@@ -249,12 +248,27 @@ int HttpFilesystem::request(HttpHeader *h)
         h->status = 200;
         h->content_type = "text/json";
 
+        this->rootpath = getRoot(h);
+        if ( this->rootpath == "" )
+        {
+            msg.perror(E_ROOT, "Wurzel unbekannt");
+            add_content(h, "{ \"result\" : \"error\"");
+            return 1;
+        }
+
+        if ( h->vars["filenameInput"].find(DIRSEP) != std::string::npos || h->vars["filenameInput.old"].find(DIRSEP) != std::string::npos )
+        {
+            msg.perror(E_WRONGNAME, "Dateinamen sind im falschen Format");
+            add_content(h, "{ \"result\" : \"error\"");
+            return 1;
+        }
+
         (this->*(i->second))(h);
         return 1;
     }
 
-    (*(h->vars.p_getExtraVars()))["root"] = this->getRoot(h);
-    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
+    (*(h->vars.p_getExtraVars()))["root"] = rootpath;
+    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h->vars["dirInput.old"], false);
 
     if ( h->error_messages.size() )
     {
@@ -271,7 +285,7 @@ int HttpFilesystem::request(HttpHeader *h)
 std::string HttpFilesystem::getRoot(HttpHeader *h )
 {
     std::map<std::string,std::string>::iterator m;
-    std::string  root = h->vars["rootInput.old"];
+    this->root = h->vars["rootInput.old"];
 
     for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
     {
@@ -289,12 +303,12 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
         {
            msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
-           return  m->second;
+           return  m->second + DIRSEP;
         }
         else
         {
            msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
-           return h->dataroot + "/" + m->second;
+           return h->dataroot + DIRSEP + m->second + DIRSEP;
         }
     }
 
@@ -302,16 +316,10 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
 }
 
-std::string HttpFilesystem::getDir(HttpHeader *h, int errormsg )
+std::string HttpFilesystem::getDir(std::string dir, int errormsg )
 {
     char rpath[PATH_MAX + 1];
     char *resolvpath;
-    dir = h->vars["dirInput.old"];
-    std::string root = getRoot(h);
-
-    if ( dir != "" && root != "/" )
-        root =  root + DIRSEP;
-
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::replace( root.begin(), root.end(), '/', '\\');
@@ -320,21 +328,21 @@ std::string HttpFilesystem::getDir(HttpHeader *h, int errormsg )
 
     rpath[0] = '\0';
     if ( root == ""
-         || ( resolvpath = realpath((root + dir).c_str(), rpath)) == NULL
-         || strstr(rpath, root.c_str()) == NULL )
+         || ( resolvpath = realpath((rootpath + dir).c_str(), rpath)) == NULL
+         || strstr(rpath, rootpath.substr(0,rootpath.length() - 1).c_str()) == NULL )
     {
     	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s, dir: %s error: %s", rpath, root.c_str(), dir.c_str(), strerror(errno));
-        if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (h->vars["rootInput.old"] + ":" + dir).c_str());
+        if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (root + ":" + dir).c_str());
         return "";
     }
 
-    path = rpath;
-    return rpath;
+    return std::string(rpath) + "/";
 }
 
-std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg, std::string *result )
+/*
+ std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg, std::string *result )
 {
-    getDir(h, errormsg);
+    std::string path = getDir(h->vars["dirInput.old"], errormsg);
     return check_path(path, name, needname, errormsg, result );
 }
 
@@ -365,10 +373,11 @@ std::string HttpFilesystem::check_path(std::string dir, std::string name, int ne
 
     return "";
 }
+*/
 
-int HttpFilesystem::quicksort_check(FileData *data1, FileData *data2 )
+int HttpFilesystem::quicksort_check(FileData *data1, FileData *data2, FileDataSort qs_type )
 {
-   switch(this->qs_type)
+   switch(qs_type)
    {
    case FD_CREATE:
        return ( data1->statbuf.st_ctime < data2->statbuf.st_ctime );
@@ -384,7 +393,7 @@ int HttpFilesystem::quicksort_check(FileData *data1, FileData *data2 )
    }
 }
 
-void HttpFilesystem::quicksort(std::vector<FileData> &sort, int left, int right)
+void HttpFilesystem::quicksort(std::vector<FileData> &sort, FileDataSort qs_type, int left, int right)
 {
     int i,j;
     FileData *x;
@@ -399,8 +408,8 @@ void HttpFilesystem::quicksort(std::vector<FileData> &sort, int left, int right)
 
     while ( 1 )
     {
-        while ( quicksort_check(&(sort[++i]), x) );
-        while ( quicksort_check(x, &(sort[--j])) && j > i );
+        while ( quicksort_check(&(sort[++i]), x, qs_type) );
+        while ( quicksort_check(x, &(sort[--j]), qs_type) && j > i );
         if ( i >= j )
             break;
         temp = sort[i];
@@ -412,29 +421,25 @@ void HttpFilesystem::quicksort(std::vector<FileData> &sort, int left, int right)
     sort[i] = sort[right];
     sort[right] = temp;
 
-    quicksort(sort, left, i-1);
-    quicksort(sort, i+1, right);
+    quicksort(sort, qs_type, left, i-1);
+    quicksort(sort, qs_type, i+1, right);
 }
 
-void HttpFilesystem::readdir(HttpHeader *h)
+void HttpFilesystem::readdir(std::string dirname, int pointdir )
 {
-    int pointdir = ( h->vars["pointdirInput.old"] != "" );
     files.clear();
     dirs.clear();
-
-    if ( getDir(h) == "" )
-        return;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     HANDLE hh;
     WIN32_FIND_DATA d;
     std::string str;
 
-    str = path + "\\*";
+    str = dirname + "\\*";
     hh = FindFirstFile(str.c_str(), &d);
     if (hh == INVALID_HANDLE_VALUE)
     {
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + h->vars["dirInput.old"] ).c_str());
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + dirname ).c_str());
         return;
     }
 
@@ -456,17 +461,12 @@ void HttpFilesystem::readdir(HttpHeader *h)
 #else
     DIR *dp;
     struct dirent *dirp;
-    std::string dir;
 
-    if((dp  = opendir(path.c_str())) == NULL)
+    if((dp  = opendir(dirname.c_str())) == NULL)
     {
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + h->vars["dirInput.old"] ).c_str());
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", dirname.c_str());
         return;
     }
-
-    dir = path;
-    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
-        dir = dir + DIRSEP;
 
     while (( dirp = ::readdir(dp) ) != NULL )
     {
@@ -474,8 +474,7 @@ void HttpFilesystem::readdir(HttpHeader *h)
         {
         FileData data;
         data.name = dirp->d_name;
-        check_path(root, dir + data.name);
-        data.statbuf = statbuf;
+        lstat((dirname + "/" + data.name).c_str(), &data.statbuf);
 
         if ( dirp->d_type == DT_DIR )
             dirs.push_back(data);
@@ -486,15 +485,12 @@ void HttpFilesystem::readdir(HttpHeader *h)
 
     closedir(dp);
 
-    this->qs_type = (FileDataSort)atoi(h->vars["sorttyp"].c_str());
-    quicksort( dirs,  0,  dirs.size() - 1);
-    quicksort( files, 0, files.size() - 1);
 
     return;
 #endif
 }
 
-int HttpFilesystem::hassubdirs(std::string path, int pointdir)
+int HttpFilesystem::hassubdirs(std::string dir, int pointdir)
 {
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
@@ -502,11 +498,11 @@ int HttpFilesystem::hassubdirs(std::string path, int pointdir)
     WIN32_FIND_DATA d;
     std::string str;
 
-    str = path + "\\*";
+    str = dir + "\\*";
     hh = FindFirstFile(str.c_str(), &d);
     if (hh == INVALID_HANDLE_VALUE)
     {
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + h->vars["dirInput.old"] ).c_str());
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ( root + ":" + dir ).c_str());
         return 0;
     }
 
@@ -525,17 +521,12 @@ int HttpFilesystem::hassubdirs(std::string path, int pointdir)
 #else
     DIR *dp;
     struct dirent *dirp;
-    std::string dir;
 
-    if((dp  = opendir(path.c_str())) == NULL)
+    if((dp  = opendir(dir.c_str())) == NULL)
     {
-        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", path.c_str());
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", dir.c_str());
         return 0;
     }
-
-    dir = path;
-    if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
-        dir = dir + DIRSEP;
 
     while (( dirp = ::readdir(dp) ) != NULL )
     {
@@ -556,32 +547,31 @@ void HttpFilesystem::ls(HttpHeader *h)
 {
     unsigned int i;
     std::string str;
+    std::string dir,fdir;
 
     std::vector<FileData>::iterator is;
 
-    std::string hroot = h->vars["rootInput.old"];
-    std::string rootname = h->vars["rootname"];
-    std::string idname = h->vars["idname"];
+    int onlydir          = ( h->vars["noleaf"] != "" && h->vars["noleaf"] != "0" );
+    FileDataSort qs_type = (FileDataSort)atoi(h->vars["sorttyp"].c_str());
 
-    int onlydir = ( h->vars["noleaf"] != "" );
+    dir = getDir(h->vars["dirInput.old"]);
 
-    std::string dir;
-    std::string root = getRoot(h);
+    if ( ! h-> error_found )
+    {
+        fdir = dir.substr(rootpath.size());
+        readdir( dir, h->vars["pointdirInput.old"] == "1");
 
-    if ( dir != "" && root != "/" )
-        root =  root + DIRSEP;
+        quicksort( dirs,  qs_type, 0,  dirs.size() - 1);
+        quicksort( files, qs_type, 0, files.size() - 1);
+    }
 
-    idname = ( idname == "" ) ? "fullname" : idname;
-    rootname = ( rootname == "" ) ? "root" : rootname;
-
-    h->content_type = "text/json";
-
-    readdir(h);
     if ( h->error_found )
     {
         add_content(h, "{ \"result\" : \"error\"");
         return;
     }
+
+    h->content_type = "text/json";
 
     add_content(h, "{  \"ids\" : [\"menuid\", \"item\", \"action\", \"typ\", \"pos\" ],\n"
                    "  \"typs\" : [ 2, 2, 2, 2, 2 ],\n"
@@ -589,7 +579,6 @@ void HttpFilesystem::ls(HttpHeader *h)
                    "  \"formats\" : [ \"\",\"\",\"\",\"\",\"\" ],\n"
                    "  \"values\" : [\n");
 
-    dir = this->dir;
     if ( dir != "" && dir.substr(dir.length() - 1) != std::string(DIRSEP) )
         dir = dir + DIRSEP;
 
@@ -601,14 +590,14 @@ void HttpFilesystem::ls(HttpHeader *h)
     {
         char str[1024];
         str[sizeof(str) - 1] =  '\0';
-        std::string fullname = dir + (*is).name;
+        std::string fullname = fdir + (*is).name;
         const char *action = "submenu";
         const char *leaf = "";
 
-        if ( onlydir && hassubdirs(root + "/" +  fullname, 0) == 0 )
+        if ( onlydir && hassubdirs(rootpath + fullname, 0) == 0 )
             leaf = "leaf";
 
-        snprintf(str, sizeof(str) - 1, "\"%s\" : \"%s\", \"%s\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\"", rootname.c_str(), hroot.c_str(), idname.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
         add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"" + std::string(action) + "\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), leaf, i++);
 
         komma = ',';
@@ -632,8 +621,8 @@ void HttpFilesystem::ls(HttpHeader *h)
 #endif
          default:       ft = "file";   break;
          }
-        std::string fullname = dir + (*is).name;
-        snprintf(str, sizeof(str) - 1, "\"%s\" : \"%s\", \"%s\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\"", rootname.c_str(), hroot.c_str(), idname.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
+        std::string fullname = fdir + (*is).name;
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
         add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), "leaf", i++ );
 
         komma = ',';
@@ -646,10 +635,7 @@ void HttpFilesystem::ls(HttpHeader *h)
 
 void HttpFilesystem::mkdir(HttpHeader *h)
 {
-    if ( h->vars["filenameInput.old"] != "" )
-         (*h->vars.p_getVars())["filenameInput"] = h->vars["filenameInput.old"] + DIRSEP + h->vars["filenameInput"];
-
-    std::string dir = check_path(h, "", 0); // @suppress("Invalid arguments")
+    std::string dir = getDir(h->vars["dirInput.old"]);
     std::string name = h->vars["filenameInput"];
 
     h->content_type = "text/json";
@@ -688,7 +674,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
 
 int HttpFilesystem::rmdir(HttpHeader *h)
 {
-    std::string name = check_path(h, "", 0);
+    std::string name = getDir(h->vars["dirInput.old"]);
 
     if (  name == "" )
         return -1;
@@ -722,35 +708,34 @@ void HttpFilesystem::rmdir_json (  HttpHeader *h)
 
 int HttpFilesystem::mv(HttpHeader *h)
 {
+    std::string dirold = getDir(h->vars["dirInput.old"]);
+    std::string dir = getDir(h->vars["dirInput"]);
+
     std::string oldname = h->vars["filenameInput.old"];
     std::string newname = h->vars["filenameInput"];
     int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
 
-    if ( oldname == "" || newname == "" )
+    if ( ( dirold == "" && oldname == "" ) || ( dir == "" && newname == "" ) )
     {
         msg.perror(E_NEEDNAME, "Der Name der Datei darf nicht leer sein");
         return -1;
     }
 
-    if ( getDir(h) == "" || oldname == "" || newname == "" )
-    {
-        return -1;
-    }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-    if ( ! MoveFile((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) )
+    if ( ! MoveFile((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) )
      {
          msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
          return-1;
      }
 #else
-   if ( !overwrite && access((path + DIRSEP + newname).c_str(), F_OK) == 0 )
+   if ( !overwrite && newname != "" && access((dir + DIRSEP + newname).c_str(), F_OK) == 0 )
    {
         msg.perror(E_CREATEFILE, "Datei existiert");
         return -1;
    }
 
-   if ( ::rename((path + DIRSEP + oldname).c_str(), (path + DIRSEP + newname).c_str()) != 0 )
+   if ( ::rename((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
@@ -770,7 +755,7 @@ void HttpFilesystem::mv_json (  HttpHeader *h)
 std::string HttpFilesystem::mkfile(HttpHeader *h)
 {
     std::string str;
-
+    std::string path;
 
     str = h->vars.getFile("dataInput");
     if ( str == "" )
@@ -781,7 +766,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
     {
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         std::string name = h->vars["filenameInput"];
-        if ( getDir(h) == "" || name == "" )
+        if ( getDir(h->vars["dirInput.old"]) == "" || name == "" )
         {
             str = msg.get("Benötige einen Dateinamen");
         }
@@ -801,7 +786,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
             std::string name = h->vars["filenameInput"];
             int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
 
-            if ( getDir(h) == "" || name == "" )
+            if ( (path = getDir(h->vars["dirInput.old"])) == "" || name == "" )
             {
                 return msg.get("Benötige einen Dateinamen");
             }
@@ -873,7 +858,7 @@ void HttpFilesystem::mkfile_json(HttpHeader *h)
 
 int HttpFilesystem::rmfile(HttpHeader *h)
 {
-    std::string name = check_path(h, h->vars["filenameInput.old"]);
+    std::string name = getDir(h->vars["dirInput.old"]) + "/" + h->vars["filenameInput.old"];
 
     if (  name == "" )
         return -1;
@@ -906,25 +891,27 @@ void HttpFilesystem::rmfile_json (  HttpHeader *h)
 void HttpFilesystem::mklink(HttpHeader *h)
 {
     std::string root,dir1,dir2,file1,file2;
-    int result;
+    int result = 0;
+    struct stat statbuf;
 
-    add_content(h,  "<?xml version=\"1.0\" encoding=\"%s\"?><result>", h->charset.c_str());
+    h->content_type = "text/json";
 
-    result = ( root = this->getRoot(h) ) == "";
+    dir1 = this->getDir(h->vars["dirInput.old"], 0);
+    dir2 = this->getDir(h->vars["dirInput"]    , 0);
 
-    if ( ! result ) result = ( dir1 = this->check_path(root, h->vars["dirInput.old"], 0) ) == "";
-    if ( ! result ) result = ( dir2 = this->check_path(root, h->vars["dirInput"]    , 0) ) == "";
+    file1 = dir1 + "/" +  h->vars["filenameInput.old"];
+    file2 = dir2 + "/" +  h->vars["filenameInput"];
 
-    if ( ! result ) result = ( file1 = this->check_path(dir1, h->vars["filenameInput.old"], 1) ) == "";
-    if ( ! result )
+    if ( lstat(file1.c_str(), &statbuf) != 0  )
     {
-        if ( ( result = ( this->check_path(dir2, h->vars["filenameInput"], 1, 0, &file2 ) != "" )) )
-        {
-            if ( h->vars["overwriteInput"] == "" )
-                msg.perror(E_FILEEXISTS, "Datei existiert schon");
-            else
-                result = 0;
-        }
+        msg.perror(E_FILEEXISTS, "Datei existiert nicht");
+        result = -1;
+    }
+
+    if ( lstat(file2.c_str(), &statbuf) == 0  && h->vars["overwriteInput"] == "" )
+    {
+        msg.perror(E_FILEEXISTS, "Datei existiert schon");
+        result = -1;
     }
 
 
@@ -946,17 +933,14 @@ void HttpFilesystem::mklink(HttpHeader *h)
             result = symlink(file1.c_str(), file2.c_str());
         else
             result = link(file1.c_str(), file2.c_str());
+
+        if ( result )
+            msg.perror(E_CREATELINK, "Kann Link nicht erstellen");
     }
 
 #endif
 
-    if ( result )
-    {
-        msg.perror(E_CREATELINK,"Kann hardlink <%s -> %s> nicht erstellen", (h->vars["dirInput.old"] + "/" + h->vars["filenameInput.old"]).c_str(), (h->vars["dirInput"] + "/" + h->vars["filenameInput"]).c_str());
-        add_content(h,  "<body>error</body>");
-        return;
-    }
-    add_content(h,  "<body>ok</body>");
+    add_content(h, ( result != 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
 void HttpFilesystem::download(HttpHeader *h)
@@ -964,7 +948,7 @@ void HttpFilesystem::download(HttpHeader *h)
     std::string name;
     FILE *f;
 
-    name = check_path(h, h->vars["filenameInput.old"], 1);
+    name = getDir(h->vars["dirInput.old"]) + "/" + h->vars["filenameInput.old"];
     if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
     {
         char buffer[10240];
@@ -999,21 +983,23 @@ void HttpFilesystem::mkicon(HttpHeader *h)
     std::string  name = h->vars["name"];
 
     std::string cname,file;
+    struct stat statbuf;
 
     struct timespec mod;
     mod.tv_sec = mod.tv_nsec = -1;
 
     cname = this->cacheroot + DIRSEP + root + DIRSEP + dir + DIRSEP + x + "_" + y;
 
-    if ( check_path(this->getDir(h), name, 1, 0) != "" )
+    if ( lstat((getDir(h->vars["dirInput.old"]) + "/" + h->vars["name"]).c_str(), &statbuf) == 0 )
     {
-       mod.tv_sec = this->statbuf.st_mtime;
-       mod.tv_nsec = this->statbuf.st_mtime;
+       mod.tv_sec = statbuf.st_mtime;
+       mod.tv_nsec = statbuf.st_mtime;
     }
 
-    if ( ( file = check_path(cname, name + "." + std::to_string(this->statbuf.st_size), 1, 0)) != "" )
+    file = cname + DIRSEP + name + "." + std::to_string(statbuf.st_size);
+    if ( lstat(file.c_str(), &statbuf) == 0 )
     {
-        if ( mod.tv_sec == this->statbuf.st_mtime )
+        if ( mod.tv_sec == statbuf.st_mtime )
         {
             FILE *c = fopen(file.c_str(), "rb");
             if ( c != NULL )
@@ -1028,10 +1014,9 @@ void HttpFilesystem::mkicon(HttpHeader *h)
     }
 
     (*(h->vars.p_getExtraVars()))["cpath"] = cname;
-    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h);
-    (*(h->vars.p_getExtraVars()))["filesize"] = std::to_string(this->statbuf.st_size);
+    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h->vars["dirInput.old"]);
+    (*(h->vars.p_getExtraVars()))["filesize"] = std::to_string(statbuf.st_size);
     findfile(h);
-
 }
 
 

@@ -431,7 +431,7 @@ void DbHttpUtilsTable::file_dat(Database *db, HttpHeader *h)
         unsigned char *out = (unsigned char*) new char[(*r)[0][0].length];
         rlen = base64.decode((unsigned char*)((char *)(*r)[0][0]), out, strlen(((char *)(*r)[0][0])));
         add_contentb(h, (char *)out, rlen );
-        delete out;
+        delete [] out;
     }
 
     db->release(tab);

@@ -458,7 +458,7 @@ void Message::wdebug(int debuglevel, const char *str, int length)
 	Pthread_mutex_lock("wdebug", &mutex);
 	fprintf(out, "%s D%04d: %s ", timestamp().c_str(), debuglevel, c);
 	fflush(out);
-	delete c;
+	delete [] c;
 	ignore_lang = 0;
 	Pthread_mutex_unlock(&mutex);
 }

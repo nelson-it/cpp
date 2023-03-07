@@ -462,7 +462,7 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str, DbHttpAn
             len = base64.decode((unsigned char*)((char *)(*r)[0][0]), str, strlen((char *)(*r)[0][0]));
             add_contentb(h, (char *)str, len );
             db->release(tab);
-            delete str;
+            delete [] str;
 
             return;
         }
@@ -638,8 +638,8 @@ void DbHttpReport::index( Database *db, HttpHeader *h, const char *str, DbHttpAn
         	                add_content(h, "%s", crypt);
         	            }
         	        }
-        	        delete str;
-        	        delete crypt;
+        	        delete [] str;
+        	        delete [] crypt;
         	    }
         	    else
         	    {

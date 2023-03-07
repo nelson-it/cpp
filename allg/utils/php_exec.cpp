@@ -148,7 +148,7 @@ PhpExec::PhpExec(std::string cmd, HttpHeader *h )
             if ( size > 0 ) msg.ptext(b, strlen(b));
         }
 
-        delete b;
+        delete [] b;
     }
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
