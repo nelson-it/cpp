@@ -51,7 +51,6 @@ char *realpath(const char *path, char resolved_path[PATH_MAX])
         {
           size_t new_size;
 
-    return result;
           free(return_path);
           return_path = (char *)malloc(size);
 
@@ -449,8 +448,7 @@ void HttpFilesystem::readdir(std::string dirname, int pointdir )
 
         FileData data;
         data.name = d.cFileName;
-        check_path(root, path + "\\" + data.name);
-        data.statbuf = statbuf;
+        lstat((dirname + "\\" + data.name).c_str(), &data.statbuf);
         if ( d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
             dirs.push_back(data);
         else

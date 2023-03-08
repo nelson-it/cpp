@@ -23,6 +23,7 @@
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #define DIRSEP   "\\"
+#define lstat stat
 #else
 #define DIRSEP   "/"
 #endif
@@ -404,7 +405,7 @@ void DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
     else
     {
         SetFileAttributes(name.c_str(), FILE_ATTRIBUTE_NORMAL);
-        if ( ! MoveFile(( name.c_str(), ( rootpath + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) )
+        if ( ! MoveFile( name.c_str(), ( rootpath + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str() ) )
         {
             std::string str = msg.getSystemerror(GetLastError());
             msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
@@ -1062,7 +1063,7 @@ void DbHttpUtilsRepository::mkdir  ( Database *db, HttpHeader *h)
     filename = filename + DIRSEP + ".gitignore";
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
-        int file = open(filenamename.c_str(), O_WRONLY | O_CREAT, 0666 );
+        int file = open(filename.c_str(), O_WRONLY | O_CREAT, 0666 );
 #else
         int file = open(filename.c_str(), O_WRONLY | O_CREAT | O_CLOEXEC, 0666 );
 #endif

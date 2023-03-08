@@ -49,7 +49,7 @@ ifeq "$(UNAME)" "Darwin"
              LD_PRE := ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so; ln -sf $(call MKLIBNAME,$(TARGET)) lib$(TARGET).so.$($(TARGET).LIBMAJOR) 
 endif
 
-ifeq "$(UNAME)" "CYGWIN_NT-10.0-19043"
+ifeq "$(UNAME)" "CYGWIN_NT-10.0-22000"
            MKLIBNAME  = $(1).dll
              OPT_STD := $(OPT_STD) -DMINGW_HAS_SECURE_API -D_POSIX_THREAD_SAFE_FUNCTIONS -DWINVER=0x600 -D_WIN32_WINNT=0x600
               LD_STD := $(LD_STD)  -lws2_32 -lwsock32
@@ -103,7 +103,7 @@ ifeq "$($(TARGET).WITH_POSTGRES)" "TRUE"
               LIB_PG := -L/Library/PostgreSQL/10/lib -lpq
               INC_PG := -I/Library/PostgreSQL/10/include 
 
-    else ifeq "$(UNAME)" "CYGWIN_NT-10.0-19043"
+    else ifeq "$(UNAME)" "CYGWIN_NT-10.0-22000"
               LIB_PG := -llibpq
               INC_PG := 
 
@@ -159,7 +159,7 @@ ifeq "$(WITH_ICONV)" "TRUE"
              OPT_STD := $(OPT_STD) -I$(EXTERN_ROOT)/include/iconv
               LD_STD := $(LD_STD)  -L$(EXTERN_ROOT)/lib/iconv -liconv.dll
     endif
-    ifeq "$(UNAME)" "CYGWIN_NT-10.0-19043"
+    ifeq "$(UNAME)" "CYGWIN_NT-10.0-22000"
               LD_STD := $(LD_STD)  -liconv
     endif
 endif
