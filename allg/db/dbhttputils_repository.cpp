@@ -40,7 +40,7 @@ DbHttpUtilsRepository::DbHttpUtilsRepository(DbHttp *h)
 
     subprovider["insert.json"]   = &DbHttpUtilsRepository::insert_json;
     subprovider["modify.json"]   = &DbHttpUtilsRepository::modify;
-    subprovider["delete.json"]   = &DbHttpUtilsRepository::delete_json;
+    subprovider["delete.json"]   = &DbHttpUtilsRepository::del;
     subprovider["data.json"]     = &DbHttpUtilsRepository::data;
 
     subprovider["ls.json"]       = &DbHttpUtilsRepository::ls;
@@ -379,70 +379,50 @@ void DbHttpUtilsRepository::modify (Database *db, HttpHeader *h)
         DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
 }
 
-int DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
+void DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
 {
-    std::string root;
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer [80];
+    struct stat statbuf;
 
-     time_t rawtime;
-     struct tm * timeinfo;
-     char buffer [80];
-     struct stat statbuf;
+    time (&rawtime);
+    timeinfo = gmtime (&rawtime);
 
-     time (&rawtime);
-     timeinfo = gmtime (&rawtime);
+    strftime (buffer,80,"%Y%m%d%H%M%S",timeinfo);
 
-     strftime (buffer,80,"%Y%m%d%H%M%S",timeinfo);
+    std::string name = getDir(h->vars["nameInput.old"]);
 
-    if ( (root = HttpFilesystem::getRoot(h)) == "" )
-    {
-        msg.perror(E_MKREPOSITORY,"Der Aktenordner <%s> existiert nicht", (h->vars["rootInput.old"] + ":" + h->vars["nameInput.old"]).c_str());
-        return -1;
-    }
+    h->status = 200;
+    h->content_type = "text/json";
 
-    if ( h->vars["nameInput.old"] == "" )
-     {
-         msg.perror(E_DELREPOSITORY,"Der Aktenordner muss eine Namen haben");
-         return -1;
-     }
-
-    if ( lstat((rootpath + DIRSEP + h->vars["nameInput.old"]).c_str(), &statbuf) == 0 )
+    if ( lstat(name.c_str(), &statbuf) != 0 )
     {
         msg.pwarning(E_DELREPOSITORY,"Der Aktenordner <%s> existiert nicht", h->vars["nameInput.old"].c_str());
     }
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     else
     {
-        SetFileAttributes(( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), FILE_ATTRIBUTE_NORMAL);
-        if ( ! MoveFile(( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), ( root + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) )
+        SetFileAttributes(name.c_str(), FILE_ATTRIBUTE_NORMAL);
+        if ( ! MoveFile(( name.c_str(), ( rootpath + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) )
         {
             std::string str = msg.getSystemerror(GetLastError());
             msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
             msg.line("%s", str.c_str());
-            return -1;
         }
     }
 #else
-    else if ( rename( ( root + DIRSEP + h->vars["nameInput.old"] ).c_str(), ( root + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) != 0 )
+    else if ( rename( name.c_str(), ( rootpath + DIRSEP + ".trash" + DIRSEP + h->vars["nameInput.old"] + "_" + buffer).c_str()) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_DELREPOSITORY,"Fehler während des Löschens eines Aktenordners");
         msg.line("%s", str.c_str());
-        return -1;
     }
 #endif
     (*h->vars.p_getVars()).erase("rootInput.old");
     (*h->vars.p_getVars()).erase("nameInput.old");
 
-    return 0;
-}
-
-void DbHttpUtilsRepository::delete_json (Database *db, HttpHeader *h)
-{
-    h->status = 200;
-    h->content_type = "text/json";
-    if ( this->del(db, h) != 0 )
-        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
-    else
+    if ( ! h->error_found )
     {
         (*h->vars.p_getVars())["table"] = "filedata";
         table.delete_json(db,h);
@@ -453,6 +433,10 @@ void DbHttpUtilsRepository::delete_json (Database *db, HttpHeader *h)
         DbHttpProvider::del_content(h);
         (*h->vars.p_getVars())["table"] = "repository";
         table.delete_json(db,h);
+    }
+    else
+    {
+        DbHttpProvider::add_content(h, "{ \"result\" : \"error\"");
     }
 
 }

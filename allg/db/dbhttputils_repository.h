@@ -55,7 +55,7 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
 
     void insert_json  (Database *db, HttpHeader *h);
     void modify  (Database *db, HttpHeader *h);
-    void delete_json  (Database *db, HttpHeader *h);
+    void del     (Database *db, HttpHeader *h);
     void data    (Database *db, HttpHeader *h);
     void ls      (Database *db, HttpHeader *h);
     void addfile (Database *db, HttpHeader *h);
@@ -68,7 +68,6 @@ class DbHttpUtilsRepository : public HttpFilesystem, DbHttpProvider
     void  dblog  ( Database *db, HttpHeader *h);
 
     int insert (Database *db, HttpHeader *h);
-    int del    (Database *db, HttpHeader *h);
 
     void log      ( Database *db, HttpHeader *h);
     void download ( Database *db, HttpHeader *h);
