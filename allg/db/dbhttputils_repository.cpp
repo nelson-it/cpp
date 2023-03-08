@@ -391,7 +391,7 @@ void DbHttpUtilsRepository::del (Database *db, HttpHeader *h)
 
     strftime (buffer,80,"%Y%m%d%H%M%S",timeinfo);
 
-    std::string name = getDir(h->vars["nameInput.old"]);
+    std::string name = getRepositoryRoot();
 
     h->status = 200;
     h->content_type = "text/json";
