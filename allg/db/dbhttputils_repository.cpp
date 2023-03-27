@@ -166,9 +166,9 @@ std::string DbHttpUtilsRepository::getRepositoryRoot()
     return rootpath + repository + DIRSEP;
 }
 
-std::string DbHttpUtilsRepository::getDir(std::string dir, int errormsg )
+std::string DbHttpUtilsRepository::getDir(std::string dir )
 {
-    return HttpFilesystem::getDir(repository + DIRSEP + dir, errormsg);
+    return HttpFilesystem::getDir(repository + DIRSEP + dir);
 }
 
 int DbHttpUtilsRepository::insert (Database *db, HttpHeader *h)

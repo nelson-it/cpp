@@ -174,7 +174,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd )
     subprovider["mkfile.json"] = &HttpFilesystem::mkfile_json;
     subprovider["rmfile.json"] = &HttpFilesystem::rmfile_json;
     subprovider["mklink.json"] = &HttpFilesystem::mklink;
-    subprovider["mv.json"] = &HttpFilesystem::mv_json;
+    subprovider["mv.json"] = &HttpFilesystem::mv;
     subprovider["download.html"] = &HttpFilesystem::download;
     subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
 
@@ -209,6 +209,12 @@ int HttpFilesystem::findfile(HttpHeader *h)
                 {
                     h->age = 0;
                     PhpExec(file, h);
+                    if ( h->error_found )
+                    {
+                        h->content_type = "text/json";
+                        del_content(h);
+                        add_content(h, " { \"result\" : \"error\" ");
+                    }
                     return 1;
                 }
                 else
@@ -242,18 +248,18 @@ int HttpFilesystem::request(HttpHeader *h)
 
     SubProviderMap::iterator i;
 
+    getRoot(h);
+    if ( this->rootpath == "" )
+    {
+        msg.perror(E_ROOT, "Wurzel unbekannt");
+        add_content(h, "{ \"result\" : \"error\"");
+        return 1;
+    }
+
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
         h->status = 200;
         h->content_type = "text/json";
-
-        this->rootpath = getRoot(h);
-        if ( this->rootpath == "" )
-        {
-            msg.perror(E_ROOT, "Wurzel unbekannt");
-            add_content(h, "{ \"result\" : \"error\"");
-            return 1;
-        }
 
         if ( h->vars["filenameInput"].find(DIRSEP) != std::string::npos || h->vars["filenameInput.old"].find(DIRSEP) != std::string::npos )
         {
@@ -267,7 +273,7 @@ int HttpFilesystem::request(HttpHeader *h)
     }
 
     (*(h->vars.p_getExtraVars()))["root"] = rootpath;
-    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h->vars["dirInput.old"], false);
+    (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h->vars["dirInput.old"]);
 
     if ( h->error_messages.size() )
     {
@@ -284,7 +290,8 @@ int HttpFilesystem::request(HttpHeader *h)
 std::string HttpFilesystem::getRoot(HttpHeader *h )
 {
     std::map<std::string,std::string>::iterator m;
-    this->root = h->vars["rootInput.old"];
+    this->root    = h->vars["rootInput.old"];
+    this->rootnew = h->vars["rootInput"];
 
     for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
     {
@@ -297,28 +304,61 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 #if defined(__MINGW32__) || defined(__CYGWIN__)
         if ( m->second[1] == ':' )
 #else
-        if ( m->second[0] == '/' )
+            if ( m->second[0] == '/' )
 #endif
 
+            {
+                msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+                this->rootpath =  m->second + DIRSEP;
+            }
+            else
+            {
+                msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
+                this->rootpath =  h->dataroot + DIRSEP + m->second + DIRSEP;
+            }
+    }
+    if ( rootnew != "" )
+    {
+
+        for (m = h->datapath.begin(); m != h->datapath.end(); ++m )
         {
-           msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
-           return  m->second + DIRSEP;
+            msg.pdebug(D_ROOTDIRS, "check %s %s", rootnew.c_str(), m->first.c_str());
+            if ( m->first == rootnew ) break;
         }
-        else
+
+        if ( m != h->datapath.end() )
         {
-           msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
-           return h->dataroot + DIRSEP + m->second + DIRSEP;
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+            if ( m->second[1] == ':' )
+#else
+                if ( m->second[0] == '/' )
+#endif
+                {
+                    msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+                    this->rootpathnew =  m->second + DIRSEP;
+                }
+                else
+                {
+                    msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
+                    this->rootpathnew =  h->dataroot + DIRSEP + m->second + DIRSEP;
+                }
         }
     }
+    else
+    {
+        this->rootpathnew = this->rootpath;
+    }
 
-    return "";
+    return this->rootpath;
 
 }
 
-std::string HttpFilesystem::getDir(std::string dir, int errormsg )
+std::string HttpFilesystem::getDir(std::string dir, int newpath )
 {
     char rpath[PATH_MAX + 1];
     char *resolvpath;
+
+    std::string path = ( newpath ) ? rootpathnew : rootpath;
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
     std::replace( root.begin(), root.end(), '/', '\\');
@@ -326,53 +366,17 @@ std::string HttpFilesystem::getDir(std::string dir, int errormsg )
 #endif
 
     rpath[0] = '\0';
-    if ( root == ""
-         || ( resolvpath = realpath((rootpath + dir).c_str(), rpath)) == NULL
-         || strstr(rpath, rootpath.substr(0,rootpath.length() - 1).c_str()) == NULL )
+    if ( path == ""
+         || ( resolvpath = realpath((path + dir).c_str(), rpath)) == NULL
+         || strstr(rpath, path.substr(0,path.length() - 1).c_str()) == NULL )
     {
     	msg.pdebug(D_ROOTDIRS, "rpath: %s, root: %s, dir: %s error: %s", rpath, root.c_str(), dir.c_str(), strerror(errno));
-        if ( errormsg ) msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", (root + ":" + dir).c_str());
+        msg.perror(E_FILENOTFOUND, "Der Ordner <%s> wurde nicht gefunden", ((( newpath ) ? rootnew : root ) + ":" + dir).c_str());
         return "";
     }
 
     return std::string(rpath) + "/";
 }
-
-/*
- std::string HttpFilesystem::check_path(HttpHeader *h, std::string name, int needname, int errormsg, std::string *result )
-{
-    std::string path = getDir(h->vars["dirInput.old"], errormsg);
-    return check_path(path, name, needname, errormsg, result );
-}
-
-std::string HttpFilesystem::check_path(std::string dir, std::string name, int needname, int errormsg, std::string *result )
-{
-
-    if ( needname && name == "" )
-    {
-        msg.perror(E_NEEDNAME, "Der Name der Datei darf nicht leer sein");
-        return "";
-    }
-
-    if ( dir  != "" && name != "" )  dir = dir + DIRSEP;
-    if ( name != "" )  dir = dir + name;
-
-    if ( result != NULL )
-        (*result) = dir;
-
-    if ( lstat(dir.c_str(), &statbuf) == 0 )
-        return dir;
-
-    if ( errormsg )
-    {
-        std::string str(msg.getSystemerror(errno));
-        msg.perror(E_FILENOTFOUND, "Die Datei <%s> wurde nicht gefunden", name.c_str());
-        msg.line("%s", str.c_str());
-    }
-
-    return "";
-}
-*/
 
 int HttpFilesystem::quicksort_check(FileData *data1, FileData *data2, FileDataSort qs_type )
 {
@@ -704,50 +708,44 @@ void HttpFilesystem::rmdir_json (  HttpHeader *h)
 }
 
 
-int HttpFilesystem::mv(HttpHeader *h)
+void HttpFilesystem::mv(HttpHeader *h)
 {
     std::string dirold = getDir(h->vars["dirInput.old"]);
-    std::string dir = getDir(h->vars["dirInput"]);
+    std::string dir = getDir(h->vars["dirInput"], 1);
 
     std::string oldname = h->vars["filenameInput.old"];
     std::string newname = h->vars["filenameInput"];
     int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
 
+    h->content_type = "text/json";
+
     if ( ( dirold == "" && oldname == "" ) || ( dir == "" && newname == "" ) )
     {
         msg.perror(E_NEEDNAME, "Der Name der Datei darf nicht leer sein");
-        return -1;
     }
 
-
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    if ( ! MoveFile((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) )
-     {
-         msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
-         return-1;
-     }
-#else
-   if ( !overwrite && newname != "" && access((dir + DIRSEP + newname).c_str(), F_OK) == 0 )
-   {
-        msg.perror(E_CREATEFILE, "Datei existiert");
-        return -1;
-   }
-
-   if ( ::rename((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) != 0 )
+    if ( ! h->error_found )
     {
-        std::string str = msg.getSystemerror(errno);
-        msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
-        msg.line("%s", str.c_str());
-        return -1;
-    }
-#endif
-    return 0;
-}
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+        if ( ! MoveFile((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) )
+        {
+            msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
+        }
+#else
+        if ( !overwrite && newname != "" && access((dir + DIRSEP + newname).c_str(), F_OK) == 0 )
+        {
+            msg.perror(E_CREATEFILE, "Datei existiert");
+        }
 
-void HttpFilesystem::mv_json (  HttpHeader *h)
-{
-    h->content_type = "text/json";
-    add_content(h, ( this->mv(h) < 0 ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
+        if ( ::rename((dirold + DIRSEP + oldname).c_str(), (dir + DIRSEP + newname).c_str()) != 0 )
+        {
+            std::string str = msg.getSystemerror(errno);
+            msg.perror(E_CREATEFILE, "Fehler während des Umbenennes eines Ordner oder Datei");
+            msg.line("%s", str.c_str());
+        }
+#endif
+    }
+    add_content(h, ( h->error_found ) ?  "{ \"result\" : \"error\"" : "{ \"result\" : \"ok\"");
 }
 
 std::string HttpFilesystem::mkfile(HttpHeader *h)
@@ -894,8 +892,8 @@ void HttpFilesystem::mklink(HttpHeader *h)
 
     h->content_type = "text/json";
 
-    dir1 = this->getDir(h->vars["dirInput.old"], 0);
-    dir2 = this->getDir(h->vars["dirInput"]    , 0);
+    dir1 = this->getDir(h->vars["dirInput.old"]);
+    dir2 = this->getDir(h->vars["dirInput"], 1 );
 
     file1 = dir1 + "/" +  h->vars["filenameInput.old"];
     file2 = dir2 + "/" +  h->vars["filenameInput"];

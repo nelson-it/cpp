@@ -47,7 +47,7 @@ protected:
     };
 
     virtual std::string getRoot(HttpHeader *h);
-    virtual std::string getDir(std::string dir, int errormsg = 1 );
+    virtual std::string getDir(std::string dir, int newpath = 0 );
 
     //virtual std::string check_path(std::string dir, std::string name, int needname = 1, int errormsg = 1, std::string *result = NULL );
     //virtual std::string check_path(HttpHeader *h, std::string name, int needname = 1 , int errormsg = 1 , std::string *result = NULL );
@@ -55,7 +55,11 @@ protected:
     virtual int findfile(HttpHeader *h);
 
     std::string root;
+    std::string rootnew;
+
     std::string rootpath;
+    std::string rootpathnew;
+
     std::string cacheroot;
 
     //struct stat statbuf;
@@ -97,8 +101,7 @@ protected:
 
     void mklink ( HttpHeader *h);
 
-    int  mv      ( HttpHeader *h);
-    void mv_json ( HttpHeader *h);
+    void mv ( HttpHeader *h);
 
     void download ( HttpHeader *h);
 
