@@ -99,8 +99,6 @@ protected:
     };
 
     virtual void read_header();
-
-    virtual void read_postvalues();
     virtual int  check_group(HttpHeader *h, const char *group) { return false; }
 
 public:

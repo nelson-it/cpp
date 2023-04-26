@@ -144,29 +144,6 @@ void HttpAnalyse::read_header()
 	HttpRequest::analyse_header(&(h->second), act_h);
 }
 
-void HttpAnalyse::read_postvalues()
-{
-	if ( act_h->post_type.find("multipart/form-data") != std::string::npos )
-	{
-		std::string::size_type npos;
-
-		msg.pdebug(D_POSTDATA, "%s", act_h->post_data);
-		if ( ( npos = act_h->post_type.find("boundary=")) != std::string::npos )
-			act_h->vars.setMultipart( "--" + act_h->post_type.substr(npos + 9), act_h->post_data);
-	}
-	else
-	{
-		act_h->vars.setVars(act_h->post_data);
-	}
-
-	if ( act_h->post_data != NULL )
-	{
-		delete[] act_h->post_data;
-		act_h->post_data = NULL;
-	}
-}
-
-
 void HttpAnalyse::request( int client, char *buffer, long size )
 {
 
@@ -199,10 +176,10 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 	{
 		if ( act_h != NULL && act_h->client == client && act_h->needed_postdata > 0 )
 		{
-			int b_rest;
+			unsigned long b_rest;
 
             msg.pdebug(D_CON, "bekomme noch %d Daten",size);
-            msg.pdebug(D_CON, "benötige noch %d Daten",  act_h->needed_postdata);
+            msg.pdebug(D_CON, "benötige noch %lu Daten",  act_h->needed_postdata);
 
 			b_rest = size - ( c - buffer );
 			if ( b_rest > act_h->needed_postdata )
@@ -210,12 +187,26 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
             msg.pdebug(D_CON, "lese noch %d Daten", b_rest);
 
-            memcpy(&act_h->post_data[act_h->post_length-act_h->needed_postdata],c, b_rest);
-			act_h->needed_postdata -= b_rest;
-			c = c + b_rest - 1;
+            if ( act_h->post_data != NULL )
+            {
+                memcpy(&act_h->post_data[act_h->post_length-act_h->needed_postdata],c, b_rest);
+                act_h->needed_postdata -= b_rest;
+                c = c + b_rest - 1;
+                if ( act_h->needed_postdata == 0 )
+                {
+                    act_h->vars.setVars(act_h->post_data);
+                    delete[] act_h->post_data;
+                    act_h->post_data = NULL;
+                }
+            }
+            else
+            {
+                act_h->vars.setMultipart(act_h->boundary, c, b_rest);
+                act_h->needed_postdata -= b_rest;
+                c = c + b_rest - 1;
+                if ( act_h->needed_postdata == 0 ) act_h->vars.setMultipart(act_h->boundary, c, 0);
+            }
 
-			if ( act_h->needed_postdata == 0 )
-				read_postvalues();
 
 		}
 
@@ -247,8 +238,17 @@ void HttpAnalyse::request( int client, char *buffer, long size )
 
 				read_header();
 				act_h->needed_postdata = act_h->post_length;
-				act_h->post_data = new char[act_h->post_length + 1];
-				act_h->post_data[act_h->post_length] = '\0';
+			    if ( act_h->post_type.find("multipart/form-data") == std::string::npos )
+			    {
+				    act_h->post_data = new char[act_h->post_length + 1];
+				    act_h->post_data[act_h->post_length] = '\0';
+			    }
+			    else
+			    {
+			        std::string::size_type npos;
+			        if ( ( npos = act_h->post_type.find("boundary=")) != std::string::npos )
+			            act_h->boundary =  "--" + act_h->post_type.substr(npos + 9);
+			    }
 			}
 		}
 		else if ( *c != '\r' )
@@ -270,8 +270,12 @@ void HttpAnalyse::disconnect( int client )
 
 	if ( ( h = headers.find(client)) != headers.end() )
 	{
+	    HttpHeaders::iterator chttp;
+
 		msg.pdebug(D_CLIENT, "Verbindung zum Client %d wurde abgebrochen",client);
 		headers.erase(h);
+		if ( ( chttp = http_headers.find(client) ) != http_headers.end() )
+		        delete chttp->second;
 	}
 	else
 	{

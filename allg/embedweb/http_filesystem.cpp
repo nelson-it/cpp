@@ -10,6 +10,9 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <magic.h>
+#include <poll.h>
+#include <sys/wait.h>
 
 #include <utils/tostring.h>
 #include <utils/php_exec.h>
@@ -176,6 +179,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd )
     subprovider["mklink.json"] = &HttpFilesystem::mklink;
     subprovider["mv.json"] = &HttpFilesystem::mv;
     subprovider["download.html"] = &HttpFilesystem::download;
+    subprovider["stream.dat"] = &HttpFilesystem::stream;
     subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
 
     if ( noadd == 0 )
@@ -463,6 +467,8 @@ void HttpFilesystem::readdir(std::string dirname, int pointdir )
 #else
     DIR *dp;
     struct dirent *dirp;
+    magic_t myt = magic_open(MAGIC_MIME);
+    magic_load(myt, NULL);
 
     if((dp  = opendir(dirname.c_str())) == NULL)
     {
@@ -474,17 +480,22 @@ void HttpFilesystem::readdir(std::string dirname, int pointdir )
     {
         if ( ( !pointdir && (std::string(dirp->d_name))[0] == '.' ) || (std::string(dirp->d_name)) == "." || (std::string(dirp->d_name)) == ".." ) continue;
         {
-        FileData data;
-        data.name = dirp->d_name;
-        lstat((dirname + "/" + data.name).c_str(), &data.statbuf);
+            FileData data;
+            data.name = dirp->d_name;
+            lstat((dirname + "/" + data.name).c_str(), &data.statbuf);
 
-        if ( dirp->d_type == DT_DIR )
-            dirs.push_back(data);
-        else
-            files.push_back(data);
+            if ( dirp->d_type == DT_DIR )
+                dirs.push_back(data);
+            else
+            {
+                const char *mime = magic_file(myt,(dirname + "/" + data.name).c_str());
+                data.mime = ( mime != NULL ) ? mime : "application/octet-stream";
+                files.push_back(data);
+            }
         }
     }
 
+    magic_close(myt);
     closedir(dp);
 
 
@@ -599,7 +610,7 @@ void HttpFilesystem::ls(HttpHeader *h)
         if ( onlydir && hassubdirs(rootpath + fullname, 0) == 0 )
             leaf = "leaf";
 
-        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"dir\", \"mime\" : \"\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime );
         add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"" + std::string(action) + "\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), leaf, i++);
 
         komma = ',';
@@ -624,7 +635,7 @@ void HttpFilesystem::ls(HttpHeader *h)
          default:       ft = "file";   break;
          }
         std::string fullname = fdir + (*is).name;
-        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft );
+        snprintf(str, sizeof(str) - 1, "\"root\" : \"%s\", \"fullname\" : \"%s\", \"name\" : \"%s\", \"createtime\" : %ld, \"modifytime\" : %ld, \"accesstime\" : %ld, \"filetype\": \"%s\", \"mime\" : \"%s\"", root.c_str(), fullname.c_str(), (*is).name.c_str(), (*is).statbuf.st_ctime, (*is).statbuf.st_mtime, (*is).statbuf.st_atime, ft, (*is).mime.c_str() );
         add_content(h, (komma + format).c_str(), fullname.c_str(), (*is).name.c_str(), ToString::mkjson("{ \"action\" : \"show\"," "  \"parameter\" : [ \"" +  ToString::mkjson(fullname.c_str()) + "\",\"" + (*is).name.c_str() + "\", { " + str + " } ] }").c_str(), "leaf", i++ );
 
         komma = ',';
@@ -793,8 +804,16 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
                 {
                     return msg.get("Datei existiert und wird nicht überschrieben");
                 }
+
                 ::unlink(file.c_str());
-                int file2 = open(file.c_str(), O_WRONLY | O_CREAT, 0666 );
+                if ( ::rename(str.c_str(), (path + DIRSEP + name).c_str()) != 0 )
+                {
+                    std::string str = msg.getSystemerror(errno);
+                    msg.perror(E_CREATEFILE, "Fehler während des Estellens einer Datei");
+                    msg.line("%s", str.c_str());
+                }
+
+/*                int file2 = open(file.c_str(), O_WRONLY | O_CREAT, 0666 );
                 if ( file2 < 0 )
                 {
                     str = msg.getSystemerror(errno);
@@ -823,6 +842,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
                     close(file2);
                     if ( str != "" ) return str;
                 }
+*/
             }
         }
 #endif
@@ -947,8 +967,13 @@ void HttpFilesystem::download(HttpHeader *h)
     name = getDir(h->vars["dirInput.old"]) + "/" + h->vars["filenameInput.old"];
     if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
     {
+        magic_t myt = magic_open(MAGIC_MIME);
+        magic_load(myt, NULL);
+
         char buffer[10240];
-        h->content_type = "application/octet-stream";
+        const char *magic = magic_file(myt,name.c_str());
+
+        h->content_type = ( magic != NULL ) ? magic : "application/octet-stream";
         snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->vars["filenameInput.old"].c_str()).c_str());
         buffer[sizeof(buffer) -1] = '\0';
         h->extra_header.push_back(buffer);
@@ -956,18 +981,207 @@ void HttpFilesystem::download(HttpHeader *h)
         h->status = 200;
         contentf(h, f);
         fclose(f);
+        magic_close(myt);
     }
     else
     {
-        h->content_type = "application/octet-stream";
         char buffer[10240];
-        h->content_type = "application/octet-stream";
+        h->content_type = "text/plain";
         snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", msg.get("Datei nicht gefunden.txt").c_str());
         buffer[sizeof(buffer) -1] = '\0';
         h->extra_header.push_back(buffer);
 
         h->status = 200;
     }
+}
+
+class HttpFilesystemStreamThread : public ServerSocket
+{
+public:
+    pthread_t id;
+    pthread_mutex_t mutex;
+
+    int client;
+    int pid;
+
+    HttpFilesystemStreamThread(int client, int pid);
+    ~HttpFilesystemStreamThread() {};
+
+    void wdebug(int debuglevel, const char *str, int length )
+    {
+        msg.wdebug(debuglevel, str, length);
+    }
+};
+
+void *HttpFilesystemStreamThreadLoop(void *param)
+{
+
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    _setmbcp(_MB_CP_ANSI);
+#endif
+
+    HttpFilesystemStreamThread *p = (HttpFilesystemStreamThread*)param;
+    char str[1024];
+
+    listen(p->getSocket(), 1);
+    pthread_mutex_unlock(&(p->mutex));
+
+    struct pollfd pollfds[1];
+
+    pollfds[0].fd = p->getSocket();
+    pollfds[0].events = POLLIN | POLLPRI;
+    if ( poll(pollfds, 1, 1000) > 0 )
+    {
+        struct sockaddr_storage caddr;
+        int rd = p->accept(caddr);
+        char buffer[10241], *c;
+        int line,len;
+
+        line = 0;
+        while ( line < 2 && (len = ::read( rd, buffer, sizeof(buffer) - 1) ) > 0 )
+        {
+            for ( c=buffer; len != 0; c++ )
+            {
+                if ( *c != '\r' && *c != '\n') line = 0;
+                if ( *c == '\n' ) line++;
+                len--;
+                if ( line == 2 ) break;
+            }
+        }
+
+        sprintf(str, "HTTP/1.1 200 OK\r\n");
+        ::write(p->client, str, strlen(str));
+        sprintf(str, "Content-Type: video/mp4\r\n");
+        ::write(p->client, str, strlen(str));
+        sprintf(str, "Transfer-Encoding: chunked\r\n\r\n");
+        ::write(p->client, str, strlen(str));
+        ::write(p->client, c++, len);
+
+        while ( (len = ::read( rd, buffer, sizeof(buffer) - 1) ) > 0 )
+            if ( ::write(p->client, buffer, len) < 0 ) break;
+
+        close(p->client);
+        close(rd);
+    }
+    else
+    {
+        sprintf(str, "HTTP/1.1 404 Not Found\r\n");
+        ::write(p->client, str, strlen(str));
+        sprintf(str, "Server: M Nelson Embedded Http Server 1.0\r\n");
+        ::write(p->client, str, strlen(str));
+		sprintf(str, "Connection: Close\r\n");
+        ::write(p->client, str, strlen(str));
+   	    sprintf(str, "Content-Length: 0\r\n\r\n");
+        ::write(p->client, str, strlen(str));
+
+        close(p->client);
+    }
+
+    close(p->getSocket());
+
+    pthread_mutex_lock(&(p->mutex));
+    pthread_mutex_unlock(&(p->mutex));
+
+    int status;
+    waitpid(p->pid, &status, 0);
+    //sprintf(str, "waitready %d\n", WEXITSTATUS(status));
+    //p->wdebug(1, str, strlen(str));
+
+    delete p;
+    pthread_exit(NULL);
+    return NULL;
+}
+
+HttpFilesystemStreamThread::HttpFilesystemStreamThread(int client, int pid)
+                           :ServerSocket(0)
+{
+    this->client = client;
+    this->pid = pid;
+
+    pthread_mutex_init(&this->mutex,NULL);
+    pthread_mutex_lock(&mutex);
+
+    pthread_attr_t attr;
+
+    pthread_attr_init(&attr);
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    pthread_create(&(this->id), &attr, HttpFilesystemStreamThreadLoop, (void *)this);
+    pthread_attr_destroy(&attr);
+}
+
+
+void HttpFilesystem::stream(HttpHeader *h)
+{
+    std::string name;
+    struct stat buf;
+    int pid;
+
+    name = getDir(h->vars["dirInput.old"]) + "/" + h->vars["filenameInput.old"];
+    if ( name == "" || stat(name.c_str(), &buf) != 0 )
+    {
+        char buffer[10240];
+        h->content_type = "text/plain";
+        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", msg.get("Datei nicht gefunden.txt").c_str());
+        buffer[sizeof(buffer) -1] = '\0';
+        h->extra_header.push_back(buffer);
+
+        h->status = 200;
+        return;
+    }
+
+    HttpFilesystemStreamThread *s = new HttpFilesystemStreamThread(h->client, 0);
+    pthread_mutex_lock(&(s->mutex));
+
+    pid = vfork();
+    if ( pid < 0 )
+    {
+        msg.perror(E_FORK,"vfork konnte nicht durchgeführt werden");
+        return;
+    }
+    if ( pid == 0 )
+    {
+        char addr[128];
+        char **argv = new char*[32];
+        unsigned int i;
+        int lfile;
+
+        sprintf(addr, "http://localhost:%u", s->getSocketnum());
+
+        i = 0;
+        argv[i++] = (char *)"/usr/bin/ffmpeg";
+        argv[i++] = (char *)"-i";
+        argv[i++] = (char *)name.c_str();
+        argv[i++] = (char *)"-vcodec";
+        argv[i++] = (char *)"libx264";
+        argv[i++] = (char *)"-preset";
+        argv[i++] = (char *)"ultrafast";
+        argv[i++] = (char *)"-metadata";
+        argv[i++] = (char *)"mime-type=\"video/mp4\"";
+        argv[i++] = (char *)"-f";
+        argv[i++] = (char *)"mp4";
+        argv[i++] = (char *)"-movflags";
+        argv[i++] = (char *)"frag_keyframe+empty_moov";
+        argv[i++] = addr;
+        argv[i] = NULL;
+
+        lfile = open("/tmp/stream.txt", O_RDWR | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP );
+        dup2(lfile, 2);
+
+        close(lfile);
+
+        execve(argv[0], argv, environ);
+        _exit(-1);
+    }
+    else
+    {
+        s->pid = pid;
+        h->client = -1;
+        pthread_mutex_unlock(&(s->mutex));
+    }
+
+    return;
+
 }
 
 void HttpFilesystem::mkicon(HttpHeader *h)

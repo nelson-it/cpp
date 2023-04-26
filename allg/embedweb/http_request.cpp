@@ -37,6 +37,17 @@ HttpRequest::HttpRequest(ServerSocket *s)
 		    serverpath.push_back(spath[i]);
 	}
 
+    this->dataroot = std::string(a["EmbedwebHttpDataroot"]);
+#if defined(__MINGW32__) || defined(__CYGWIN__)
+    if ( this->dataroot[1] != ':' )
+    {
+#else
+    if ( this->dataroot[0] != '/' )
+    {
+#endif
+        this->dataroot = projectroot + "/" + this->dataroot;
+    }
+
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 	spath.setString(a["EmbedwebHttpDatapath"], '!');
 #else
@@ -50,21 +61,11 @@ HttpRequest::HttpRequest(ServerSocket *s)
 #else
 	    if ( dele[1][0] != '/')
 #endif
-		    datapath[dele[0]] = projectroot + "/" + dele[1];
+		    datapath[dele[0]] = this->dataroot + "/" + dele[1];
 	    else
 		    datapath[dele[0]] = dele[1];
 	}
 
-    this->dataroot = std::string(a["EmbedwebHttpDataroot"]);
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-    if ( this->dataroot[1] != ':' )
-    {
-#else
-    if ( this->dataroot[0] != '/' )
-    {
-#endif
-        this->dataroot = projectroot + "/" + this->dataroot;
-    }
     content_types["gif"]  = "image/gif";
     content_types["png"]  = "image/png";
     content_types["jpg"]  = "image/jpeg";

@@ -97,7 +97,6 @@ void DbHttpUtilsQuery::mk_exportvalue(HttpHeader *h, DbConnect::Result r, int dp
         long val = (long)r;
 
         time_t t = val;
-        fprintf(stderr, "%s\n", r.format(&msg));
         if ( localtime_r(&t,&tm) == NULL )
         {
             msg.pwarning(W_CONV, "Konnte <%d> nicht in einen Zeitstruktur wandeln");

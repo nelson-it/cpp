@@ -67,6 +67,7 @@ ServerSocket::Client::Client()
 
 ServerSocket::Client::Client( ServerSocket *s, SocketProvider *p, int fd, struct sockaddr_storage *sin, int addrlen )
 {
+    struct sockaddr_in saddr;
     char host[NI_MAXHOST];
     char port[NI_MAXSERV];
 
@@ -84,12 +85,11 @@ ServerSocket::Client::Client( ServerSocket *s, SocketProvider *p, int fd, struct
 
     if ( strncmp(host, "::ffff:", 7 ) == 0 )
     {
-        struct sockaddr_in s;
         memset(&s, 0, sizeof(s));
-        s.sin_family = AF_INET;
-        s.sin_port = atoi(port);
-        s.sin_addr.s_addr = *((unsigned long*)(((struct sockaddr_in6 *)sin)->sin6_addr.s6_addr + 12));
-        sin = (struct sockaddr_storage *)&s;
+        saddr.sin_family = AF_INET;
+        saddr.sin_port = atoi(port);
+        saddr.sin_addr.s_addr = *((unsigned long*)(((struct sockaddr_in6 *)sin)->sin6_addr.s6_addr + 12));
+        sin = (struct sockaddr_storage *)&saddr;
         getnameinfo((struct sockaddr *)sin, addrlen, host, sizeof(host), port, sizeof(port), NI_NUMERICHOST);
     }
 
@@ -97,15 +97,6 @@ ServerSocket::Client::Client( ServerSocket *s, SocketProvider *p, int fd, struct
     memcpy(&this->sin, sin, addrlen);
 
     need_close = 0;
-#if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
-    int on;
-    on = 1;
-    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
-    {
-        s->msg.perror(E_SOCK_OPEN, "client konnte reuse Option nicht setzen");
-        s->msg.line("%s", strerror(errno));
-    }
-#endif
 
 }
 
@@ -164,6 +155,41 @@ ServerSocket::Client &ServerSocket::Client::operator=( const Client &in)
 ServerSocket::Client::~Client()
 {
     if ( buffer != NULL ) delete[] buffer;
+}
+
+int ServerSocket::accept( struct sockaddr_storage &c)
+{
+    int rval;
+#if defined (Darwin)
+    socklen_t size = sizeof(c);
+    rval = accept(sock, (struct sockaddr *)&c, &size );
+#elif defined(__MINGW32__) || defined(__CYGWIN__)
+    int size = sizeof(c);
+    rval = accept(sock, (struct sockaddr *)&c, &size );
+#else
+    socklen_t size = sizeof(c);
+    rval = accept4(sock, (struct sockaddr *)&c, &size, SOCK_CLOEXEC );
+#endif
+
+    if ( rval < 0 )
+    {
+        msg.perror(E_ACCEPT, "Fehler beim accept - client kann nicht verbunden werden");
+        msg.line("%s", strerror(errno));
+    }
+#if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
+    else
+    {
+        int on;
+        on = 1;
+        if (setsockopt(rval, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
+        {
+            msg.perror(E_SOCK_OPEN, "konnte reuse Option nicht setzen");
+            msg.line("%s", strerror(errno));
+        }
+    }
+#endif
+
+    return rval;
 }
 
 void ServerSocket::Client::write(char *b, int l)
@@ -313,7 +339,7 @@ bool ServerSocket::TimeSort::operator()
 ServerSocket::ServerSocket(short socketnum )
 :msg("ServerSocket")
 {
-    int length;
+    unsigned int length;
     int rval;
     struct sockaddr_in6 server;
 
@@ -345,9 +371,20 @@ ServerSocket::ServerSocket(short socketnum )
 
     if ( ( rval = bind(sock, (struct sockaddr *)&server, length)) < 0 )
     {
-        msg.perror(E_SOCK_BIND,"konnte socket nich an port %d binden", socketnum);
+        msg.perror(E_SOCK_BIND,"konnte socket nicht an port %d binden", socketnum);
         msg.line("%s", strerror(errno));
         exit(1);
+    }
+
+    this->socketnum = socketnum;
+    if (socketnum == 0)
+    {
+        if (getsockname(sock, (struct sockaddr*) &server, &length) == -1)
+        {
+            msg.perror(E_SOCKNUM, "konnte socketnum nicht ermitteln");
+            msg.line("%s", strerror(errno));
+        }
+        this->socketnum = ntohs(server.sin6_port);
     }
 
     http = NULL;
@@ -816,26 +853,12 @@ void ServerSocket::loop()
             rsel--;
 
             struct sockaddr_storage c;
-#if defined (Darwin)
-            socklen_t size = sizeof(c);
-            if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
-#elif defined(__MINGW32__) || defined(__CYGWIN__)
-            int size = sizeof(c);
-            if ( ( rval = accept(sock, (struct sockaddr *)&c, &size ) ) < 0 )
-#else
-            socklen_t size = sizeof(c);
-            if ( ( rval = accept4(sock, (struct sockaddr *)&c, &size, SOCK_CLOEXEC ) ) < 0 )
-#endif
-            {
-                msg.perror(E_ACCEPT, "Fehler beim accept - client kann nicht verbunden werden");
-                msg.line("%s", strerror(errno));
-            }
-            else
+            if ( ( rval = this->accept(c) ) >= 0 )
             {
                 SocketProvider *p;
                 if ( ( p = get_provider("Http")) != NULL )
                 {
-                    clients[rval] = Client(this, p, rval, &c, size);
+                    clients[rval] = Client(this, p, rval, &c, sizeof(c));
                     msg.pdebug(D_CON, "client %d connected: addr %s", rval, clients[rval].getHost().c_str());
                 }
                 else

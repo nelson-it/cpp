@@ -180,7 +180,6 @@ void XmlTextTex::mk_table(XmlParseNode *node, int num)
 
     max_cols = strtoul(node->getAttr("colcount").c_str(), NULL, 10 );
     border = node->getAttr("border") == "1";
-    fprintf(stderr, "border %d", border);
 
     if ( node->getAttr("padding") != "0" ) padding = "";
 

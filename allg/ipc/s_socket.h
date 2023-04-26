@@ -26,6 +26,8 @@ class TimeoutClient;
 
 class ServerSocket
 {
+protected:
+
     pthread_mutex_t mutex;
     pthread_mutex_t timeout_mutex;
 
@@ -45,6 +47,7 @@ class ServerSocket
         E_HTTP_NULL,
         E_NO_CLIENT,
         E_WRITE,
+        E_SOCKNUM,
 
         E_MAXERROR = 100
 
@@ -123,6 +126,7 @@ class ServerSocket
     // ================
     Message msg;
     int sock;
+    short socketnum;
     SocketProvider *http;
 
     fd_set *rd_set;
@@ -160,6 +164,7 @@ public:
     void add_timeout( TimeoutClient *t);
     void del_timeout( TimeoutClient *t);
 
+    int accept(struct sockaddr_storage &c);
     void write( int client, char *buffer, int size);
     void write( int client, FILE *fp,     int size);
     void flush( int client );
@@ -167,6 +172,8 @@ public:
     void close( int client);
 
     std::string getHost(int client ) { return clients[client].getHost(); }
+    int getSocket() { return sock; }
+    int getSocketnum() { return (unsigned short)socketnum; }
 
     struct sockaddr_storage *getAddr(int client) { return clients[client].getAddr(); }
     void setAddr(int client, std::string host) { clients[client].setAddr(host); }

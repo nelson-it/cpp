@@ -3,7 +3,7 @@
               
              OPT_STD := -g -Wall -pedantic -std=c++11
              OPT_ADD := $($(TARGET).OPT_ADD)
-	          LD_STD := -g
+	          LD_STD := -g -lmagic
 	      
 	      OPT_SHARED :=
            LD_SHARED :=

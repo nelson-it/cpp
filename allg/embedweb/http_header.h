@@ -65,11 +65,10 @@ public:
     std::string passwd;
 
     std::string post_type;
+    std::string boundary;
     char       *post_data;
-    int         post_length;
-    int         needed_postdata;
-
-    void       *user_data;
+    unsigned long  post_length;
+    unsigned long  needed_postdata;
 
     // Vom Provider auszufüllen
     // ========================
@@ -104,7 +103,6 @@ public:
         content = new char[CONTENT_SIZE];
         content_maxsize = CONTENT_SIZE;
         post_data = NULL;
-        user_data = NULL;
         clear();
     }
 
@@ -112,7 +110,6 @@ public:
     {
         if ( content != NULL )   delete[] content;
         if ( post_data != NULL ) delete[] post_data;
-        if ( user_data != NULL ) delete (char *)user_data;
     }
 
 
@@ -142,7 +139,6 @@ public:
         *content = '\0';
         content_length = 0;
         if ( post_data != NULL ) delete[] post_data;
-        if ( user_data != NULL ) delete (char*)user_data;
 
         post_data = NULL;
         post_length = 0;
@@ -158,6 +154,7 @@ public:
         location = "";
         content_type   = "text/html";
         charset        = "UTF-8";
+        boundary = "";
 
         cookies.clear();
         set_cookies.clear();

@@ -630,7 +630,6 @@ int Process::read( char *buffer, int size)
             if ( waitpid(pid, &status, WNOHANG) > 0 )
             {
                 status = WEXITSTATUS(status);
-                fprintf(stderr, "status %d\n", status);
                 close(file);
                 pid = -1;
                 sel = -1;

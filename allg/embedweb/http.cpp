@@ -413,7 +413,7 @@ void Http::write_header()
 		msg.pdebug(D_CON, "fordere Passwort an %s", buffer);
 	}
 
-	sprintf(buffer, "Server: M Nelson Embedded Http Server 0.9\r\n");
+	sprintf(buffer, "Server: M Nelson Embedded Http Server 1.0\r\n");
 	s->write(act_h->client, buffer, strlen(buffer));
 
 	if ( no_cache || act_h->age == 0 )
@@ -513,11 +513,14 @@ void Http::get(HttpHeader *h)
 
     make_content();
 
-    write_header();
-    write_content();
-    write_trailer();
+    if (act_h->client != -1)
+    {
+        write_header();
+        write_content();
+        write_trailer();
 
-    s->flush(act_h->client);
+        s->flush(act_h->client);
+    }
 
 	msg.del_msgclient(this);
 	act_h = NULL;

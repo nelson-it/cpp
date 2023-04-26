@@ -6,8 +6,48 @@
 
 #include <message/message.h>
 
+class HttpVars;
+class HttpVarsMultipart
+{
+    HttpVars *vars;
+
+    char *buf;
+    int bufpos;
+    int buflen;
+    int bufsize;
+
+    int waitfile;
+
+    std::string boundary;
+    std::string name;
+    std::string value;
+    std::string str;
+    std::string content_type;
+
+    int startfound;
+    int endfound;
+    int isvalue;
+
+    FILE *wd;
+    char filename[512];
+
+    FILE *opentmp(char *filename);
+
+    void putfile();
+    void putline();
+
+public:
+    HttpVarsMultipart(HttpVars *vars, std::string boundary);
+    ~HttpVarsMultipart();
+
+    void put(char *buffer, int size);
+    int isready () { return endfound; }
+};
+
 class HttpVars 
 {
+    friend class HttpVarsMultipart;
+
 public:
     typedef std::map<std::string, std::string> Vars;
     typedef std::map<std::string, std::string> Files;
@@ -15,8 +55,9 @@ public:
 private:
     enum ErrorTypes
     {
-        FILEOPEN = 1,
-        DECODE
+        E_FILEOPEN = 1,
+        E_DECODE,
+        E_REQUEST
     };
 
     Message msg;
@@ -25,14 +66,17 @@ private:
     Files files;
 
     Vars extravars;
+
+    HttpVarsMultipart *multipart;
+
 public:
     HttpVars() : msg("HttpVars")
-    {}
+    { multipart = NULL; }
 
     virtual ~HttpVars();
 
     void setVars( std::string vars);
-    void setMultipart( std::string boundary, char *data);
+    void setMultipart( std::string boundary, char *values, int size);
     void setVar(std::string id, std::string value)
     {
         vars[id] = value;

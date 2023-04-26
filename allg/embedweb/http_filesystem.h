@@ -33,6 +33,8 @@ protected:
 
         E_WRONGNAME,
 
+        E_FORK,
+
         E_MAX = 1000
     };
 
@@ -68,6 +70,7 @@ protected:
     {
         std::string name;
         struct stat statbuf;
+        std::string mime;
     };
 
     enum FileDataSort
@@ -104,6 +107,7 @@ protected:
     void mv ( HttpHeader *h);
 
     void download ( HttpHeader *h);
+    void stream   ( HttpHeader *h);
 
     void mkicon ( HttpHeader *h);
 
