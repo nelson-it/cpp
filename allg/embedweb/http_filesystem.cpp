@@ -180,7 +180,7 @@ HttpFilesystem::HttpFilesystem(Http *h, int noadd )
     subprovider["mv.json"] = &HttpFilesystem::mv;
     subprovider["download.html"] = &HttpFilesystem::download;
     subprovider["stream.dat"] = &HttpFilesystem::stream;
-    subprovider["mk_icon.php"] = &HttpFilesystem::mkicon;
+    subprovider["icon.jpg"] = &HttpFilesystem::mkicon;
 
     if ( noadd == 0 )
         h->add_provider(this);
@@ -260,6 +260,7 @@ int HttpFilesystem::request(HttpHeader *h)
         return 1;
     }
 
+    if ( h->filename.substr(0, 8) == "download" ) h->filename = "download.html";
     if ( (i = subprovider.find(h->filename)) != subprovider.end() )
     {
         h->status = 200;
@@ -974,9 +975,13 @@ void HttpFilesystem::download(HttpHeader *h)
         const char *magic = magic_file(myt,name.c_str());
 
         h->content_type = ( magic != NULL ) ? magic : "application/octet-stream";
-        snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->vars["filenameInput.old"].c_str()).c_str());
-        buffer[sizeof(buffer) -1] = '\0';
-        h->extra_header.push_back(buffer);
+
+        if ( h->vars["nofilename"] == "" )
+        {
+          snprintf(buffer, sizeof(buffer), "Content-Disposition: attachment; filename=\"%s\"", h->vars.url_decode(h->vars["filenameInput.old"].c_str()).c_str());
+          buffer[sizeof(buffer) -1] = '\0';
+          h->extra_header.push_back(buffer);
+        }
 
         h->status = 200;
         contentf(h, f);
