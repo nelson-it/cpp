@@ -61,7 +61,7 @@ HttpRequest::HttpRequest(ServerSocket *s)
 #else
 	    if ( dele[1][0] != '/')
 #endif
-		    datapath[dele[0]] = this->dataroot + "/" + dele[1];
+		    datapath[dele[0]] = this->dataroot + ((dele[1] != "" ) ? "/" : "" ) + dele[1];
 	    else
 		    datapath[dele[0]] = dele[1];
 	}

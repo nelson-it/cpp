@@ -306,22 +306,10 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
     if ( m != h->datapath.end() )
     {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-        if ( m->second[1] == ':' )
-#else
-            if ( m->second[0] == '/' )
-#endif
-
-            {
-                msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
-                this->rootpath =  m->second + DIRSEP;
-            }
-            else
-            {
-                msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
-                this->rootpath =  h->dataroot + DIRSEP + m->second + DIRSEP;
-            }
+        msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+        this->rootpath =  m->second + DIRSEP;
     }
+
     if ( rootnew != "" )
     {
 
@@ -333,20 +321,8 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
 
         if ( m != h->datapath.end() )
         {
-#if defined(__MINGW32__) || defined(__CYGWIN__)
-            if ( m->second[1] == ':' )
-#else
-                if ( m->second[0] == '/' )
-#endif
-                {
-                    msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
-                    this->rootpathnew =  m->second + DIRSEP;
-                }
-                else
-                {
-                    msg.pdebug(D_ROOTDIRS, "found %s", (h->dataroot + "/" + m->second).c_str());
-                    this->rootpathnew =  h->dataroot + DIRSEP + m->second + DIRSEP;
-                }
+            msg.pdebug(D_ROOTDIRS, "found %s",  m->second.c_str());
+            this->rootpathnew =  m->second + DIRSEP;
         }
     }
     else
@@ -355,7 +331,6 @@ std::string HttpFilesystem::getRoot(HttpHeader *h )
     }
 
     return this->rootpath;
-
 }
 
 std::string HttpFilesystem::getDir(std::string dir, int newpath )
@@ -813,37 +788,6 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
                     msg.perror(E_CREATEFILE, "Fehler während des Estellens einer Datei");
                     msg.line("%s", str.c_str());
                 }
-
-/*                int file2 = open(file.c_str(), O_WRONLY | O_CREAT, 0666 );
-                if ( file2 < 0 )
-                {
-                    str = msg.getSystemerror(errno);
-                    close(file1);
-                    return str;
-                }
-                else
-                {
-                    str = "";
-                    mode_t mask;
-                    mask = umask(0);
-                    umask(mask);
-                    fchmod(file2, (0666 & ~ mask));
-                    int i,n;
-                    char buf[1024];
-                    while ( ( i = read(file1, &buf, sizeof(buf))) > 0 )
-                    {
-                        while ( i > 0 && ( n = write(file2, &buf, i)) > 0 ) i -= n;
-                        if ( i != 0 )
-                        {
-                            str = msg.getSystemerror(errno);
-                            break;
-                        }
-                    }
-                    close(file1);
-                    close(file2);
-                    if ( str != "" ) return str;
-                }
-*/
             }
         }
 #endif
