@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <time.h>
 
 #if defined(__CYGWIN__) || defined(__MINGW32__)
 #include <winsock2.h>
@@ -213,18 +214,16 @@ std::string DbTranslate::get(const char *str, const char *kategorie)
     if (db->p_getConnect()->have_result())
     {
         c = (char *) (*db->p_getConnect()->p_get_first_result())[0];
-        if (*c == '\0')
-        {
-            il->second[str] = str;
-            pthread_mutex_unlock(&mutex);
-            return str;
-        }
-        else
-        {
-            il->second[str] = c;
-            pthread_mutex_unlock(&mutex);
-            return c;
-        }
+        il->second[str] = (*c == '\0') ? il->second[str] = str : c;
+
+        char t[64];
+        sprintf(t, "%20ld", ::time(NULL));
+
+        stm = "UPDATE " + db->getApplschema() + ".translate SET accesstime = " + t + " WHERE id = " + s;
+         db->p_getConnect()->execute(stm.c_str(), 1);
+
+        pthread_mutex_unlock(&mutex);
+        return il->second[str];
     }
     else if (result == 0)
     {

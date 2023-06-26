@@ -51,15 +51,18 @@ void DbQueryCreator::setName(std::string schema, std::string name, std::string u
 	if (db->p_getConnect()->have_result())
 	{
 		DbConnect::ResultVec *r = db->p_getConnect()->p_get_first_result();
-		queryid = (char *) ((*r)[0]);
-		unionall = (long) ((*r)[1]);
-		distinct = (long) ((*r)[2]);
+		this->queryid = (char *) ((*r)[0]);
+		this->unionall = (long) ((*r)[1]);
+		this->distinct = (long) ((*r)[2]);
 	}
 	else
 	{
-		queryid = "";
-		unionall = 1;
-		distinct = 0;
+		this->queryid = "";
+    	this->schema = "";
+	    this->name = "";
+	    this->unionnum = 1;
+		this->unionall = 1;
+		this->distinct = 0;
 
 		return;
 	}
