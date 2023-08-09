@@ -68,6 +68,9 @@ void DbHttp::setLocale()
     if ( ( l = this->loc.find(lstr)) == this->loc.end() )
     {
         this->loc[lstr] = newlocale(LC_ALL_MASK, lstr.c_str(), NULL);
+        if ( this->loc[lstr] == NULL )
+            msg.perror(E_LOCATION, "newlocale: ", strerror(errno));
+
         l = this->loc.find(lstr);
     }
     //uselocale(this->stdloc);

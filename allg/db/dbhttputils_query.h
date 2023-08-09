@@ -51,6 +51,7 @@ public:
     void data_xml (Database *db, HttpHeader *h);
     void data_csv (Database *db, HttpHeader *h);
     void data_json (Database *db, HttpHeader *h);
+    void data_plain (Database *db, HttpHeader *h);
 
 };
 

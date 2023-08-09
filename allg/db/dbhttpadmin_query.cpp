@@ -99,30 +99,30 @@ std::string DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 		query->clear_select();
 		for (i = 0; i < sanzahl; i++)
 		{
-			char t[32];
-			char n[32];
-			char c[32];
-			char l[32];
-			char ty[32];
-			char f[32];
-            char g[32];
-            char hm[32];
-			char de[32];
-			char en[32];
+			char t[64];
+			char n[64];
+			char c[64];
+			char l[64];
+			char ty[64];
+			char f[64];
+            char g[64];
+            char hm[64];
+			char de[64];
+			char en[64];
 			std::string col;
 			std::string lang;
 			std::string::size_type j;
 
-			snprintf(t, 32, "tabnumInput%ld", i); t[31] = '\0';
-			snprintf(n, 32, "fieldInput%ld", i); n[31] = '\0';
-			snprintf(c, 32, "columnidInput%ld", i); c[31] = '\0';
-			snprintf(l, 32, "langInput%ld", i); l[31] = '\0';
-			snprintf(ty, 32, "typInput%ld", i); ty[31] = '\0';
-			snprintf(f, 32, "formatInput%ld", i); f[31] = '\0';
-            snprintf(g, 32, "groupbyInput%ld", i); g[31] = '\0';
-            snprintf(hm, 32, "musthavingInput%ld", i); g[31] = '\0';
-			snprintf(de, 32, "text_deInput%ld", i); de[31] = '\0';
-			snprintf(en, 32, "text_enInput%ld", i); en[31] = '\0';
+			snprintf(t, 64, "tabnumInput%ld", i); t[31] = '\0';
+			snprintf(n, 64, "fieldInput%ld", i); n[31] = '\0';
+			snprintf(c, 64, "columnidInput%ld", i); c[31] = '\0';
+			snprintf(l, 64, "langInput%ld", i); l[31] = '\0';
+			snprintf(ty, 64, "typInput%ld", i); ty[31] = '\0';
+			snprintf(f, 64, "formatInput%ld", i); f[31] = '\0';
+            snprintf(g, 64, "groupbyInput%ld", i); g[31] = '\0';
+            snprintf(hm, 64, "musthavingInput%ld", i); g[31] = '\0';
+			snprintf(de, 64, "text_deInput%ld", i); de[31] = '\0';
+			snprintf(en, 64, "text_enInput%ld", i); en[31] = '\0';
 
 			col = h->vars[n];
 			if (atoi(h->vars[l].c_str()) != 0)
@@ -151,25 +151,25 @@ std::string DbHttpAdminQuery::ok(Database *db, HttpHeader *h)
 		query->clear_where();
 		for (i = 0; i < wanzahl; i++)
 		{
-			char notop[32];
-			char leftbrace[32];
-			char lefttab[32];
-			char leftval[32];
-			char op[32];
-			char righttab[32];
-			char rightval[32];
-			char rightbrace[32];
-			char boolop[32];
+			char notop[64];
+			char leftbrace[64];
+			char lefttab[64];
+			char leftval[64];
+			char op[64];
+			char righttab[64];
+			char rightval[64];
+			char rightbrace[64];
+			char boolop[64];
 
-			snprintf(notop, 32, "wnotoperatorInput%ld", i); notop[31] = '\0';
-			snprintf(leftbrace, 32, "wleftbraceInput%ld", i); leftbrace[31] = '\0';
-			snprintf(lefttab, 32, "wlefttabInput%ld", i); lefttab[31] = '\0';
-			snprintf(leftval, 32, "wleftvalueInput%ld", i); leftval[31] = '\0';
-			snprintf(op, 32, "woperatorInput%ld", i); op[31] = '\0';
-			snprintf(righttab, 32, "wrighttabInput%ld", i); righttab[31] = '\0';
-			snprintf(rightval, 32, "wrightvalueInput%ld", i); rightval[31] = '\0';
-			snprintf(rightbrace, 32, "wrightbraceInput%ld", i); rightbrace[31] = '\0';
-			snprintf(boolop, 32, "wbooloperatorInput%ld", i); boolop[31] = '\0';
+			snprintf(notop, 64, "wnotoperatorInput%ld", i); notop[31] = '\0';
+			snprintf(leftbrace, 64, "wleftbraceInput%ld", i); leftbrace[31] = '\0';
+			snprintf(lefttab, 64, "wlefttabInput%ld", i); lefttab[31] = '\0';
+			snprintf(leftval, 64, "wleftvalueInput%ld", i); leftval[31] = '\0';
+			snprintf(op, 64, "woperatorInput%ld", i); op[31] = '\0';
+			snprintf(righttab, 64, "wrighttabInput%ld", i); righttab[31] = '\0';
+			snprintf(rightval, 64, "wrightvalueInput%ld", i); rightval[31] = '\0';
+			snprintf(rightbrace, 64, "wrightbraceInput%ld", i); rightbrace[31] = '\0';
+			snprintf(boolop, 64, "wbooloperatorInput%ld", i); boolop[31] = '\0';
 
 			if (query->add_where(h->vars[notop], h->vars[leftbrace], h->vars[lefttab], h->vars[leftval], h->vars[op], h->vars[righttab], h->vars[rightval], h->vars[rightbrace], h->vars[boolop]) < 0)
 			{

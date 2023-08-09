@@ -23,7 +23,15 @@ class DbHttpApplication;
 class DbHttp : public Http
 {
     Message msg;
+
 protected:
+
+    enum ERROR_TYPE
+    {
+       E_LOCATION = Http::MAX_ERROR,
+
+       MAX_ERROR = 200
+    };
 
     DbTranslate *trans;
     std::string cookieid;

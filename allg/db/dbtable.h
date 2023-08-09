@@ -142,7 +142,7 @@ public:
         typ = ' ';
         dbconnect = NULL;
     }
-    virtual ~DbTable() {cols.empty(); }
+    virtual ~DbTable() {cols.clear(); }
 
     int empty() { return cols.empty(); }
 

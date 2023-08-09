@@ -18,6 +18,7 @@
 #include <utils/php_exec.h>
 
 #include <string>
+#include <filesystem>
 
 #if defined(__MINGW32__) || defined(__CYGWIN__)
 #include <winsock2.h>
@@ -644,6 +645,7 @@ void HttpFilesystem::mkdir(HttpHeader *h)
     }
 #else
     if ( ::mkdir((dir + DIRSEP + name).c_str(), 0777 ) != 0 )
+    //if ( std::filesystem::create_directories((dir + DIRSEP + name)) != 0 )
     {
         std::string str = msg.getSystemerror(errno);
         msg.perror(E_CREATEFILE, "Fehler während des Erstellens eines Ordners");
@@ -768,6 +770,15 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
         {
             std::string name = h->vars["filenameInput"];
             int overwrite = ( h->vars["overwrite"] != "" && h->vars["overwrite"] != "0" );
+            int mkdir = ( h->vars["mkdir"] != "" && h->vars["mkdir"] != "0" );
+
+            if ( mkdir )
+            {
+                if ( (path = getDir("/")) == "" )
+                        return msg.get("Wurzel unbekannt");
+
+                std::filesystem::create_directories(path + h->vars["dirInput.old"] );
+            }
 
             if ( (path = getDir(h->vars["dirInput.old"])) == "" || name == "" )
             {
@@ -775,6 +786,7 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
             }
             else
             {
+
                 std::string file = path + DIRSEP + name;
                 if ( !overwrite && access( file.c_str() , F_OK ) == 0 )
                 {
