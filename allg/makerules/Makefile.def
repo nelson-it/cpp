@@ -1,7 +1,7 @@
                  CPP := g++
                  CC  := gcc
               
-             OPT_STD := -g -Wall -pedantic -std=c++11
+             OPT_STD := -g -Wall -pedantic -std=c++17
              OPT_ADD := $($(TARGET).OPT_ADD)
 	          LD_STD := -g -lmagic
 	      
