@@ -13,7 +13,6 @@
 #include "dbhttp_provider.h"
 #include "dbhttp_application.h"
 
-
 DbHttp::DbHttp(ServerSocket *s, DbHttpAnalyse *analyse, Database *db, int register_it) :
         Http(s, NULL), msg("DbHttp")
 {
@@ -69,7 +68,7 @@ void DbHttp::setLocale()
     {
         this->loc[lstr] = newlocale(LC_ALL_MASK, lstr.c_str(), NULL);
         if ( this->loc[lstr] == NULL )
-            msg.perror(E_LOCATION, "newlocale: ", strerror(errno));
+            msg.perror(E_LOCATION, "newlocale: %s %s", lstr.c_str(), strerror(errno));
 
         l = this->loc.find(lstr);
     }
