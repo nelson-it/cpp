@@ -10,9 +10,11 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 #include <magic.h>
 #include <poll.h>
 #include <sys/wait.h>
+#endif
 
 #include <utils/tostring.h>
 #include <utils/php_exec.h>
@@ -919,16 +921,20 @@ void HttpFilesystem::mklink(HttpHeader *h)
 void HttpFilesystem::download(HttpHeader *h)
 {
     std::string name;
+    char buffer[10240];
     FILE *f;
 
     name = getDir(h->vars["dirInput.old"]) + "/" + h->vars["filenameInput.old"];
     if ( name != "" && ( f = fopen(name.c_str(), "r")) != NULL )
     {
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
         magic_t myt = magic_open(MAGIC_MIME);
         magic_load(myt, NULL);
 
-        char buffer[10240];
         const char *magic = magic_file(myt,name.c_str());
+#else
+        const char *magic = NULL;
+#endif
 
         h->content_type = ( magic != NULL ) ? magic : "application/octet-stream";
 
@@ -942,7 +948,9 @@ void HttpFilesystem::download(HttpHeader *h)
         h->status = 200;
         contentf(h, f);
         fclose(f);
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
         magic_close(myt);
+#endif
     }
     else
     {
@@ -955,6 +963,8 @@ void HttpFilesystem::download(HttpHeader *h)
         h->status = 200;
     }
 }
+
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
 
 class HttpFilesystemStreamThread : public ServerSocket
 {
@@ -1070,10 +1080,11 @@ HttpFilesystemStreamThread::HttpFilesystemStreamThread(int client, int pid)
     pthread_create(&(this->id), &attr, HttpFilesystemStreamThreadLoop, (void *)this);
     pthread_attr_destroy(&attr);
 }
-
+#endif
 
 void HttpFilesystem::stream(HttpHeader *h)
 {
+#if ! defined(__MINGW32__) && ! defined(__CYGWIN__)
     std::string name;
     struct stat buf;
     int pid;
@@ -1142,6 +1153,7 @@ void HttpFilesystem::stream(HttpHeader *h)
     }
 
     return;
+#endif
 
 }
 

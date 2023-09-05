@@ -165,7 +165,7 @@ int ServerSocket::accept( struct sockaddr_storage &c)
     rval = accept(sock, (struct sockaddr *)&c, &size );
 #elif defined(__MINGW32__) || defined(__CYGWIN__)
     int size = sizeof(c);
-    rval = accept(sock, (struct sockaddr *)&c, &size );
+    rval = ::accept(sock, (struct sockaddr *)&c, &size );
 #else
     socklen_t size = sizeof(c);
     rval = accept4(sock, (struct sockaddr *)&c, &size, SOCK_CLOEXEC );
@@ -339,7 +339,11 @@ bool ServerSocket::TimeSort::operator()
 ServerSocket::ServerSocket(short socketnum )
 :msg("ServerSocket")
 {
+#if ! ( defined(__MINGW32__) || defined(__CYGWIN__) )
     unsigned int length;
+#else
+    int length;
+#endif
     int rval;
     struct sockaddr_in6 server;
 
