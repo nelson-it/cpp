@@ -1196,6 +1196,7 @@ void HttpFilesystem::mkicon(HttpHeader *h)
         }
     }
 
+    h->filename = "images/mk_icon.php";
     (*(h->vars.p_getExtraVars()))["cpath"] = cname;
     (*(h->vars.p_getExtraVars()))["realpath"] = this->getDir(h->vars["dirInput.old"]);
     (*(h->vars.p_getExtraVars()))["filesize"] = std::to_string(statbuf.st_size);
