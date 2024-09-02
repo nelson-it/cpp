@@ -48,7 +48,7 @@ std::string Message::timestamp(time_t t)
 	struct tm tm;
 
 	if ( t == 0 ) time(&t);
-	l = strftime(str, sizeof(str), "%H:%M:%S", localtime_r( &t, &tm));
+	l = strftime(str, sizeof(str), "%d.%m.%Y %H:%M:%S", localtime_r( &t, &tm));
 	str[l] = '\0';
 
 	return str;
@@ -303,9 +303,9 @@ void Message::pwarning(int errorno, const char *str, ... )
 
 	fprintf(out, "%s W%04d: %6s ", timestamp().c_str(), errorclass + errorno, id);
 	if ( prg_trans == NULL || ignore_lang)
-		vfprintf(out, str, ap);
+		vfprintf(out, (std::string(str) + "\n").c_str(), ap);
 	else
-		vfprintf(out, prg_trans->get(str, id).c_str(), ap);
+		vfprintf(out, (prg_trans->get(str, id) + "\n").c_str(), ap);
 
 	va_end(ap);
 
@@ -334,7 +334,6 @@ void Message::pwarning(int errorno, const char *str, ... )
 		va_end(ap);
 	}
 
-	fprintf(out,"\n");
 	fflush(out);
 	ignore_lang = 0;
 

@@ -90,6 +90,13 @@ private:
 		D_TIMEOUT = 7,
 	};
 
+	enum ERROR_TYPES
+	{
+	    E_MINTYPE = HttpAnalyse::MAX_ERROR,
+
+	    E_LOGIN
+	};
+
 	pthread_mutex_t cl_mutex;
 	void lock() { pthread_mutex_lock(&cl_mutex); }
 	void unlock() { pthread_mutex_unlock(&cl_mutex); }

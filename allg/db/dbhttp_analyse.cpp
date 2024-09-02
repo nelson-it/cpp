@@ -137,6 +137,11 @@ void DbHttpAnalyse::check_user(HttpHeader *h)
             unlock();
             return;
         }
+        else
+        {
+            msg.ignore_lang = 1;
+            msg.perror(E_LOGIN, "Login Error %s", a.c_str());
+        }
 
         msg.pdebug(D_CLIENT, "falscher client %d", client);
 
