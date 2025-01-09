@@ -79,7 +79,7 @@ DbTranslate::DbTranslate(Database *db, std::string lang, std::string region)
     this->lang = lang;
     this->setRegion(region);
 
-    pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE_NP );
+    pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE );
     pthread_mutex_init(&mutex,&mutexattr);
 }
 

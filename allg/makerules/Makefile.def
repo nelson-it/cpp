@@ -126,6 +126,11 @@ ifeq "$($(TARGET).WITH_MAGIC)" "TRUE"
 endif
 
 ifeq "$(WITH_ICONV)" "TRUE"
+	ifeq "$(LINUX)" "alpine"
+       LD_STD := $(LD_STD) -L/usr/lib -liconv
+      OPT_STD := -I/usr/include/gnu-libiconv $(OPT_STD) 
+  endif
+  
 	ifeq "$(UNAME)" "Darwin"
              LD_STD := $(LD_STD) -L/usr/lib -liconv
 	endif

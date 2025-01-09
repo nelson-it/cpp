@@ -6,6 +6,10 @@ ifeq "$(UNAME)" "CYGWIN_NT-6.1-WOW64"
                SHLIB := dll
 endif
 
+ifeq "$(UNAME)" "Linux"
+         LINUX := $(shell sh -c '. /etc/os-release; echo $$ID')
+endif
+
 $(SHLIB_PRE)mnebase.$(SHLIB).ISDLL := TRUE
 $(SHLIB_PRE)mnebase.$(SHLIB).WITH_GD := FALSE
 $(SHLIB_PRE)mnebase.$(SHLIB).WITH_POSTGRES := FALSE

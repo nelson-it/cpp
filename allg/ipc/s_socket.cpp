@@ -11,7 +11,6 @@
 #include <errno.h>
 #include <fcntl.h>
 
-#include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/time.h>
 
