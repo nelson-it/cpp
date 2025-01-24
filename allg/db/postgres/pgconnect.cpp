@@ -187,6 +187,15 @@ void PgConnect::open_connection(const char *dbname, const char *user, const char
         else
         {
             connections[this->con].anzahl_connect = 1;
+
+            connections[this->con].pghost = "PGHOST=" + std::string(PQhost(this->con));
+            connections[this->con].pgdatabase = "PGDATABASE=" + std::string(PQdb(this->con));
+            connections[this->con].pgport = "PGPORT=" + std::string(PQport(this->con));
+
+            putenv((char*)connections[this->con].pghost.c_str());
+            putenv((char*)connections[this->con].pgdatabase.c_str());
+            putenv((char*)connections[this->con].pgport.c_str());
+
             PQsetNoticeProcessor(con, NoticeProcessor, this);
             start(0);
         }

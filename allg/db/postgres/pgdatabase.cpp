@@ -25,8 +25,7 @@ PgDatabase::~PgDatabase()
 {
 }
 
-DbConnect *PgDatabase::p_getConnect(std::string dbname, std::string user,
-        std::string passwd)
+DbConnect *PgDatabase::p_getConnect(std::string dbname, std::string user, std::string passwd)
 {
     if (con == NULL)
     {

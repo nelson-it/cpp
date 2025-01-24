@@ -22,6 +22,10 @@ class PgConnect : public DbConnect
         std::string in_transaction;
         pthread_mutex_t mutex;
 
+        std::string pghost;
+        std::string pgdatabase;
+        std::string pgport;
+
     public:
         Connections()
         {
