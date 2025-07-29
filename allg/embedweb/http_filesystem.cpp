@@ -796,9 +796,13 @@ std::string HttpFilesystem::mkfile(HttpHeader *h)
                 }
 
                 ::unlink(file.c_str());
-                if ( ::rename(str.c_str(), (path + DIRSEP + name).c_str()) != 0 )
+                std::error_code errcode;
+
+                std::filesystem::copy(str.c_str(), (path + DIRSEP + name).c_str(), errcode );
+                ::unlink(str.c_str());
+                if ( errcode.value() != 0 )
                 {
-                    std::string str = msg.getSystemerror(errno);
+                    std::string str = msg.getSystemerror(errcode.value());
                     msg.perror(E_CREATEFILE, "Fehler während des Estellens einer Datei");
                     msg.line("%s", str.c_str());
                 }
